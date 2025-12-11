@@ -1,0 +1,17 @@
+PROYECTOMOVILELECTRONICAM
+│
+├─ app
+│   ├─ index.js                 → Login
+│   ├─ (main)/
+│   │      home.js              → Dashboard
+│   │      pendientes.js        → Lista de trabajos
+│   │      detalle/[id].js      → Detalle trabajo
+│   │      reporte/[id].js      → Crear reporte
+│   ├─ _layout.js               → Layout central
+│
+├─ components/                  → Botones, tarjetas, inputs
+├─ services/                    → llamadas API (login, trabajos, reportes)
+├─ constants/                   → colores, strings, config
+├─ context/                     → auth global si quieres
+├─ hooks/                       → useAuth, useTrabajos
+├─ assets/                      → imágenes
