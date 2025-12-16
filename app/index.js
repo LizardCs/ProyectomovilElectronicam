@@ -1,59 +1,142 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
-  Keyboard,
-  Image
+  View
 } from "react-native";
+
+// Importar el servicio de API
+import { AuthService } from "../services/api";
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [clave, setClave] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [apiInfo, setApiInfo] = useState("");
 
-  const handleLogin = () => {
-    if (!email || !password) {
+  useEffect(() => {
+    // Verificar si hay usuario guardado
+    checkExistingSession();
+    // Mostrar info de la API
+    setApiInfo("API: http://192.168.110.167/api-expo");
+  }, []);
+
+  const checkExistingSession = async () => {
+    try {
+      const user = await AuthService.getStoredUser();
+      if (user) {
+        // Si hay usuario guardado, redirigir según rol
+        if (user.rol === 1) {
+          router.replace("/admin/home");
+        } else {
+          router.replace("/tecnico/home");
+        }
+      }
+    } catch (error) {
+      console.log('No hay sesión previa');
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!usuario || !clave) {
       Alert.alert("Error", "Por favor completa todos los campos");
       return;
     }
 
     setIsLoading(true);
-    
-    // Simulación de autenticación
-    setTimeout(() => {
-      setIsLoading(false);
+    Keyboard.dismiss();
+
+    try {
+      console.log("🔐 Intentando login con:", { usuario, clave });
       
-      // Credenciales de prueba
-      if (email === "admin@mantilla.com" && password === "admin123") {
-        router.replace("/admin/home");
-      } else if (email === "tecnico@mantilla.com" && password === "tecnico123") {
-        router.replace("/tecnico/home");
+      const response = await AuthService.login({ 
+        usuario: usuario.trim(), 
+        clave: clave.trim() 
+      });
+      
+      console.log("📥 Respuesta del servidor:", response);
+      
+      if (response.success && response.user) {
+        // Login exitoso
+        console.log("✅ Usuario autenticado:", response.user);
+        
+        // Redirigir según el rol (1=admin, 0=tecnico)
+        if (response.user.rol === 1) {
+          router.replace("/admin/home");
+        } else {
+          router.replace("/tecnico/home");
+        }
+        
       } else {
+        // Login fallido
         Alert.alert(
-          "Credenciales incorrectas",
-          "Por favor verifica tu usuario y contraseña",
-          [{ text: "Entendido" }]
+          "❌ Error de autenticación",
+          response.message || "Credenciales incorrectas",
+          [{ text: "Intentar nuevamente" }]
         );
       }
-    }, 1000);
+    } catch (error) {
+      console.error("❌ Error completo en login:", error);
+      Alert.alert(
+        "🔌 Error de conexión",
+        "No se pudo conectar al servidor.\n\n" +
+        "Verifica que:\n" +
+        "• XAMPP Apache y MySQL estén ejecutándose\n" +
+        "• Tu IP local sea correcta\n" +
+        "• Ambos dispositivos estén en la misma red WiFi\n\n" +
+        "Para Android Emulador usa: http://10.0.2.2/api-expo",
+        [{ text: "Entendido" }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
     Alert.alert(
-      "Recuperar contraseña",
-      "Contacta al administrador del sistema para restablecer tu contraseña.",
+      "🔐 Recuperar contraseña",
+      "Contacta al administrador del sistema:\n\n" +
+      "📧 Electronicamantilla@gmail.com\n" +
+      "📱 099xxxxxxx",
       [{ text: "Entendido" }]
     );
+  };
+
+  const handleTestConnection = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://192.168.110.167/api-expo/test.php");
+      const text = await response.text();
+      Alert.alert(
+        "🔍 Test de conexión",
+        text.substring(0, 150) + "...",
+        [{ text: "OK" }]
+      );
+    } catch (error) {
+      Alert.alert(
+        "❌ Conexión fallida",
+        `No se pudo conectar a la API.\n\n` +
+        `URL probada: http://192.168.110.167/api-expo/test.php\n\n` +
+        "Solución:\n" +
+        "1. Abre XAMPP y activa Apache\n" +
+        "2. Verifica tu IP local con ipconfig\n" +
+        "3. Asegúrate de que el archivo test.php existe",
+        [{ text: "Entendido" }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -76,6 +159,18 @@ export default function Login() {
           <Text style={styles.welcomeText}>
             Sistema de gestión técnica
           </Text>
+          
+          {/* Botón para probar conexión */}
+          <TouchableOpacity 
+            onPress={handleTestConnection}
+            style={styles.testButton}
+            disabled={isLoading}
+          >
+            <Ionicons name="wifi-outline" size={16} color="#88BBDC" />
+            <Text style={styles.testButtonText}>Probar conexión API</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.apiInfo}>{apiInfo}</Text>
         </View>
 
         {/* Formulario de login */}
@@ -83,7 +178,7 @@ export default function Login() {
           <View style={styles.formHeader}>
             <Text style={styles.loginTitle}>Iniciar Sesión</Text>
             <Text style={styles.loginSubtitle}>
-              Ingresa tus credenciales para continuar
+              Ingresa tus credenciales
             </Text>
           </View>
 
@@ -98,14 +193,14 @@ export default function Login() {
                 style={styles.inputIcon}
               />
               <TextInput
-                placeholder="correo@ejemplo.com"
+                placeholder="Ej: admin@mantilla.com"
                 placeholderTextColor="#88BBDC"
-                value={email}
-                onChangeText={setEmail}
+                value={usuario}
+                onChangeText={setUsuario}
                 style={styles.input}
                 autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
+                autoComplete="username"
+                returnKeyType="next"
               />
             </View>
           </View>
@@ -124,10 +219,12 @@ export default function Login() {
                 placeholder="••••••••"
                 placeholderTextColor="#88BBDC"
                 secureTextEntry
-                value={password}
-                onChangeText={setPassword}
+                value={clave}
+                onChangeText={setClave}
                 style={styles.input}
                 autoComplete="password"
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
               />
             </View>
           </View>
@@ -141,8 +238,8 @@ export default function Login() {
           >
             {isLoading ? (
               <View style={styles.loadingContainer}>
-                <Ionicons name="refresh-outline" size={24} color="#000000" style={styles.loadingIcon} />
-                <Text style={styles.buttonText}>Verificando...</Text>
+                <ActivityIndicator color="#000000" />
+                <Text style={styles.buttonText}>Conectando...</Text>
               </View>
             ) : (
               <>
@@ -162,18 +259,19 @@ export default function Login() {
             <Ionicons name="help-circle-outline" size={18} color="#0A6CC9" />
           </TouchableOpacity>
 
-          {/* Información de credenciales de prueba */}
+          {/* Información de credenciales */}
           <View style={styles.demoCredentials}>
-            <Text style={styles.demoTitle}>Credenciales de prueba:</Text>
-            <Text style={styles.demoText}>Admin: admin@mantilla.com / admin123</Text>
-            <Text style={styles.demoText}>Técnico: tecnico@mantilla.com / tecnico123</Text>
+            <Text style={styles.demoTitle}>Datos de prueba en BD:</Text>
+            <Text style={styles.demoText}>• Usuario: admin</Text>
+            <Text style={styles.demoText}>• Contraseña: password</Text>
+            <Text style={styles.demoText}>• MOV_ROL: 1 (Admin) / 0 (Técnico)</Text>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            © 2024 Electrónica Mantilla. Todos los derechos reservados.
+            © 2024 Electrónica Mantilla. Conectado a XAMPP
           </Text>
           <Text style={styles.footerVersion}>v2.1.0</Text>
         </View>
@@ -200,6 +298,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    alignItems: "center",
   },
   logoContainer: {
     flexDirection: "row",
@@ -245,6 +344,29 @@ const styles = StyleSheet.create({
     color: "#88BBDC",
     textAlign: "center",
     marginTop: 5,
+    marginBottom: 10,
+  },
+  testButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(10, 108, 201, 0.2)",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  testButtonText: {
+    color: "#88BBDC",
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 8,
+  },
+  apiInfo: {
+    fontSize: 11,
+    color: "#0A6CC9",
+    textAlign: "center",
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
   },
   formContainer: {
     flex: 1,
@@ -320,10 +442,6 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  loadingIcon: {
-    marginRight: 10,
-    transform: [{ rotate: "0deg" }],
   },
   buttonText: {
     fontSize: 18,
