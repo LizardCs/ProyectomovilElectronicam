@@ -1,17 +1,34 @@
-PROYECTOMOVILELECTRONICAM
+OYECTOMOVILELECTRONICAM
 │
 ├─ app
-│   ├─ index.js                 → Login
+│   ├─ index.js                 → Login INICIO
+│   ├─ modal.tsx                
 │   ├─ (main)/
-│   │      home.js              → Dashboard
-│   │      pendientes.js        → Lista de trabajos
-│   │      detalle/[id].js      → Detalle trabajo
-│   │      reporte/[id].js      → Crear reporte
-│   ├─ _layout.js               → Layout central
+│   │    │───detalle
+│   │    │     │__[id].js  
+│   │    │
+│   │    │───reporte
+│   │          │__[id].js
+│   │    _layout.js             
+│   │    home.js
+│   │    pendientes
+│   ├─ (tabs)/
+│   │   _layout.tsx           
+│   │   explore.tsx
+│   │   index.tsx
+│   │   modal.tsx
+│   ├─ admin/
+│       │__home.js         
+│   ├─ tecnico/
+│       │__home.js
 │
-├─ components/                  → Botones, tarjetas, inputs
-├─ services/                    → llamadas API (login, trabajos, reportes)
-├─ constants/                   → colores, strings, config
-├─ context/                     → auth global si quieres
-├─ hooks/                       → useAuth, useTrabajos
-├─ assets/                      → imágenes
+├─ assets/images/    
+├─ components/
+├─ constants/
+├─ hooks/
+├─ node_modules/
+├─ scripts/
+     ├─ reset-project.js
+├─ services/
+    ├─ mockUsers.js   
+                             
