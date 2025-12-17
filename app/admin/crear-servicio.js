@@ -504,21 +504,13 @@ export default function CrearServicio() {
                             </View>
                         </View>
 
-                        {/* Nombre del técnico seleccionado (editable) */}
+                        {/* Nombre del técnico seleccionado (SOLO LECTURA) */}
                         {formData.SERV_CED_REC && (
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.label}>
-                                    Técnico asignado
-                                </Text>
-                                <TextInput
-                                    style={styles.input}
-                                    value={formData.SERV_NOM_REC}
-                                    onChangeText={(text) => handleChange("SERV_NOM_REC", text)}
-                                    placeholderTextColor="#999"
-                                />
-                                <Text style={styles.helperText}>
-                                    Se puede editar el nombre si es necesario
-                                </Text>
+                            <View style={styles.readOnlyContainer}>
+                                <View style={styles.readOnlyField}>
+                                    <Text style={styles.readOnlyLabel}>Técnico asignado:</Text>
+                                    <Text style={styles.readOnlyValue}>{formData.SERV_NOM_REC}</Text>
+                                </View>
                             </View>
                         )}
                     </View>
@@ -750,30 +742,25 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#E5E5EA",
     },
-    helperText: {
-        fontSize: 13,
-        color: "#8E8E93",
-        marginTop: 6,
-        fontStyle: "italic",
-    },
     readOnlyContainer: {
         backgroundColor: "#F8F9FA",
         borderRadius: 12,
         padding: 15,
+        marginTop: 10,
     },
     readOnlyField: {
         flexDirection: "row",
-        marginBottom: 10,
+        alignItems: "center",
     },
     readOnlyLabel: {
         fontSize: 14,
         color: "#666",
-        width: 80,
+        width: 120,
     },
     readOnlyValue: {
-        fontSize: 14,
+        fontSize: 15,
         color: "#1C1C1E",
-        fontWeight: "500",
+        fontWeight: "600",
         flex: 1,
     },
     pickerContainer: {
