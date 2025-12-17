@@ -25,14 +25,15 @@ export default function CrearServicio() {
     const [user, setUser] = useState(null);
     const [tecnicos, setTecnicos] = useState([]);
 
-    // Estados del formulario según tu tabla serviciostecnicos
+    // Estados del formulario
     const [formData, setFormData] = useState({
         SERV_IMG_ENV: null,        // Foto del comprobante (URI)
-        SERV_NUM: "",              // Número de servicio (solo números)
-        SERV_CED_ENV: "",          // Cedula del asignador (automático)
-        SERV_NOM_ENV: "",          // Nombre del asignador (automático)
-        SERV_CED_REC: "",          // Cédula del técnico (seleccionar de lista)
-        SERV_NOM_REC: "",          // Nombre del técnico (se llena automáticamente)
+        SERV_NUM: "",              // Número de servicio
+        SERV_DESCRIPCION: "",      // <--- DESCRIPCIÓN
+        SERV_CED_ENV: "",          // Cedula del asignador
+        SERV_NOM_ENV: "",          // Nombre del asignador
+        SERV_CED_REC: "",          // Cédula del técnico
+        SERV_NOM_REC: "",          // Nombre del técnico
         SERV_EST: 0,               // Estado (0 = pendiente)
     });
 
@@ -48,7 +49,6 @@ export default function CrearServicio() {
             if (userJson) {
                 const userData = JSON.parse(userJson);
                 setUser(userData);
-                // Llenar automáticamente los campos del asignador
                 setFormData(prev => ({
                     ...prev,
                     SERV_CED_ENV: userData.cedula || "Admin",
@@ -62,61 +62,44 @@ export default function CrearServicio() {
 
     const loadTecnicos = async () => {
         try {
-            // Llamada a tu API para obtener técnicos (MOV_ROL = 0)
             const response = await fetch('http://192.168.110.167/api-expo/obtener-tecnicos.php');
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            
             const data = await response.json();
-
             if (data.success) {
                 setTecnicos(data.tecnicos);
                 console.log('✅ Técnicos cargados:', data.tecnicos);
             } else {
                 console.warn('⚠️ No se encontraron técnicos:', data.message);
-                // Mantener datos de prueba como fallback
+                // Fallback data
                 setTecnicos([
                     { MOV_CED: "0987654321", NOM_MOV: "Juan", MOV_APE: "Pérez", nombre_completo: "Juan Pérez" },
                     { MOV_CED: "1122334455", NOM_MOV: "Carlos", MOV_APE: "López", nombre_completo: "Carlos López" },
-                    { MOV_CED: "5566778899", NOM_MOV: "Ana", MOV_APE: "García", nombre_completo: "Ana García" },
                 ]);
             }
         } catch (error) {
             console.error('❌ Error cargando técnicos:', error);
-            // Datos de prueba como fallback
+            // Fallback data
             setTecnicos([
                 { MOV_CED: "0987654321", NOM_MOV: "Juan", MOV_APE: "Pérez", nombre_completo: "Juan Pérez" },
-                { MOV_CED: "1122334455", NOM_MOV: "Carlos", MOV_APE: "López", nombre_completo: "Carlos López" },
-                { MOV_CED: "5566778899", NOM_MOV: "Ana", MOV_APE: "García", nombre_completo: "Ana García" },
             ]);
         }
     };
 
     const requestPermissions = async () => {
-        // Solicitar permiso para cámara
         const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
         const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (cameraPermission.status !== 'granted' || mediaPermission.status !== 'granted') {
-            Alert.alert(
-                "Permisos necesarios",
-                "Necesitas permitir el acceso a la cámara y galería para subir fotos"
-            );
+            Alert.alert("Permisos necesarios", "Necesitas permitir el acceso a la cámara y galería");
         }
     };
 
     const handleChange = (field, value) => {
-        // Si es número de servicio, solo permitir números
         if (field === 'SERV_NUM') {
             const numericValue = value.replace(/[^0-9]/g, '');
-            setFormData({
-                ...formData,
-                [field]: numericValue
-            });
+            setFormData({ ...formData, [field]: numericValue });
         }
-        // Si es cédula del técnico, buscar y completar nombre automáticamente
         else if (field === 'SERV_CED_REC') {
             const tecnicoSeleccionado = tecnicos.find(t => t.MOV_CED === value);
             setFormData({
@@ -126,10 +109,7 @@ export default function CrearServicio() {
             });
         }
         else {
-            setFormData({
-                ...formData,
-                [field]: value
-            });
+            setFormData({ ...formData, [field]: value });
         }
     };
 
@@ -140,14 +120,10 @@ export default function CrearServicio() {
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.8,
-                base64: true, // <-- IMPORTANTE: obtener base64
             });
 
             if (!result.canceled) {
-                setFormData({
-                    ...formData,
-                    SERV_IMG_ENV: `data:image/jpeg;base64,${result.assets[0].base64}`
-                });
+                setFormData({ ...formData, SERV_IMG_ENV: result.assets[0].uri });
             }
         } catch (error) {
             console.error('Error tomando foto:', error);
@@ -162,14 +138,10 @@ export default function CrearServicio() {
                 allowsEditing: true,
                 aspect: [4, 3],
                 quality: 0.8,
-                base64: true, // <-- IMPORTANTE: obtener base64
             });
 
             if (!result.canceled) {
-                setFormData({
-                    ...formData,
-                    SERV_IMG_ENV: `data:image/jpeg;base64,${result.assets[0].base64}`
-                });
+                setFormData({ ...formData, SERV_IMG_ENV: result.assets[0].uri });
             }
         } catch (error) {
             console.error('Error seleccionando imagen:', error);
@@ -178,17 +150,15 @@ export default function CrearServicio() {
     };
 
     const handleSubmit = async () => {
-        // Validación del formulario
+        // Validaciones
         if (!formData.SERV_IMG_ENV) {
             Alert.alert("Falta foto", "Debes tomar una foto del comprobante");
             return;
         }
-
         if (!formData.SERV_NUM) {
             Alert.alert("Falta número", "Ingresa el número de servicio");
             return;
         }
-
         if (!formData.SERV_CED_REC) {
             Alert.alert("Falta técnico", "Selecciona un técnico");
             return;
@@ -197,28 +167,23 @@ export default function CrearServicio() {
         setIsLoading(true);
 
         try {
-            // DETERMINAR SI ESTAMOS EN WEB O MÓVIL
             const isWeb = Platform.OS === 'web';
             console.log(`Ejecutando en: ${Platform.OS} (Web: ${isWeb})`);
 
             if (isWeb) {
-                // ============ PARA WEB ============
+                // ============ PARA WEB (JSON) ============
                 console.log('En WEB: Enviando como JSON...');
 
                 const servicioData = {
                     SERV_IMG_ENV: formData.SERV_IMG_ENV,
                     SERV_NUM: formData.SERV_NUM,
+                    SERV_DESCRIPCION: formData.SERV_DESCRIPCION, // Corregido (antes tenia ç)
                     SERV_CED_ENV: formData.SERV_CED_ENV,
                     SERV_NOM_ENV: formData.SERV_NOM_ENV,
                     SERV_CED_REC: formData.SERV_CED_REC,
                     SERV_NOM_REC: formData.SERV_NOM_REC,
                     SERV_EST: 0
                 };
-
-                console.log('Datos a enviar:', {
-                    SERV_NUM: servicioData.SERV_NUM,
-                    SERV_CED_REC: servicioData.SERV_CED_REC
-                });
 
                 const response = await fetch('http://192.168.110.167/api-expo/crear-servicio.php', {
                     method: 'POST',
@@ -230,104 +195,66 @@ export default function CrearServicio() {
                 });
 
                 const responseText = await response.text();
-                console.log('Respuesta completa:', responseText);
-
                 let result;
                 try {
                     result = JSON.parse(responseText);
                 } catch (error) {
-                    console.error('Error parseando JSON:', error);
-                    throw new Error(`Respuesta inválida del servidor: ${responseText.substring(0, 200)}`);
+                    throw new Error(`Respuesta inválida: ${responseText.substring(0, 200)}`);
                 }
 
                 if (result.success) {
-                    Alert.alert(
-                        "✅ Servicio asignado",
-                        `Servicio ${formData.SERV_NUM} asignado a ${formData.SERV_NOM_REC}`,
-                        [
-                            {
-                                text: "OK",
-                                onPress: () => {
-                                    // Usar la ruta correcta para tu estructura de carpetas
-                                    // Si tu home está en app/admin/home.js
-                                    router.replace("/admin/home");
-                                }
-                            }
-                        ]
-                    );
+                    Alert.alert("✅ Servicio asignado", `Servicio asignado a ${formData.SERV_NOM_REC}`, [
+                        { text: "OK", onPress: () => router.replace("/admin/home") }
+                    ]);
                 } else {
                     throw new Error(result.message || 'Error al crear el servicio');
                 }
 
             } else {
-                // ============ PARA MÓVIL (Android/iOS) ============
-                console.log('En MÓVIL: Enviando como FormData...');
+                // ============ PARA MÓVIL (FormData Nativo) ============
+                // CORRECCIÓN IMPORTANTE: No usar Blob ni atob() aquí.
+                console.log('En MÓVIL: Enviando como FormData nativo...');
 
                 const formDataToSend = new FormData();
 
                 // Agregar campos de texto
                 formDataToSend.append('SERV_NUM', formData.SERV_NUM);
+                formDataToSend.append('SERV_DESCRIPCION', formData.SERV_DESCRIPCION || '');
                 formDataToSend.append('SERV_CED_ENV', formData.SERV_CED_ENV);
                 formDataToSend.append('SERV_NOM_ENV', formData.SERV_NOM_ENV);
                 formDataToSend.append('SERV_CED_REC', formData.SERV_CED_REC);
                 formDataToSend.append('SERV_NOM_REC', formData.SERV_NOM_REC);
                 formDataToSend.append('SERV_EST', '0');
 
-                // Agregar la imagen
+                // Agregar la imagen usando URI (Forma correcta para React Native)
                 if (formData.SERV_IMG_ENV) {
-                    // Si es un data URL (base64)
-                    if (formData.SERV_IMG_ENV.startsWith('data:')) {
-                        const base64Data = formData.SERV_IMG_ENV.split(',')[1];
-                        const byteCharacters = atob(base64Data);
-                        const byteArrays = [];
+                    const uri = formData.SERV_IMG_ENV;
+                    const filename = uri.split('/').pop();
+                    const match = /\.(\w+)$/.exec(filename);
+                    const type = match ? `image/${match[1]}` : `image/jpeg`;
 
-                        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-                            const slice = byteCharacters.slice(offset, offset + 512);
-                            const byteNumbers = new Array(slice.length);
-
-                            for (let i = 0; i < slice.length; i++) {
-                                byteNumbers[i] = slice.charCodeAt(i);
-                            }
-
-                            const byteArray = new Uint8Array(byteNumbers);
-                            byteArrays.push(byteArray);
-                        }
-
-                        const blob = new Blob(byteArrays, { type: 'image/jpeg' });
-                        formDataToSend.append('SERV_IMG_ENV', blob, `comprobante_${Date.now()}.jpg`);
-
-                    } else {
-                        // Es una URI normal de archivo
-                        const filename = formData.SERV_IMG_ENV.split('/').pop() || `comprobante_${Date.now()}.jpg`;
-                        formDataToSend.append('SERV_IMG_ENV', {
-                            uri: formData.SERV_IMG_ENV,
-                            type: 'image/jpeg',
-                            name: filename
-                        });
-                    }
+                    formDataToSend.append('SERV_IMG_ENV', {
+                        uri: uri,
+                        name: filename,
+                        type: type,
+                    });
                 }
 
                 const response = await fetch('http://192.168.110.167/api-expo/crear-servicio.php', {
                     method: 'POST',
                     body: formDataToSend,
+                    // No poner Content-Type header manualmente para multipart en móvil
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    Alert.alert(
-                        "✅ Servicio asignado",
-                        `Servicio ${formData.SERV_NUM} asignado a ${formData.SERV_NOM_REC}`,
-                        [
-                            {
-                                text: "Volver al inicio",
-                                onPress: () => {
-                                    // Ruta correcta para móvil
-                                    router.replace("/admin/home");
-                                }
-                            }
-                        ]
-                    );
+                    Alert.alert("✅ Servicio asignado", `Servicio asignado a ${formData.SERV_NOM_REC}`, [
+                        { text: "Volver al inicio", onPress: () => router.replace("/admin/home") }
+                    ]);
                 } else {
                     throw new Error(result.message || 'Error al crear el servicio');
                 }
@@ -335,20 +262,17 @@ export default function CrearServicio() {
 
         } catch (error) {
             console.error('❌ Error detallado:', error);
-            Alert.alert(
-                "Error",
-                error.message || "No se pudo crear el servicio. Verifica tu conexión."
-            );
+            Alert.alert("Error", error.message || "Error de conexión");
         } finally {
             setIsLoading(false);
         }
     };
 
-
     const resetForm = () => {
         setFormData({
             SERV_IMG_ENV: null,
             SERV_NUM: "",
+            SERV_DESCRIPCION: "",
             SERV_CED_ENV: formData.SERV_CED_ENV,
             SERV_NOM_ENV: formData.SERV_NOM_ENV,
             SERV_CED_REC: "",
@@ -358,7 +282,6 @@ export default function CrearServicio() {
     };
 
     const handleCancel = () => {
-        // Verificar si hay datos sin guardar
         if (formData.SERV_IMG_ENV || formData.SERV_NUM || formData.SERV_CED_REC) {
             setShowCancelModal(true);
         } else {
@@ -371,52 +294,35 @@ export default function CrearServicio() {
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={handleCancel}
-                    style={styles.backButton}
-                >
+                <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Asignación de Servicios</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView
-                style={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
-            >
+            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.formCard}>
-                    {/* Sección 1: Foto del Comprobante */}
+                    {/* Sección 1: Foto */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <Ionicons name="camera" size={22} color="#007AFF" />
                             <Text style={styles.sectionTitle}>Comprobante</Text>
                         </View>
-
                         <Text style={styles.sectionDescription}>
-                            Seleccione de su galeria o tome una foto del comprobante de servicio
+                            Seleccione de su galeria o tome una foto del comprobante
                         </Text>
 
                         {formData.SERV_IMG_ENV ? (
                             <View style={styles.imagePreviewContainer}>
-                                <Image
-                                    source={{ uri: formData.SERV_IMG_ENV }}
-                                    style={styles.imagePreview}
-                                />
+                                <Image source={{ uri: formData.SERV_IMG_ENV }} style={styles.imagePreview} />
                                 <View style={styles.imageActions}>
-                                    <TouchableOpacity
-                                        style={styles.imageActionButton}
-                                        onPress={takePhoto}
-                                    >
+                                    <TouchableOpacity style={styles.imageActionButton} onPress={takePhoto}>
                                         <Ionicons name="camera" size={20} color="#007AFF" />
                                         <Text style={styles.imageActionText}>Retomar</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.imageActionButton}
-                                        onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}
-                                    >
+                                    <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
                                         <Ionicons name="trash" size={20} color="#FF3B30" />
                                         <Text style={styles.imageActionText}>Eliminar</Text>
                                     </TouchableOpacity>
@@ -424,18 +330,11 @@ export default function CrearServicio() {
                             </View>
                         ) : (
                             <View style={styles.cameraButtons}>
-                                <TouchableOpacity
-                                    style={styles.cameraButton}
-                                    onPress={takePhoto}
-                                >
+                                <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
                                     <Ionicons name="camera" size={30} color="#007AFF" />
                                     <Text style={styles.cameraButtonText}>Tomar Foto</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.cameraButton}
-                                    onPress={pickImage}
-                                >
+                                <TouchableOpacity style={styles.cameraButton} onPress={pickImage}>
                                     <Ionicons name="images" size={30} color="#34C759" />
                                     <Text style={styles.cameraButtonText}>Galería</Text>
                                 </TouchableOpacity>
@@ -449,16 +348,37 @@ export default function CrearServicio() {
                             <Ionicons name="document" size={22} color="#007AFF" />
                             <Text style={styles.sectionTitle}>Número de Servicio</Text>
                         </View>
-
                         <View style={styles.inputGroup}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Ejmplo: 2024001"
+                                placeholder="Ejemplo: 2024001"
                                 value={formData.SERV_NUM}
                                 onChangeText={(text) => handleChange("SERV_NUM", text)}
                                 placeholderTextColor="#999"
                                 keyboardType="numeric"
                                 maxLength={10}
+                            />
+                        </View>
+                    </View>
+
+                    {/* Sección 2.1: Descripcion */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Ionicons name="clipboard" size={22} color="#007AFF" />
+                            <Text style={styles.sectionTitle}>Descripción del Trabajo</Text>
+                        </View>
+                        <Text style={styles.sectionDescription}>
+                            Detalle la actividad que va a realizar el técnico.
+                        </Text>
+                        <View style={styles.inputGroup}>
+                            <TextInput
+                                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                                placeholder="Ej: Realizar mantenimiento preventivo..."
+                                value={formData.SERV_DESCRIPCION}
+                                onChangeText={(text) => handleChange("SERV_DESCRIPCION", text)}
+                                placeholderTextColor="#999"
+                                multiline={true}
+                                numberOfLines={4}
                             />
                         </View>
                     </View>
@@ -469,7 +389,6 @@ export default function CrearServicio() {
                             <Ionicons name="people" size={22} color="#007AFF" />
                             <Text style={styles.sectionTitle}>Seleccionar Técnico *</Text>
                         </View>
-
                         <View style={styles.inputGroup}>
                             <View style={styles.pickerContainer}>
                                 {tecnicos.map((tecnico) => (
@@ -504,7 +423,6 @@ export default function CrearServicio() {
                             </View>
                         </View>
 
-                        {/* Nombre del técnico seleccionado (SOLO LECTURA) */}
                         {formData.SERV_CED_REC && (
                             <View style={styles.readOnlyContainer}>
                                 <View style={styles.readOnlyField}>
@@ -515,13 +433,12 @@ export default function CrearServicio() {
                         )}
                     </View>
 
-                    {/* Información de resumen */}
+                    {/* Resumen */}
                     <View style={styles.summaryCard}>
                         <View style={styles.summaryHeader}>
                             <Ionicons name="information-circle" size={22} color="#FF9500" />
                             <Text style={styles.summaryTitle}>Resumen de la Asignación</Text>
                         </View>
-
                         <View style={styles.summaryItems}>
                             <View style={styles.summaryItem}>
                                 <Text style={styles.summaryLabel}>Estado:</Text>
@@ -543,7 +460,7 @@ export default function CrearServicio() {
                     </View>
                 </View>
 
-                {/* Botones de acción */}
+                {/* Botones */}
                 <View style={styles.actionButtons}>
                     <TouchableOpacity
                         style={styles.cancelButton}
@@ -569,11 +486,10 @@ export default function CrearServicio() {
                         )}
                     </TouchableOpacity>
                 </View>
-
                 <View style={{ height: 40 }} />
             </ScrollView>
 
-            {/* Modal de confirmación de cancelación */}
+            {/* Modal Cancelar */}
             <Modal
                 animationType="fade"
                 transparent={true}
@@ -725,12 +641,6 @@ const styles = StyleSheet.create({
     },
     inputGroup: {
         marginBottom: 20,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: "500",
-        color: "#1C1C1E",
-        marginBottom: 8,
     },
     input: {
         backgroundColor: "#F2F2F7",
