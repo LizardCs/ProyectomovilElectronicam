@@ -34,8 +34,8 @@ $clave = trim($data->clave);
 // DEBUG: Mostrar lo que llega
 error_log("Login attempt - Usuario: $usuario");
 
-// Consulta SQL - CORREGIDA: usar usersmovil en lugar de usuarios
-$sql = "SELECT MOV_ID, NOM_MOV, MOV_APE, MOV_ROL, MOV_CELU, MOV_USU 
+// Consulta SQL - CORREGIDA: Se agregó MOV_CED al SELECT
+$sql = "SELECT MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_ROL, MOV_CELU, MOV_USU 
         FROM usersmovil 
         WHERE MOV_USU = ? AND MOV_CLAVE = ?";
         
@@ -63,6 +63,7 @@ if ($result->num_rows > 0) {
         "message" => "Login exitoso",
         "user" => [
             "id" => $row['MOV_ID'],
+            "cedula" => $row['MOV_CED'], // <--- AQUÍ SE AGREGA LA CÉDULA
             "nombre" => $row['NOM_MOV'],
             "apellido" => $row['MOV_APE'],
             "nombre_completo" => $row['NOM_MOV'] . " " . $row['MOV_APE'],

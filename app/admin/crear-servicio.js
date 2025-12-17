@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router"; // <-- Importamos useLocalSearchParams
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -20,13 +20,17 @@ import {
 
 export default function CrearServicio() {
     const router = useRouter();
+    const params = useLocalSearchParams(); // <-- Para recibir datos de edición
+    
     const [isLoading, setIsLoading] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [user, setUser] = useState(null);
     const [tecnicos, setTecnicos] = useState([]);
+    const [isEditing, setIsEditing] = useState(false); // Bandera para saber el modo
 
     // Estados del formulario
     const [formData, setFormData] = useState({
+        SERV_ID: null,             // ID (solo para editar)
         SERV_IMG_ENV: null,
         SERV_NUM: "",
         SERV_DESCRIPCION: "",
@@ -41,7 +45,31 @@ export default function CrearServicio() {
         loadUser();
         loadTecnicos();
         requestPermissions();
+        checkEditMode(); // <-- Verificar si estamos editando
     }, []);
+
+    // Verificar si llegaron datos para editar
+    const checkEditMode = () => {
+        if (params.servicioEditar) {
+            const servicio = JSON.parse(params.servicioEditar);
+            setIsEditing(true); // Activamos modo edición
+
+            // Pre-llenamos el formulario
+            setFormData(prev => ({
+                ...prev,
+                SERV_ID: servicio.SERV_ID,
+                SERV_NUM: servicio.SERV_NUM,
+                SERV_DESCRIPCION: servicio.SERV_DESCRIPCION,
+                SERV_CED_ENV: servicio.SERV_CED_ENV,
+                SERV_NOM_ENV: servicio.SERV_NOM_ENV,
+                SERV_CED_REC: servicio.SERV_CED_REC,
+                SERV_NOM_REC: servicio.SERV_NOM_REC,
+                SERV_EST: servicio.SERV_EST,
+                // Si viene de BD es base64 puro, le agregamos la cabecera para verla
+                SERV_IMG_ENV: servicio.SERV_IMG_ENV ? `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}` : null
+            }));
+        }
+    };
 
     const loadUser = async () => {
         try {
@@ -49,11 +77,14 @@ export default function CrearServicio() {
             if (userJson) {
                 const userData = JSON.parse(userJson);
                 setUser(userData);
-                setFormData(prev => ({
-                    ...prev,
-                    SERV_CED_ENV: userData.cedula || "Admin",
-                    SERV_NOM_ENV: userData.nombre_completo || "Administrador"
-                }));
+                // Solo llenamos datos de asignador si NO estamos editando (para no sobrescribir)
+                if (!params.servicioEditar) {
+                    setFormData(prev => ({
+                        ...prev,
+                        SERV_CED_ENV: userData.cedula || "Admin",
+                        SERV_NOM_ENV: userData.nombre_completo || "Administrador"
+                    }));
+                }
             }
         } catch (error) {
             console.error('Error cargando usuario:', error);
@@ -64,20 +95,14 @@ export default function CrearServicio() {
         try {
             const response = await fetch('http://192.168.110.167/api-expo/obtener-tecnicos.php');
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-
             const data = await response.json();
             if (data.success) {
                 setTecnicos(data.tecnicos);
             } else {
-                setTecnicos([
-                    { MOV_CED: "0987654321", NOM_MOV: "Juan", MOV_APE: "Pérez", nombre_completo: "Juan Pérez (Test)" },
-                ]);
+                setTecnicos([{ MOV_CED: "999", nombre_completo: "Sin técnicos" }]);
             }
         } catch (error) {
-            console.error('Error cargando técnicos:', error);
-            setTecnicos([
-                { MOV_CED: "0987654321", NOM_MOV: "Juan", MOV_APE: "Pérez", nombre_completo: "Juan Pérez (Offline)" },
-            ]);
+            console.error('Error técnicos:', error);
         }
     };
 
@@ -110,129 +135,128 @@ export default function CrearServicio() {
     const takePhoto = async () => {
         try {
             const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.8,
+                allowsEditing: true, aspect: [4, 3], quality: 0.8,
             });
             if (!result.canceled) {
                 setFormData({ ...formData, SERV_IMG_ENV: result.assets[0].uri });
             }
-        } catch (error) {
-            Alert.alert("Error", "No se pudo tomar la foto");
-        }
+        } catch (error) { Alert.alert("Error foto"); }
     };
 
     const pickImage = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.8,
+                allowsEditing: true, aspect: [4, 3], quality: 0.8,
             });
             if (!result.canceled) {
                 setFormData({ ...formData, SERV_IMG_ENV: result.assets[0].uri });
             }
-        } catch (error) {
-            Alert.alert("Error", "No se pudo seleccionar la imagen");
-        }
+        } catch (error) { Alert.alert("Error imagen"); }
     };
 
-    // FUNCIÓN PRINCIPAL DE ENVÍO
+    // ==========================================
+    // FUNCIÓN DE ENVÍO (CREAR O EDITAR)
+    // ==========================================
     const handleSubmit = async () => {
-        if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto", "Debes tomar una foto"); return; }
-        if (!formData.SERV_NUM) { Alert.alert("Falta número", "Ingresa el número de servicio"); return; }
-        if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico", "Selecciona un técnico"); return; }
+        if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto"); return; }
+        if (!formData.SERV_NUM) { Alert.alert("Falta número"); return; }
+        if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico"); return; }
 
         setIsLoading(true);
 
+        // CONFIGURAMOS LA URL DEPENDIENDO DEL MODO
+        const url = isEditing 
+            ? 'http://192.168.110.167/api-expo/editar-servicio.php' 
+            : 'http://192.168.110.167/api-expo/crear-servicio.php';
+
         try {
-            // GENERAR LA FECHA ACTUAL DEL TELÉFONO (YYYY-MM-DD HH:MM:SS)
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-
-            // Esta es la fecha que se envía oculta
-            const fechaAsignacion = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
-            console.log("📅 Fecha de asignación generada (Teléfono):", fechaAsignacion);
-
             const isWeb = Platform.OS === 'web';
 
             if (isWeb) {
-                // ============ WEB ============
-                const servicioData = {
-                    SERV_IMG_ENV: formData.SERV_IMG_ENV,
-                    SERV_NUM: formData.SERV_NUM,
-                    SERV_DESCRIPCION: formData.SERV_DESCRIPCION,
-                    SERV_FECH_ASIG: fechaAsignacion, // <--- SE ENVÍA AQUÍ
-                    SERV_CED_ENV: formData.SERV_CED_ENV,
-                    SERV_NOM_ENV: formData.SERV_NOM_ENV,
-                    SERV_CED_REC: formData.SERV_CED_REC,
-                    SERV_NOM_REC: formData.SERV_NOM_REC,
-                    SERV_EST: 0
-                };
-
-                const response = await fetch('http://192.168.110.167/api-expo/crear-servicio.php', {
+                // WEB: Enviamos JSON
+                const servicioData = { ...formData };
+                // Si es crear, agregamos fecha (si el PHP lo requiere, aunque ya lo hace auto)
+                // Si es editar, el PHP ignora la fecha de asignación para no cambiarla
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(servicioData)
                 });
-
                 const result = await response.json();
-                if (result.success) {
-                    Alert.alert("Exito", "Servicio creado", [{ text: "OK", onPress: () => router.replace("/admin/home") }]);
-                } else {
-                    throw new Error(result.message);
-                }
+                processResult(result);
 
             } else {
-                // ============ MÓVIL (Android/iOS) ============
+                // MÓVIL: Enviamos FormData
                 const formDataToSend = new FormData();
+                
+                // Campos comunes
                 formDataToSend.append('SERV_NUM', formData.SERV_NUM);
                 formDataToSend.append('SERV_DESCRIPCION', formData.SERV_DESCRIPCION || '');
-                formDataToSend.append('SERV_FECH_ASIG', fechaAsignacion); // <--- SE ENVÍA AQUÍ
-                formDataToSend.append('SERV_CED_ENV', formData.SERV_CED_ENV);
-                formDataToSend.append('SERV_NOM_ENV', formData.SERV_NOM_ENV);
                 formDataToSend.append('SERV_CED_REC', formData.SERV_CED_REC);
                 formDataToSend.append('SERV_NOM_REC', formData.SERV_NOM_REC);
-                formDataToSend.append('SERV_EST', '0');
-
-                if (formData.SERV_IMG_ENV) {
-                    const uri = formData.SERV_IMG_ENV;
-                    const filename = uri.split('/').pop();
-                    const match = /\.(\w+)$/.exec(filename);
-                    const type = match ? `image/${match[1]}` : `image/jpeg`;
-
-                    formDataToSend.append('SERV_IMG_ENV', {
-                        uri: uri,
-                        name: filename,
-                        type: type,
-                    });
+                
+                // Si es EDITAR, enviamos el ID
+                if (isEditing) {
+                    formDataToSend.append('SERV_ID', formData.SERV_ID);
+                } else {
+                    // Si es CREAR, enviamos datos del asignador y estado inicial
+                    formDataToSend.append('SERV_CED_ENV', formData.SERV_CED_ENV);
+                    formDataToSend.append('SERV_NOM_ENV', formData.SERV_NOM_ENV);
+                    formDataToSend.append('SERV_EST', '0');
                 }
 
-                const response = await fetch('http://192.168.110.167/api-expo/crear-servicio.php', {
+                // MANEJO DE IMAGEN EN MÓVIL
+                if (formData.SERV_IMG_ENV) {
+                    // Caso 1: Es una imagen existente (Base64 data string) porque estamos editando y no la cambiamos
+                    if (formData.SERV_IMG_ENV.startsWith('data:image')) {
+                        // Enviamos la cadena tal cual como texto
+                        formDataToSend.append('SERV_IMG_ENV', formData.SERV_IMG_ENV);
+                    } 
+                    // Caso 2: Es una imagen nueva (URI de archivo local)
+                    else {
+                        const uri = formData.SERV_IMG_ENV;
+                        const filename = uri.split('/').pop();
+                        const match = /\.(\w+)$/.exec(filename);
+                        const type = match ? `image/${match[1]}` : `image/jpeg`;
+                        
+                        formDataToSend.append('SERV_IMG_ENV', {
+                            uri: uri,
+                            name: filename,
+                            type: type,
+                        });
+                    }
+                }
+
+                const response = await fetch(url, {
                     method: 'POST',
                     body: formDataToSend,
                     headers: { 'Accept': 'application/json' }
                 });
-
                 const result = await response.json();
-                if (result.success) {
-                    Alert.alert("Exito", "Servicio creado", [{ text: "OK", onPress: () => router.replace("/admin/home") }]);
-                } else {
-                    throw new Error(result.message);
-                }
+                processResult(result);
             }
 
         } catch (error) {
             console.error(error);
-            Alert.alert("Error", error.message || "Error de conexión");
+            Alert.alert("Error", "Ocurrió un error en la conexión.");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const processResult = (result) => {
+        if (result.success) {
+            Alert.alert(
+                "Éxito", 
+                isEditing ? "Servicio actualizado correctamente" : "Servicio creado correctamente",
+                [{ text: "OK", onPress: () => {
+                    // Volver 2 pasos atrás si editamos (a Home), o 1 si creamos
+                    if(isEditing) router.push("/admin/home"); // Forzamos ir a Home para recargar
+                    else router.replace("/admin/home");
+                }}]
+            );
+        } else {
+            throw new Error(result.message);
         }
     };
 
@@ -250,7 +274,10 @@ export default function CrearServicio() {
                 <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Asignación de Servicios</Text>
+                {/* Cambiamos el título según el modo */}
+                <Text style={styles.headerTitle}>
+                    {isEditing ? "Editar Servicio" : "Asignación de Servicios"}
+                </Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -267,7 +294,7 @@ export default function CrearServicio() {
                             <View style={styles.imagePreviewContainer}>
                                 <Image source={{ uri: formData.SERV_IMG_ENV }} style={styles.imagePreview} />
                                 <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
-                                    <Text style={styles.imageActionText}>Eliminar Foto</Text>
+                                    <Text style={styles.imageActionText}>Cambiar Foto</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
@@ -344,7 +371,13 @@ export default function CrearServicio() {
                         <Text style={styles.cancelButtonText}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
-                        {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Asignar</Text>}
+                        {isLoading ? (
+                            <ActivityIndicator color="#FFF" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>
+                                {isEditing ? "Actualizar" : "Asignar"}
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 </View>
                 <View style={{ height: 50 }} />

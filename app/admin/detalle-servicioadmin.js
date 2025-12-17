@@ -14,16 +14,16 @@ import {
 export default function DetalleServicioAdmin() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    
+
     // Recuperamos el objeto servicio que pasamos como string desde el Home
     const servicio = params.servicio ? JSON.parse(params.servicio) : null;
 
     if (!servicio) {
         return (
             <View style={styles.container}>
-                <Text style={{marginTop: 50, textAlign:'center'}}>No se encontró información.</Text>
-                <TouchableOpacity onPress={() => router.back()} style={{alignItems:'center', marginTop:20}}>
-                    <Text style={{color: 'blue'}}>Volver</Text>
+                <Text style={{ marginTop: 50, textAlign: 'center' }}>No se encontró información.</Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center', marginTop: 20 }}>
+                    <Text style={{ color: 'blue' }}>Volver</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -40,8 +40,11 @@ export default function DetalleServicioAdmin() {
     };
 
     const handleEditar = () => {
-        // Aquí iría la navegación a la pantalla de edición
-        alert("Funcionalidad de Editar (Próximamente)");
+        // Enviamos el servicio a la pantalla de crear
+        router.push({
+            pathname: "/admin/crear-servicio",
+            params: { servicioEditar: JSON.stringify(servicio) } // Pasamos los datos
+        });
     };
 
     return (
@@ -59,7 +62,7 @@ export default function DetalleServicioAdmin() {
 
             <ScrollView style={styles.contentContainer}>
                 <View style={styles.card}>
-                    
+
                     {/* Título */}
                     <View style={styles.titleContainer}>
                         <Ionicons name="construct" size={24} color="#007AFF" />
@@ -71,8 +74,8 @@ export default function DetalleServicioAdmin() {
                     {/* Imagen */}
                     <Text style={styles.label}>Comprobante / Foto:</Text>
                     <View style={styles.imageContainer}>
-                        <Image 
-                            source={{ uri: imageUri }} 
+                        <Image
+                            source={{ uri: imageUri }}
                             style={styles.image}
                             resizeMode="cover"
                         />
@@ -80,14 +83,14 @@ export default function DetalleServicioAdmin() {
 
                     {/* Fila: Número y Estado */}
                     <View style={styles.infoRow}>
-                        <View style={{flex: 1}}>
+                        <View style={{ flex: 1 }}>
                             <Text style={styles.label}>N° Asignación:</Text>
                             <Text style={styles.value}>{servicio.SERV_NUM}</Text>
                         </View>
-                        <View style={{flex: 1}}>
+                        <View style={{ flex: 1 }}>
                             <Text style={styles.label}>Estado:</Text>
                             <View style={[
-                                styles.badge, 
+                                styles.badge,
                                 { backgroundColor: esCompletado ? "#34C759" : "#FF9500" }
                             ]}>
                                 <Text style={styles.badgeText}>
@@ -123,15 +126,15 @@ export default function DetalleServicioAdmin() {
                     </View>
 
                 </View>
-                <View style={{height: 20}}/>
+                <View style={{ height: 20 }} />
             </ScrollView>
 
             {/* Footer con Botones */}
             <View style={styles.footer}>
-                
+
                 {/* Botón Salir */}
-                <TouchableOpacity 
-                    style={[styles.button, styles.btnSalir]} 
+                <TouchableOpacity
+                    style={[styles.button, styles.btnSalir]}
                     onPress={handleSalir}
                 >
                     <Ionicons name="arrow-back-circle-outline" size={24} color="#FFF" />
@@ -140,8 +143,8 @@ export default function DetalleServicioAdmin() {
 
                 {/* Botón Editar (Solo visible si NO está completado) */}
                 {!esCompletado && (
-                    <TouchableOpacity 
-                        style={[styles.button, styles.btnEditar]} 
+                    <TouchableOpacity
+                        style={[styles.button, styles.btnEditar]}
                         onPress={handleEditar}
                     >
                         <Ionicons name="create-outline" size={24} color="#FFF" />
