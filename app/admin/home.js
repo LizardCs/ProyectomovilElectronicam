@@ -92,10 +92,16 @@ export default function HomeAdmin() {
     router.push("/admin/crear-servicio");
   };
 
-  // ==========================================
-  // LÓGICA DE ESTADOS CORREGIDA (0 y 1)
-  // ==========================================
-  
+  // --- NUEVA FUNCIÓN PARA VER DETALLES ---
+  const handleVerDetalles = (servicio) => {
+    router.push({
+        pathname: "/admin/detalle-servicioadmin", // Nombre exacto del archivo
+        params: { servicio: JSON.stringify(servicio) }
+    });
+  };
+  // ---------------------------------------
+
+  // Lógica de Estados (0 = Pendiente, 1 = Completado)
   const mapEstadoDB = (estadoNum) => {
     const est = parseInt(estadoNum);
     if (est === 1) return "completado";
@@ -105,9 +111,9 @@ export default function HomeAdmin() {
   const getEstadoColor = (estadoNum) => {
     const estado = mapEstadoDB(estadoNum);
     switch (estado) {
-      case "pendiente": return "#FF9500"; // Naranja
-      case "completado": return "#34C759"; // Verde
-      default: return "#8E8E93"; // Gris fallback
+      case "pendiente": return "#FF9500"; 
+      case "completado": return "#34C759"; 
+      default: return "#8E8E93"; 
     }
   };
 
@@ -146,7 +152,7 @@ export default function HomeAdmin() {
         </View>
       </Animated.View>
 
-      {/* Stats Cards CORREGIDAS */}
+      {/* Stats Cards */}
       <Animated.View
         style={[
           styles.statsContainer,
@@ -161,7 +167,6 @@ export default function HomeAdmin() {
         <View style={styles.statCard}>
           <Ionicons name="time" size={28} color="#FF9500" />
           <Text style={styles.statNumber}>
-            {/* Cuenta los ceros (0) */}
             {servicios.filter(t => parseInt(t.SERV_EST) === 0).length}
           </Text>
           <Text style={styles.statLabel}>Pendientes</Text>
@@ -169,7 +174,6 @@ export default function HomeAdmin() {
         <View style={styles.statCard}>
           <Ionicons name="checkmark-circle" size={28} color="#34C759" />
           <Text style={styles.statNumber}>
-            {/* CORREGIDO: Cuenta los unos (1) */}
             {servicios.filter(t => parseInt(t.SERV_EST) === 1).length}
           </Text>
           <Text style={styles.statLabel}>Completados</Text>
@@ -274,7 +278,11 @@ export default function HomeAdmin() {
                         </Text>
                     </View>
                     
-                    <TouchableOpacity style={styles.actionButton}>
+                    {/* BOTÓN CON LA ACCIÓN AGREGADA */}
+                    <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => handleVerDetalles(servicio)}
+                    >
                         <Text style={styles.actionText}>Ver Detalles</Text>
                         <Ionicons name="chevron-forward" size={16} color="#007AFF" />
                     </TouchableOpacity>
