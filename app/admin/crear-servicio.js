@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from "expo-router"; // <-- Importamos useLocalSearchParams
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -20,17 +20,17 @@ import {
 
 export default function CrearServicio() {
     const router = useRouter();
-    const params = useLocalSearchParams(); // <-- Para recibir datos de edición
+    const params = useLocalSearchParams();
     
     const [isLoading, setIsLoading] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [user, setUser] = useState(null);
     const [tecnicos, setTecnicos] = useState([]);
-    const [isEditing, setIsEditing] = useState(false); // Bandera para saber el modo
+    const [isEditing, setIsEditing] = useState(false);
 
     // Estados del formulario
     const [formData, setFormData] = useState({
-        SERV_ID: null,             // ID (solo para editar)
+        SERV_ID: null,
         SERV_IMG_ENV: null,
         SERV_NUM: "",
         SERV_DESCRIPCION: "",
@@ -45,16 +45,14 @@ export default function CrearServicio() {
         loadUser();
         loadTecnicos();
         requestPermissions();
-        checkEditMode(); // <-- Verificar si estamos editando
+        checkEditMode();
     }, []);
 
-    // Verificar si llegaron datos para editar
     const checkEditMode = () => {
         if (params.servicioEditar) {
             const servicio = JSON.parse(params.servicioEditar);
-            setIsEditing(true); // Activamos modo edición
-
-            // Pre-llenamos el formulario
+            setIsEditing(true);
+            
             setFormData(prev => ({
                 ...prev,
                 SERV_ID: servicio.SERV_ID,
@@ -64,8 +62,7 @@ export default function CrearServicio() {
                 SERV_NOM_ENV: servicio.SERV_NOM_ENV,
                 SERV_CED_REC: servicio.SERV_CED_REC,
                 SERV_NOM_REC: servicio.SERV_NOM_REC,
-                SERV_EST: servicio.SERV_EST,
-                // Si viene de BD es base64 puro, le agregamos la cabecera para verla
+                SERV_EST: parseInt(servicio.SERV_EST),
                 SERV_IMG_ENV: servicio.SERV_IMG_ENV ? `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}` : null
             }));
         }
@@ -74,14 +71,23 @@ export default function CrearServicio() {
     const loadUser = async () => {
         try {
             const userJson = await AsyncStorage.getItem('@user_data');
+            
+            // CHISMOSO: MIRA LA CONSOLA PARA VER SI LA CÉDULA ESTÁ AQUÍ
+            console.log("📦 DATOS EN MEMORIA:", userJson); 
+
             if (userJson) {
                 const userData = JSON.parse(userJson);
                 setUser(userData);
-                // Solo llenamos datos de asignador si NO estamos editando (para no sobrescribir)
+
+                // Buscamos la cédula
+                const cedulaReal = userData.cedula || userData.MOV_CED || userData.id || "Admin";
+                console.log("✅ Cédula a usar:", cedulaReal);
+
+                // Si NO estamos editando, llenamos los datos del asignador
                 if (!params.servicioEditar) {
                     setFormData(prev => ({
                         ...prev,
-                        SERV_CED_ENV: userData.cedula || "Admin",
+                        SERV_CED_ENV: cedulaReal,
                         SERV_NOM_ENV: userData.nombre_completo || "Administrador"
                     }));
                 }
@@ -154,9 +160,6 @@ export default function CrearServicio() {
         } catch (error) { Alert.alert("Error imagen"); }
     };
 
-    // ==========================================
-    // FUNCIÓN DE ENVÍO (CREAR O EDITAR)
-    // ==========================================
     const handleSubmit = async () => {
         if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto"); return; }
         if (!formData.SERV_NUM) { Alert.alert("Falta número"); return; }
@@ -164,7 +167,6 @@ export default function CrearServicio() {
 
         setIsLoading(true);
 
-        // CONFIGURAMOS LA URL DEPENDIENDO DEL MODO
         const url = isEditing 
             ? 'http://192.168.110.167/api-expo/editar-servicio.php' 
             : 'http://192.168.110.167/api-expo/crear-servicio.php';
@@ -173,10 +175,7 @@ export default function CrearServicio() {
             const isWeb = Platform.OS === 'web';
 
             if (isWeb) {
-                // WEB: Enviamos JSON
                 const servicioData = { ...formData };
-                // Si es crear, agregamos fecha (si el PHP lo requiere, aunque ya lo hace auto)
-                // Si es editar, el PHP ignora la fecha de asignación para no cambiarla
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -186,34 +185,25 @@ export default function CrearServicio() {
                 processResult(result);
 
             } else {
-                // MÓVIL: Enviamos FormData
                 const formDataToSend = new FormData();
                 
-                // Campos comunes
                 formDataToSend.append('SERV_NUM', formData.SERV_NUM);
                 formDataToSend.append('SERV_DESCRIPCION', formData.SERV_DESCRIPCION || '');
                 formDataToSend.append('SERV_CED_REC', formData.SERV_CED_REC);
                 formDataToSend.append('SERV_NOM_REC', formData.SERV_NOM_REC);
                 
-                // Si es EDITAR, enviamos el ID
                 if (isEditing) {
                     formDataToSend.append('SERV_ID', formData.SERV_ID);
                 } else {
-                    // Si es CREAR, enviamos datos del asignador y estado inicial
                     formDataToSend.append('SERV_CED_ENV', formData.SERV_CED_ENV);
                     formDataToSend.append('SERV_NOM_ENV', formData.SERV_NOM_ENV);
                     formDataToSend.append('SERV_EST', '0');
                 }
 
-                // MANEJO DE IMAGEN EN MÓVIL
                 if (formData.SERV_IMG_ENV) {
-                    // Caso 1: Es una imagen existente (Base64 data string) porque estamos editando y no la cambiamos
                     if (formData.SERV_IMG_ENV.startsWith('data:image')) {
-                        // Enviamos la cadena tal cual como texto
                         formDataToSend.append('SERV_IMG_ENV', formData.SERV_IMG_ENV);
-                    } 
-                    // Caso 2: Es una imagen nueva (URI de archivo local)
-                    else {
+                    } else {
                         const uri = formData.SERV_IMG_ENV;
                         const filename = uri.split('/').pop();
                         const match = /\.(\w+)$/.exec(filename);
@@ -250,8 +240,7 @@ export default function CrearServicio() {
                 "Éxito", 
                 isEditing ? "Servicio actualizado correctamente" : "Servicio creado correctamente",
                 [{ text: "OK", onPress: () => {
-                    // Volver 2 pasos atrás si editamos (a Home), o 1 si creamos
-                    if(isEditing) router.push("/admin/home"); // Forzamos ir a Home para recargar
+                    if(isEditing) router.push("/admin/home");
                     else router.replace("/admin/home");
                 }}]
             );
@@ -274,7 +263,6 @@ export default function CrearServicio() {
                 <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
-                {/* Cambiamos el título según el modo */}
                 <Text style={styles.headerTitle}>
                     {isEditing ? "Editar Servicio" : "Asignación de Servicios"}
                 </Text>
@@ -348,20 +336,70 @@ export default function CrearServicio() {
                             <Ionicons name="people" size={22} color="#007AFF" />
                             <Text style={styles.sectionTitle}>Seleccionar Técnico</Text>
                         </View>
-                        {tecnicos.map((tecnico) => (
-                            <TouchableOpacity
-                                key={tecnico.MOV_CED}
-                                style={[
-                                    styles.tecnicoOption,
-                                    formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoOptionSelected
-                                ]}
-                                onPress={() => handleChange("SERV_CED_REC", tecnico.MOV_CED)}
-                            >
-                                <Text style={{ fontWeight: 'bold' }}>{tecnico.nombre_completo}</Text>
-                                <Text style={{ fontSize: 12, color: '#666' }}>CI: {tecnico.MOV_CED}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        <View style={styles.pickerContainer}>
+                            {tecnicos.map((tecnico) => (
+                                <TouchableOpacity
+                                    key={tecnico.MOV_CED}
+                                    style={[
+                                        styles.tecnicoOption,
+                                        formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoOptionSelected
+                                    ]}
+                                    onPress={() => handleChange("SERV_CED_REC", tecnico.MOV_CED)}
+                                >
+                                    <View style={styles.tecnicoInfo}>
+                                        <Ionicons
+                                            name={formData.SERV_CED_REC === tecnico.MOV_CED ? "checkmark-circle" : "ellipse-outline"}
+                                            size={20}
+                                            color={formData.SERV_CED_REC === tecnico.MOV_CED ? "#007AFF" : "#999"}
+                                        />
+                                        <View style={styles.tecnicoDetails}>
+                                            <Text style={[
+                                                styles.tecnicoName,
+                                                formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoNameSelected
+                                            ]}>
+                                                {tecnico.nombre_completo}
+                                            </Text>
+                                            <Text style={styles.tecnicoCedula}>
+                                                CI: {tecnico.MOV_CED}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
+
+                    {/* ======================================================= */}
+                    {/* RESUMEN DE LA ASIGNACIÓN (RESTAURADO)                   */}
+                    {/* ======================================================= */}
+                    <View style={styles.summaryCard}>
+                        <View style={styles.summaryHeader}>
+                            <Ionicons name="information-circle" size={22} color="#FF9500" />
+                            <Text style={styles.summaryTitle}>Resumen de la Asignación</Text>
+                        </View>
+
+                        <View style={styles.summaryItems}>
+                            <View style={styles.summaryItem}>
+                                <Text style={styles.summaryLabel}>Estado:</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: formData.SERV_EST === 1 ? '#E8F5E9' : '#FFF8E1' }]}>
+                                    <Text style={[styles.statusText, { color: formData.SERV_EST === 1 ? '#2E7D32' : '#FF8F00' }]}>
+                                        {formData.SERV_EST === 1 ? "COMPLETADO" : "PENDIENTE"}
+                                    </Text>
+                                </View>
+                            </View>
+                            <View style={styles.summaryItem}>
+                                <Text style={styles.summaryLabel}>Asignado por:</Text>
+                                <Text style={styles.summaryValue}>{formData.SERV_NOM_ENV}</Text>
+                            </View>
+                            {formData.SERV_NOM_REC ? (
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Asignado a:</Text>
+                                    <Text style={styles.summaryValue}>{formData.SERV_NOM_REC}</Text>
+                                </View>
+                            ) : null}
+                        </View>
+                    </View>
+                    {/* ======================================================= */}
 
                 </View>
 
@@ -416,8 +454,26 @@ const styles = StyleSheet.create({
     imagePreviewContainer: { alignItems: 'center' },
     imageActionButton: { padding: 10, backgroundColor: '#FFEEED', borderRadius: 8 },
     imageActionText: { color: 'red' },
+    pickerContainer: { marginTop: 10 },
     tecnicoOption: { padding: 15, borderWidth: 1, borderColor: "#EEE", borderRadius: 10, marginBottom: 8, backgroundColor: "#FAFAFA" },
     tecnicoOptionSelected: { backgroundColor: "#E3F2FD", borderColor: "#2196F3" },
+    tecnicoInfo: { flexDirection: "row", alignItems: "center" },
+    tecnicoDetails: { marginLeft: 12, flex: 1 },
+    tecnicoName: { fontSize: 16, color: "#333" },
+    tecnicoNameSelected: { color: "#007AFF", fontWeight: "600" },
+    tecnicoCedula: { fontSize: 13, color: "#666", marginTop: 2 },
+    
+    // ESTILOS DEL RESUMEN
+    summaryCard: { backgroundColor: "#FFF8E1", borderRadius: 15, padding: 20, marginTop: 10, borderWidth: 1, borderColor: "#FFECB3" },
+    summaryHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
+    summaryTitle: { fontSize: 16, fontWeight: "600", color: "#FF8F00", marginLeft: 10 },
+    summaryItems: { gap: 10 },
+    summaryItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    summaryLabel: { fontSize: 14, color: "#666" },
+    summaryValue: { fontSize: 14, color: "#1C1C1E", fontWeight: "500" },
+    statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15 },
+    statusText: { fontSize: 12, fontWeight: "600" },
+
     actionButtons: { flexDirection: "row", gap: 10 },
     cancelButton: { flex: 1, padding: 15, backgroundColor: "#DDD", borderRadius: 10, alignItems: "center" },
     cancelButtonText: { fontWeight: "bold", color: "#333" },
