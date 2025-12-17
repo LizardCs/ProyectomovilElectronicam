@@ -71,9 +71,6 @@ export default function CrearServicio() {
     const loadUser = async () => {
         try {
             const userJson = await AsyncStorage.getItem('@user_data');
-            
-            // CHISMOSO: MIRA LA CONSOLA PARA VER SI LA CÉDULA ESTÁ AQUÍ
-            console.log("📦 DATOS EN MEMORIA:", userJson); 
 
             if (userJson) {
                 const userData = JSON.parse(userJson);
@@ -81,7 +78,6 @@ export default function CrearServicio() {
 
                 // Buscamos la cédula
                 const cedulaReal = userData.cedula || userData.MOV_CED || userData.id || "Admin";
-                console.log("✅ Cédula a usar:", cedulaReal);
 
                 // Si NO estamos editando, llenamos los datos del asignador
                 if (!params.servicioEditar) {
