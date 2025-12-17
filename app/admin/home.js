@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -15,17 +16,10 @@ import {
 
 export default function HomeAdmin() {
   const router = useRouter();
-  // CAMBIO: Inicializamos en "servicios" en lugar de "tareas"
   const [activeTab, setActiveTab] = useState("servicios");
   const [user, setUser] = useState(null);
-
-  // CAMBIO: Renombrado de 'tareas' a 'servicios'
-  const [servicios, setServicios] = useState([
-    { id: "N-101", descripcion: "Televisor Samsung no enciende", tecnico: "Juan Pérez", estado: "pendiente" },
-    { id: "N-102", descripcion: "Lavadora LG hace ruido", tecnico: "Carlos López", estado: "en_proceso" },
-    { id: "N-103", descripcion: "Refrigeradora Mabe no enfria", tecnico: "Ana García", estado: "completado" },
-    { id: "N-104", descripcion: "Microondas Philips no calienta", tecnico: "Sin asignar", estado: "pendiente" },
-  ]);
+  const [servicios, setServicios] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -33,8 +27,16 @@ export default function HomeAdmin() {
 
   useEffect(() => {
     loadUser();
+    startAnimations();
+  }, []);
 
-    // Animación de entrada
+  useFocusEffect(
+    useCallback(() => {
+      fetchServicios();
+    }, [])
+  );
+
+  const startAnimations = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -47,7 +49,7 @@ export default function HomeAdmin() {
         useNativeDriver: true,
       })
     ]).start();
-  }, []);
+  };
 
   const loadUser = async () => {
     try {
@@ -62,31 +64,59 @@ export default function HomeAdmin() {
     }
   };
 
+  const fetchServicios = async () => {
+    try {
+      const response = await fetch('http://192.168.110.167/api-expo/obtener-servicios.php');
+      const data = await response.json();
+      
+      if (data.success) {
+        setServicios(data.servicios);
+      }
+    } catch (error) {
+      console.error("Error obteniendo servicios:", error);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchServicios();
+    setRefreshing(false);
+  }, []);
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('@user_data');
     router.replace('/');
   };
 
   const handleAddService = () => {
-    // Navegar a la pantalla de crear servicio
     router.push("/admin/crear-servicio");
   };
 
-  const getEstadoColor = (estado) => {
+  // ==========================================
+  // LÓGICA DE ESTADOS CORREGIDA (0 y 1)
+  // ==========================================
+  
+  const mapEstadoDB = (estadoNum) => {
+    const est = parseInt(estadoNum);
+    if (est === 1) return "completado";
+    return "pendiente"; // 0
+  };
+
+  const getEstadoColor = (estadoNum) => {
+    const estado = mapEstadoDB(estadoNum);
     switch (estado) {
-      case "pendiente": return "#ff9500";
-      case "en_proceso": return "#007AFF";
-      case "completado": return "#34C759";
-      default: return "#8E8E93";
+      case "pendiente": return "#FF9500"; // Naranja
+      case "completado": return "#34C759"; // Verde
+      default: return "#8E8E93"; // Gris fallback
     }
   };
 
-  const getEstadoTexto = (estado) => {
+  const getEstadoTexto = (estadoNum) => {
+    const estado = mapEstadoDB(estadoNum);
     switch (estado) {
       case "pendiente": return "Pendiente";
-      case "en_proceso": return "En Proceso";
       case "completado": return "Completado";
-      default: return estado;
+      default: return "Desconocido";
     }
   };
 
@@ -98,10 +128,7 @@ export default function HomeAdmin() {
       <Animated.View
         style={[
           styles.header,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
         ]}
       >
         <View style={styles.headerContent}>
@@ -113,41 +140,37 @@ export default function HomeAdmin() {
               </Text>
             )}
           </View>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>
       </Animated.View>
 
-      {/* Stats Cards */}
+      {/* Stats Cards CORREGIDAS */}
       <Animated.View
         style={[
           styles.statsContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
         ]}
       >
         <View style={styles.statCard}>
           <Ionicons name="briefcase" size={28} color="#007AFF" />
           <Text style={styles.statNumber}>{servicios.length}</Text>
-          <Text style={styles.statLabel}>Total Servicios</Text>
+          <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
           <Ionicons name="time" size={28} color="#FF9500" />
           <Text style={styles.statNumber}>
-            {servicios.filter(t => t.estado === "pendiente").length}
+            {/* Cuenta los ceros (0) */}
+            {servicios.filter(t => parseInt(t.SERV_EST) === 0).length}
           </Text>
           <Text style={styles.statLabel}>Pendientes</Text>
         </View>
         <View style={styles.statCard}>
           <Ionicons name="checkmark-circle" size={28} color="#34C759" />
           <Text style={styles.statNumber}>
-            {servicios.filter(t => t.estado === "completado").length}
+            {/* CORREGIDO: Cuenta los unos (1) */}
+            {servicios.filter(t => parseInt(t.SERV_EST) === 1).length}
           </Text>
           <Text style={styles.statLabel}>Completados</Text>
         </View>
@@ -159,16 +182,12 @@ export default function HomeAdmin() {
           style={[styles.tabButton, activeTab === "servicios" && styles.activeTab]}
           onPress={() => setActiveTab("servicios")}
         >
-          {/* Cambié el ícono a briefcase para servicios */}
           <Ionicons
             name={activeTab === "servicios" ? "briefcase" : "briefcase-outline"}
             size={24}
             color={activeTab === "servicios" ? "#007AFF" : "#8E8E93"}
           />
-          <Text style={[
-            styles.tabText,
-            activeTab === "servicios" && styles.activeTabText
-          ]}>
+          <Text style={[styles.tabText, activeTab === "servicios" && styles.activeTabText]}>
             Servicios
           </Text>
         </TouchableOpacity>
@@ -182,25 +201,22 @@ export default function HomeAdmin() {
             size={24}
             color={activeTab === "usuarios" ? "#007AFF" : "#8E8E93"}
           />
-          <Text style={[
-            styles.tabText,
-            activeTab === "usuarios" && styles.activeTabText
-          ]}>
+          <Text style={[styles.tabText, activeTab === "usuarios" && styles.activeTabText]}>
             Usuarios
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Content Area */}
-      <ScrollView style={styles.contentContainer}>
+      <ScrollView 
+        style={styles.contentContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {activeTab === "servicios" ? (
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }}
-          >
-            {/* Servicios Header */}
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Servicios Asignados</Text>
               <TouchableOpacity
@@ -212,89 +228,82 @@ export default function HomeAdmin() {
               </TouchableOpacity>
             </View>
 
-            {/* Lista de Servicios */}
-            {servicios.map((servicio, index) => (
-              <Animated.View
-                key={servicio.id}
-                style={[
-                  styles.tareaCard,
-                  {
-                    opacity: fadeAnim,
-                    transform: [{
-                      translateY: slideAnim.interpolate({
-                        inputRange: [0, 30],
-                        outputRange: [0, index * 10]
-                      })
-                    }]
-                  }
-                ]}
-              >
-                <View style={styles.tareaHeader}>
-                  <View style={styles.tareaIdContainer}>
-                    <Text style={styles.tareaId}>{servicio.id}</Text>
-                  </View>
-                  <View style={[
-                    styles.estadoBadge,
-                    { backgroundColor: getEstadoColor(servicio.estado) }
-                  ]}>
-                    <Text style={styles.estadoText}>
-                      {getEstadoTexto(servicio.estado)}
-                    </Text>
-                  </View>
+            {servicios.length === 0 ? (
+                <View style={{alignItems:'center', marginTop: 50}}>
+                    <Text style={{color:'#999'}}>No hay servicios registrados.</Text>
                 </View>
+            ) : (
+                servicios.map((servicio, index) => (
+                <Animated.View
+                    key={servicio.SERV_ID}
+                    style={[
+                    styles.tareaCard,
+                    {
+                        transform: [{
+                        translateY: slideAnim.interpolate({
+                            inputRange: [0, 30],
+                            outputRange: [0, index * 10]
+                        })
+                        }]
+                    }
+                    ]}
+                >
+                    <View style={styles.tareaHeader}>
+                    <View style={styles.tareaIdContainer}>
+                        <Text style={styles.tareaId}>{servicio.SERV_NUM}</Text>
+                    </View>
+                    <View style={[
+                        styles.estadoBadge,
+                        { backgroundColor: getEstadoColor(servicio.SERV_EST) }
+                    ]}>
+                        <Text style={styles.estadoText}>
+                        {getEstadoTexto(servicio.SERV_EST)}
+                        </Text>
+                    </View>
+                    </View>
 
-                <Text style={styles.tareaDescripcion}>
-                  {servicio.descripcion}
-                </Text>
-
-                <View style={styles.tareaFooter}>
-                  <View style={styles.tecnicoInfo}>
-                    <Ionicons name="person-outline" size={16} color="#666" />
-                    <Text style={styles.tecnicoNombre}>
-                      {servicio.tecnico}
+                    <Text style={styles.tareaDescripcion} numberOfLines={2}>
+                        {servicio.SERV_DESCRIPCION || "Sin descripción"}
                     </Text>
-                  </View>
-                  <TouchableOpacity style={styles.actionButton}>
-                    <Text style={styles.actionText}>Ver Detalles</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#007AFF" />
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
-            ))}
+
+                    <View style={styles.tareaFooter}>
+                    <View style={styles.tecnicoInfo}>
+                        <Ionicons name="person-outline" size={16} color="#666" />
+                        <Text style={styles.tecnicoNombre}>
+                        {servicio.SERV_NOM_REC || "Sin asignar"}
+                        </Text>
+                    </View>
+                    
+                    <TouchableOpacity style={styles.actionButton}>
+                        <Text style={styles.actionText}>Ver Detalles</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+                    </TouchableOpacity>
+                    </View>
+                </Animated.View>
+                ))
+            )}
+            <View style={{height: 100}} /> 
           </Animated.View>
         ) : (
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }}
-          >
-            {/* Usuarios Header */}
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Gestión de Usuarios</Text>
               <TouchableOpacity style={styles.addButton}>
                 <Ionicons name="person-add" size={30} color="#007AFF" />
               </TouchableOpacity>
             </View>
-
-            {/* Placeholder para usuarios */}
             <View style={styles.placeholderContainer}>
               <Ionicons name="people" size={80} color="#E5E5EA" />
-              <Text style={styles.placeholderTitle}>
-                Gestión de Usuarios
-              </Text>
+              <Text style={styles.placeholderTitle}>Gestión de Usuarios</Text>
               <Text style={styles.placeholderText}>
                 Aquí podrás agregar, editar y eliminar usuarios del sistema.
               </Text>
-              <Text style={styles.placeholderSubtext}>
-                (Próximamente)
-              </Text>
+              <Text style={styles.placeholderSubtext}>(Próximamente)</Text>
             </View>
           </Animated.View>
         )}
       </ScrollView>
 
-      {/* Floating Action Button para agregar servicio */}
       {activeTab === "servicios" && (
         <TouchableOpacity
           style={styles.floatingButton}
@@ -316,7 +325,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#001C38",
     paddingTop: 60,
-    // CAMBIO: Aumenté el paddingBottom de 25 a 50 para dar más espacio
     paddingBottom: 50,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 25,
@@ -330,11 +338,9 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center", // Cambiado a center para mejor alineación vertical
+    alignItems: "center",
   },
   headerTextContainer: {
-    // CAMBIO: Contenedor extra si se necesita ajuste fino,
-    // pero el paddingBottom del header hace la mayor parte del trabajo.
     marginBottom: 5,
   },
   welcome: {
@@ -346,7 +352,6 @@ const styles = StyleSheet.create({
   userInfo: {
     fontSize: 16,
     color: "#88BBDC",
-    // CAMBIO: Agregado un pequeño margen inferior extra por si acaso
     marginBottom: 5,
   },
   logoutButton: {
@@ -358,8 +363,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    // CAMBIO: Ajustado de -25 a -35 para que suba, pero como el header es más alto,
-    // se verá separado del texto.
     marginTop: -35,
     marginBottom: 20,
   },
@@ -385,7 +388,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginTop: 4,
-    textAlign: 'center', // Asegurar que el texto esté centrado
+    textAlign: 'center',
   },
   tabContainer: {
     flexDirection: "row",
@@ -494,6 +497,8 @@ const styles = StyleSheet.create({
   tecnicoInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    marginRight: 10,
   },
   tecnicoNombre: {
     fontSize: 14,
