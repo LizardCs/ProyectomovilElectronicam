@@ -12,21 +12,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 include 'db.php';
 
-// Inicializar variables
-$SERV_NUM = $SERV_CED_ENV = $SERV_NOM_ENV = $SERV_CED_REC = $SERV_NOM_REC = '';
+// Inicializar variables (Agregamos SERV_DESCRIPCION)
+$SERV_NUM = $SERV_CED_ENV = $SERV_NOM_ENV = $SERV_CED_REC = $SERV_NOM_REC = $SERV_DESCRIPCION = '';
 $SERV_EST = 0;
 $imagenBase64 = '';
 
 // Determinar tipo de contenido
 $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 
-// Si es JSON
+// 1. Si los datos llegan como JSON (Web)
 if (strpos($contentType, 'application/json') !== false) {
     $input = file_get_contents('php://input');
     $data = json_decode($input, true);
     
     if ($data) {
         $SERV_NUM = $data['SERV_NUM'] ?? '';
+        $SERV_DESCRIPCION = $data['SERV_DESCRIPCION'] ?? ''; // <--- NUEVO
         $SERV_CED_ENV = $data['SERV_CED_ENV'] ?? '';
         $SERV_NOM_ENV = $data['SERV_NOM_ENV'] ?? '';
         $SERV_CED_REC = $data['SERV_CED_REC'] ?? '';
@@ -35,9 +36,10 @@ if (strpos($contentType, 'application/json') !== false) {
         $imagenBase64 = $data['SERV_IMG_ENV'] ?? '';
     }
 } 
-// Si es FormData/multipart
+// 2. Si los datos llegan como FormData/Multipart (Móvil - Android/iOS)
 else if (strpos($contentType, 'multipart/form-data') !== false || isset($_FILES['SERV_IMG_ENV'])) {
     $SERV_NUM = $_POST['SERV_NUM'] ?? '';
+    $SERV_DESCRIPCION = $_POST['SERV_DESCRIPCION'] ?? ''; // <--- NUEVO
     $SERV_CED_ENV = $_POST['SERV_CED_ENV'] ?? '';
     $SERV_NOM_ENV = $_POST['SERV_NOM_ENV'] ?? '';
     $SERV_CED_REC = $_POST['SERV_CED_REC'] ?? '';
@@ -54,13 +56,13 @@ else if (strpos($contentType, 'multipart/form-data') !== false || isset($_FILES[
 
 // Validar datos requeridos
 if (empty($SERV_NUM) || empty($SERV_CED_ENV) || empty($SERV_CED_REC)) {
-    echo json_encode(["success" => false, "message" => "Faltan campos requeridos"]);
+    echo json_encode(["success" => false, "message" => "Faltan campos requeridos (Número, Asignador o Técnico)"]);
     exit();
 }
 
 // Validar imagen
 if (empty($imagenBase64)) {
-    echo json_encode(["success" => false, "message" => "La imagen es obligatoria"]);
+    echo json_encode(["success" => false, "message" => "La imagen del comprobante es obligatoria"]);
     exit();
 }
 
@@ -73,9 +75,10 @@ if (strpos($imagenBase64, 'data:image') === 0) {
 }
 
 // Preparar SQL
+// Se agrega SERV_DESCRIPCION a la lista de columnas y un signo ? extra
 $sql = "INSERT INTO serviciostecnicos 
-        (SERV_NUM, SERV_CED_ENV, SERV_NOM_ENV, SERV_IMG_ENV, SERV_CED_REC, SERV_NOM_REC, SERV_EST) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)";
+        (SERV_NUM, SERV_DESCRIPCION, SERV_CED_ENV, SERV_NOM_ENV, SERV_IMG_ENV, SERV_CED_REC, SERV_NOM_REC, SERV_EST) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
 
@@ -84,9 +87,12 @@ if (!$stmt) {
     exit();
 }
 
+// Vincular parámetros (bind_param)
+// "sssssssi" -> 7 strings y 1 entero
 $stmt->bind_param(
-    "ssssssi", 
+    "sssssssi", 
     $SERV_NUM,
+    $SERV_DESCRIPCION, // <--- NUEVO CAMPO VINCULADO
     $SERV_CED_ENV,
     $SERV_NOM_ENV,
     $imagenBase64,
@@ -98,7 +104,7 @@ $stmt->bind_param(
 if ($stmt->execute()) {
     echo json_encode([
         "success" => true, 
-        "message" => "Servicio creado", 
+        "message" => "Servicio creado exitosamente", 
         "id" => $stmt->insert_id
     ]);
 } else {
