@@ -11,6 +11,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -23,6 +24,10 @@ export default function HomeAdmin() {
   const [usuarios, setUsuarios] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // --- ESTADOS PARA FILTROS Y BÚSQUEDA ---
+  const [filtroActivo, setFiltroActivo] = useState("total");
+  const [busqueda, setBusqueda] = useState("");
+
   // Animaciones de entrada
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -32,10 +37,13 @@ export default function HomeAdmin() {
     startAnimations();
   }, []);
 
-  // Recargar datos cada vez que la pantalla gane el foco
+  // Recargar datos cada vez que la pantalla gane el foco o cambie el tab
   useFocusEffect(
     useCallback(() => {
       fetchData();
+      // Resetear filtros al cambiar entre servicios y usuarios
+      setFiltroActivo("total");
+      setBusqueda("");
     }, [activeTab])
   );
 
@@ -116,6 +124,28 @@ export default function HomeAdmin() {
     ]);
   };
 
+  // --- LÓGICA DE FILTRADO DINÁMICO ---
+  const obtenerDatosFiltrados = () => {
+    if (activeTab === "servicios") {
+      return servicios.filter(s => {
+        const cumpleFiltro =
+          filtroActivo === "total" ? true :
+            filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
+              filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
+
+        const cumpleBusqueda = s.SERV_NUM.toString().toLowerCase().includes(busqueda.toLowerCase());
+        return cumpleFiltro && cumpleBusqueda;
+      });
+    } else {
+      return usuarios.filter(u => {
+        if (filtroActivo === "total") return true;
+        if (filtroActivo === "movil") return u.origen === "MOVIL";
+        if (filtroActivo === "web") return u.origen === "WEB";
+        return true;
+      });
+    }
+  };
+
   // --- LÓGICA DE NAVEGACIÓN ---
   const handleAddAction = () => {
     if (activeTab === "servicios") {
@@ -131,17 +161,12 @@ export default function HomeAdmin() {
       params: { servicio: JSON.stringify(servicio) }
     });
   };
-  
-  const handleGestionarUsuario = (usuario) => {
-  router.push({
-    pathname: "/admin/detalle-usuario", // Asegúrate que el archivo se llame así
-    params: { user: JSON.stringify(usuario) }
-  });
-};
 
-  // --- HELPERS VISUALES ---
-  const getEstadoColor = (estadoNum) => {
-    return parseInt(estadoNum) === 1 ? "#34C759" : "#FF9500";
+  const handleGestionarUsuario = (usuario) => {
+    router.push({
+      pathname: "/admin/detalle-usuario",
+      params: { user: JSON.stringify(usuario) }
+    });
   };
 
   const getRolInfo = (item) => {
@@ -169,23 +194,59 @@ export default function HomeAdmin() {
         </View>
       </Animated.View>
 
-      {/* Stats Cards (Basadas en servicios) */}
+      {/* Stats Cards como FILTROS */}
       <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.statCard}>
-          <Ionicons name="layers" size={24} color="#007AFF" />
-          <Text style={styles.statNumber}>{activeTab === "servicios" ? servicios.length : usuarios.length}</Text>
-          <Text style={styles.statLabel}>{activeTab === "servicios" ? "Servicios" : "Usuarios"}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Ionicons name="time" size={24} color="#FF9500" />
-          <Text style={styles.statNumber}>{servicios.filter(s => parseInt(s.SERV_EST) === 0).length}</Text>
-          <Text style={styles.statLabel}>Pendientes</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Ionicons name="checkmark-circle" size={24} color="#34C759" />
-          <Text style={styles.statNumber}>{servicios.filter(s => parseInt(s.SERV_EST) === 1).length}</Text>
-          <Text style={styles.statLabel}>Listos</Text>
-        </View>
+        {/* TOTAL */}
+        <TouchableOpacity
+          style={[styles.statCard, filtroActivo === "total" && styles.statCardActive]}
+          onPress={() => setFiltroActivo("total")}
+        >
+          <Ionicons name="layers" size={24} color={filtroActivo === "total" ? "#FFF" : "#007AFF"} />
+          <Text style={[styles.statNumber, filtroActivo === "total" && { color: '#FFF' }]}>
+            {activeTab === "servicios" ? servicios.length : usuarios.length}
+          </Text>
+          <Text style={[styles.statLabel, filtroActivo === "total" && { color: '#FFF' }]}>Total</Text>
+        </TouchableOpacity>
+
+        {/* PENDIENTES / MÓVIL */}
+        <TouchableOpacity
+          style={[styles.statCard, (filtroActivo === "pendientes" || filtroActivo === "movil") && styles.statCardActive]}
+          onPress={() => setFiltroActivo(activeTab === "servicios" ? "pendientes" : "movil")}
+        >
+          <Ionicons
+            name={activeTab === "servicios" ? "time" : "phone-portrait"}
+            size={24}
+            color={(filtroActivo === "pendientes" || filtroActivo === "movil") ? "#FFF" : "#FF9500"}
+          />
+          <Text style={[styles.statNumber, (filtroActivo === "pendientes" || filtroActivo === "movil") && { color: '#FFF' }]}>
+            {activeTab === "servicios"
+              ? servicios.filter(s => parseInt(s.SERV_EST) === 0).length
+              : usuarios.filter(u => u.origen === "MOVIL").length}
+          </Text>
+          <Text style={[styles.statLabel, (filtroActivo === "pendientes" || filtroActivo === "movil") && { color: '#FFF' }]}>
+            {activeTab === "servicios" ? "Pendientes" : "Móvil"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* LISTOS / WEB */}
+        <TouchableOpacity
+          style={[styles.statCard, (filtroActivo === "listos" || filtroActivo === "web") && styles.statCardActive]}
+          onPress={() => setFiltroActivo(activeTab === "servicios" ? "listos" : "web")}
+        >
+          <Ionicons
+            name={activeTab === "servicios" ? "checkmark-circle" : "desktop"}
+            size={24}
+            color={(filtroActivo === "listos" || filtroActivo === "web") ? "#FFF" : "#34C759"}
+          />
+          <Text style={[styles.statNumber, (filtroActivo === "listos" || filtroActivo === "web") && { color: '#FFF' }]}>
+            {activeTab === "servicios"
+              ? servicios.filter(s => parseInt(s.SERV_EST) === 1).length
+              : usuarios.filter(u => u.origen === "WEB").length}
+          </Text>
+          <Text style={[styles.statLabel, (filtroActivo === "listos" || filtroActivo === "web") && { color: '#FFF' }]}>
+            {activeTab === "servicios" ? "Listos" : "Web"}
+          </Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Tabs Navigation */}
@@ -207,6 +268,25 @@ export default function HomeAdmin() {
         </TouchableOpacity>
       </View>
 
+      {/* BUSCADOR (Solo aparece en servicios) */}
+      {activeTab === "servicios" && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por N° de servicio..."
+            value={busqueda}
+            onChangeText={setBusqueda}
+            keyboardType="numeric"
+          />
+          {busqueda !== "" && (
+            <TouchableOpacity onPress={() => setBusqueda("")}>
+              <Ionicons name="close-circle" size={20} color="#CCC" style={{ marginRight: 15 }} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Content Area */}
       <ScrollView
         style={styles.contentContainer}
@@ -218,68 +298,68 @@ export default function HomeAdmin() {
             <Text style={styles.sectionTitle}>
               {activeTab === "servicios" ? "Asignaciones" : "Personal Registrado"}
             </Text>
+            {filtroActivo !== "total" && (
+              <View style={styles.activeFilterBadge}>
+                <Text style={styles.activeFilterText}>Filtro: {filtroActivo.toUpperCase()}</Text>
+              </View>
+            )}
           </View>
 
-          {activeTab === "servicios" ? (
-            // LISTA DE SERVICIOS
-            servicios.length === 0 ? (
-              <Text style={styles.emptyText}>No hay servicios registrados.</Text>
-            ) : (
-              servicios.map((s) => (
-                <View key={s.SERV_ID} style={styles.tareaCard}>
-                  <View style={styles.tareaHeader}>
-                    <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>#{s.SERV_NUM}</Text></View>
-                    <View style={[styles.estadoBadge, { backgroundColor: getEstadoColor(s.SERV_EST) }]}>
-                      <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE"}</Text>
-                    </View>
+          {obtenerDatosFiltrados().length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={60} color="#CCC" />
+              <Text style={styles.emptyText}>No se encontraron resultados.</Text>
+            </View>
+          ) : (
+            obtenerDatosFiltrados().map((item) => (
+              <View key={item.SERV_ID || `${item.origen}-${item.id}`} style={styles.tareaCard}>
+                <View style={styles.tareaHeader}>
+                  <View style={styles.tareaIdContainer}>
+                    <Text style={styles.tareaId}>
+                      {activeTab === "servicios" ? `#${item.SERV_NUM}` : item.usuario}
+                    </Text>
                   </View>
-                  <Text style={styles.tareaDescripcion} numberOfLines={2}>{s.SERV_DESCRIPCION || "Sin descripción"}</Text>
-                  <View style={styles.tareaFooter}>
-                    <View style={styles.tecnicoInfo}>
-                      <Ionicons name="person-circle-outline" size={18} color="#666" />
-                      <Text style={styles.tecnicoNombre}>{s.SERV_NOM_REC || "Por asignar"}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.actionButton} onPress={() => handleVerDetallesServicio(s)}>
-                      <Text style={styles.actionText}>Ver</Text>
-                      <Ionicons name="chevron-forward" size={16} color="#007AFF" />
-                    </TouchableOpacity>
+                  <View style={[
+                    styles.estadoBadge,
+                    {
+                      backgroundColor: activeTab === "servicios"
+                        ? (parseInt(item.SERV_EST) === 1 ? "#34C759" : "#FF9500")
+                        : getRolInfo(item).color
+                    }
+                  ]}>
+                    <Text style={styles.estadoText}>
+                      {activeTab === "servicios"
+                        ? (parseInt(item.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE")
+                        : getRolInfo(item).texto}
+                    </Text>
                   </View>
                 </View>
-              ))
-            )
-          ) : (
-            // LISTA DE USUARIOS
-            usuarios.length === 0 ? (
-              <Text style={styles.emptyText}>No hay usuarios registrados.</Text>
-            ) : (
-              usuarios.map((u) => {
-                const rol = getRolInfo(u);
-                return (
-                  <View key={`${u.origen}-${u.id}`} style={styles.tareaCard}>
-                    <View style={styles.tareaHeader}>
-                      <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>{u.usuario}</Text></View>
-                      <View style={[styles.estadoBadge, { backgroundColor: rol.color }]}>
-                        <Text style={styles.estadoText}>{rol.texto}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.tareaDescripcion}>{u.nombre} {u.apellido}</Text>
-                    <View style={styles.tareaFooter}>
-                      <View style={styles.tecnicoInfo}>
-                        <Ionicons name="card-outline" size={18} color="#666" />
-                        <Text style={styles.tecnicoNombre}>ID: {u.cedula}</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => handleGestionarUsuario(u)}
-                      >
-                        <Text style={styles.actionText}>Gestionar</Text>
-                        <Ionicons name="settings-outline" size={16} color="#007AFF" />
-                      </TouchableOpacity>
-                    </View>
+
+                <Text style={styles.tareaDescripcion} numberOfLines={2}>
+                  {activeTab === "servicios" ? (item.SERV_DESCRIPCION || "Sin descripción") : `${item.nombre} ${item.apellido}`}
+                </Text>
+
+                <View style={styles.tareaFooter}>
+                  <View style={styles.tecnicoInfo}>
+                    <Ionicons
+                      name={activeTab === "servicios" ? "person-circle-outline" : "card-outline"}
+                      size={18}
+                      color="#666"
+                    />
+                    <Text style={styles.tecnicoNombre}>
+                      {activeTab === "servicios" ? (item.SERV_NOM_REC || "Por asignar") : `CI: ${item.cedula}`}
+                    </Text>
                   </View>
-                );
-              })
-            )
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => activeTab === "servicios" ? handleVerDetallesServicio(item) : handleGestionarUsuario(item)}
+                  >
+                    <Text style={styles.actionText}>{activeTab === "servicios" ? "Ver" : "Gestionar"}</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
           )}
           <View style={{ height: 100 }} />
         </Animated.View>
@@ -310,6 +390,7 @@ const styles = StyleSheet.create({
   logoutButton: { backgroundColor: "rgba(255, 255, 255, 0.15)", padding: 10, borderRadius: 12 },
   statsContainer: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, marginTop: -35 },
   statCard: { backgroundColor: "white", alignItems: "center", padding: 15, borderRadius: 20, width: "30%", elevation: 4 },
+  statCardActive: { backgroundColor: "#001C38", transform: [{ scale: 1.05 }], borderColor: '#007AFF', borderWidth: 1 },
   statNumber: { fontSize: 20, fontWeight: "bold", color: "#1C1C1E", marginTop: 5 },
   statLabel: { fontSize: 11, color: "#666", marginTop: 2 },
   tabContainer: { flexDirection: "row", backgroundColor: "white", margin: 20, borderRadius: 15, padding: 5, elevation: 3 },
@@ -317,9 +398,13 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: "#F2F2F7" },
   tabText: { fontSize: 15, color: "#8E8E93", marginLeft: 8, fontWeight: "500" },
   activeTabText: { color: "#007AFF", fontWeight: "bold" },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', marginHorizontal: 20, borderRadius: 12, borderWidth: 1, borderColor: '#DDD', marginBottom: 15, height: 50 },
+  searchInput: { flex: 1, paddingHorizontal: 10, fontSize: 16, color: '#000' },
   contentContainer: { flex: 1, paddingHorizontal: 20 },
-  sectionHeader: { marginBottom: 15 },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#1C1C1E" },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#1C1C1E" },
+  activeFilterBadge: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  activeFilterText: { fontSize: 10, color: '#007AFF', fontWeight: 'bold' },
   tareaCard: { backgroundColor: "white", borderRadius: 18, padding: 20, marginBottom: 15, elevation: 2 },
   tareaHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   tareaIdContainer: { backgroundColor: "#F2F2F7", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
@@ -332,7 +417,8 @@ const styles = StyleSheet.create({
   tecnicoNombre: { fontSize: 14, color: "#666", marginLeft: 6 },
   actionButton: { flexDirection: "row", alignItems: "center" },
   actionText: { fontSize: 14, color: "#007AFF", marginRight: 4, fontWeight: "bold" },
-  emptyText: { textAlign: 'center', color: '#999', marginTop: 40, fontSize: 16 },
+  emptyContainer: { alignItems: 'center', marginTop: 40 },
+  emptyText: { textAlign: 'center', color: '#999', marginTop: 10, fontSize: 16 },
   floatingButton: {
     position: "absolute",
     bottom: 30,
