@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   RefreshControl,
   SafeAreaView,
@@ -19,9 +20,10 @@ export default function HomeAdmin() {
   const [activeTab, setActiveTab] = useState("servicios");
   const [user, setUser] = useState(null);
   const [servicios, setServicios] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Animaciones
+  // Animaciones de entrada
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -30,13 +32,16 @@ export default function HomeAdmin() {
     startAnimations();
   }, []);
 
+  // Recargar datos cada vez que la pantalla gane el foco
   useFocusEffect(
     useCallback(() => {
-      fetchServicios();
-    }, [])
+      fetchData();
+    }, [activeTab])
   );
 
   const startAnimations = () => {
+    fadeAnim.setValue(0);
+    slideAnim.setValue(30);
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -64,66 +69,78 @@ export default function HomeAdmin() {
     }
   };
 
+  const fetchData = async () => {
+    if (activeTab === "servicios") {
+      await fetchServicios();
+    } else {
+      await fetchUsuarios();
+    }
+  };
+
   const fetchServicios = async () => {
     try {
       const response = await fetch('http://192.168.110.167/api-expo/obtener-servicios.php');
       const data = await response.json();
-      
-      if (data.success) {
-        setServicios(data.servicios);
-      }
+      if (data.success) setServicios(data.servicios);
     } catch (error) {
       console.error("Error obteniendo servicios:", error);
     }
   };
 
+  const fetchUsuarios = async () => {
+    try {
+      const response = await fetch('http://192.168.110.167/api-expo/obtener-usuarios.php');
+      const data = await response.json();
+      if (data.success) setUsuarios(data.usuarios);
+    } catch (error) {
+      console.error("Error obteniendo usuarios:", error);
+    }
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchServicios();
+    await fetchData();
     setRefreshing(false);
-  }, []);
+  }, [activeTab]);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('@user_data');
-    router.replace('/');
+    Alert.alert("Cerrar Sesión", "¿Estás seguro?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Sí, salir",
+        onPress: async () => {
+          await AsyncStorage.removeItem('@user_data');
+          router.replace('/');
+        }
+      }
+    ]);
   };
 
-  const handleAddService = () => {
-    router.push("/admin/crear-servicio");
+  // --- LÓGICA DE NAVEGACIÓN ---
+  const handleAddAction = () => {
+    if (activeTab === "servicios") {
+      router.push("/admin/crear-servicio");
+    } else {
+      router.push("/admin/crear-usuario");
+    }
   };
 
-  // --- NUEVA FUNCIÓN PARA VER DETALLES ---
-  const handleVerDetalles = (servicio) => {
+  const handleVerDetallesServicio = (servicio) => {
     router.push({
-        pathname: "/admin/detalle-servicioadmin", // Nombre exacto del archivo
-        params: { servicio: JSON.stringify(servicio) }
+      pathname: "/admin/detalle-servicioadmin",
+      params: { servicio: JSON.stringify(servicio) }
     });
   };
-  // ---------------------------------------
 
-  // Lógica de Estados (0 = Pendiente, 1 = Completado)
-  const mapEstadoDB = (estadoNum) => {
-    const est = parseInt(estadoNum);
-    if (est === 1) return "completado";
-    return "pendiente"; // 0
-  };
-
+  // --- HELPERS VISUALES ---
   const getEstadoColor = (estadoNum) => {
-    const estado = mapEstadoDB(estadoNum);
-    switch (estado) {
-      case "pendiente": return "#FF9500"; 
-      case "completado": return "#34C759"; 
-      default: return "#8E8E93"; 
-    }
+    return parseInt(estadoNum) === 1 ? "#34C759" : "#FF9500";
   };
 
-  const getEstadoTexto = (estadoNum) => {
-    const estado = mapEstadoDB(estadoNum);
-    switch (estado) {
-      case "pendiente": return "Pendiente";
-      case "completado": return "Completado";
-      default: return "Desconocido";
-    }
+  const getRolInfo = (item) => {
+    if (item.origen === 'WEB') return { texto: "ACCESO WEB", color: "#5856D6" };
+    if (parseInt(item.rol) === 1) return { texto: "ADMIN MÓVIL", color: "#007AFF" };
+    return { texto: "TÉCNICO", color: "#34C759" };
   };
 
   return (
@@ -131,19 +148,12 @@ export default function HomeAdmin() {
       <StatusBar backgroundColor="#001C38" barStyle="light-content" />
 
       {/* Header */}
-      <Animated.View
-        style={[
-          styles.header,
-          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-        ]}
-      >
+      <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.welcome}>Administración </Text>
+            <Text style={styles.welcome}>Panel Central</Text>
             {user && (
-              <Text style={styles.userInfo}>
-                {user.nombre_completo || user.nombre}
-              </Text>
+              <Text style={styles.userInfo}>{user.nombre_completo || user.nombre}</Text>
             )}
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -152,31 +162,22 @@ export default function HomeAdmin() {
         </View>
       </Animated.View>
 
-      {/* Stats Cards */}
-      <Animated.View
-        style={[
-          styles.statsContainer,
-          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-        ]}
-      >
+      {/* Stats Cards (Basadas en servicios) */}
+      <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.statCard}>
-          <Ionicons name="briefcase" size={28} color="#007AFF" />
-          <Text style={styles.statNumber}>{servicios.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Ionicons name="layers" size={24} color="#007AFF" />
+          <Text style={styles.statNumber}>{activeTab === "servicios" ? servicios.length : usuarios.length}</Text>
+          <Text style={styles.statLabel}>{activeTab === "servicios" ? "Servicios" : "Usuarios"}</Text>
         </View>
         <View style={styles.statCard}>
-          <Ionicons name="time" size={28} color="#FF9500" />
-          <Text style={styles.statNumber}>
-            {servicios.filter(t => parseInt(t.SERV_EST) === 0).length}
-          </Text>
+          <Ionicons name="time" size={24} color="#FF9500" />
+          <Text style={styles.statNumber}>{servicios.filter(s => parseInt(s.SERV_EST) === 0).length}</Text>
           <Text style={styles.statLabel}>Pendientes</Text>
         </View>
         <View style={styles.statCard}>
-          <Ionicons name="checkmark-circle" size={28} color="#34C759" />
-          <Text style={styles.statNumber}>
-            {servicios.filter(t => parseInt(t.SERV_EST) === 1).length}
-          </Text>
-          <Text style={styles.statLabel}>Completados</Text>
+          <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+          <Text style={styles.statNumber}>{servicios.filter(s => parseInt(s.SERV_EST) === 1).length}</Text>
+          <Text style={styles.statLabel}>Listos</Text>
         </View>
       </Animated.View>
 
@@ -186,388 +187,158 @@ export default function HomeAdmin() {
           style={[styles.tabButton, activeTab === "servicios" && styles.activeTab]}
           onPress={() => setActiveTab("servicios")}
         >
-          <Ionicons
-            name={activeTab === "servicios" ? "briefcase" : "briefcase-outline"}
-            size={24}
-            color={activeTab === "servicios" ? "#007AFF" : "#8E8E93"}
-          />
-          <Text style={[styles.tabText, activeTab === "servicios" && styles.activeTabText]}>
-            Servicios
-          </Text>
+          <Ionicons name="construct" size={20} color={activeTab === "servicios" ? "#007AFF" : "#8E8E93"} />
+          <Text style={[styles.tabText, activeTab === "servicios" && styles.activeTabText]}>Servicios</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tabButton, activeTab === "usuarios" && styles.activeTab]}
           onPress={() => setActiveTab("usuarios")}
         >
-          <Ionicons
-            name={activeTab === "usuarios" ? "people" : "people-outline"}
-            size={24}
-            color={activeTab === "usuarios" ? "#007AFF" : "#8E8E93"}
-          />
-          <Text style={[styles.tabText, activeTab === "usuarios" && styles.activeTabText]}>
-            Usuarios
-          </Text>
+          <Ionicons name="people" size={20} color={activeTab === "usuarios" ? "#007AFF" : "#8E8E93"} />
+          <Text style={[styles.tabText, activeTab === "usuarios" && styles.activeTabText]}>Usuarios</Text>
         </TouchableOpacity>
       </View>
 
       {/* Content Area */}
-      <ScrollView 
+      <ScrollView
         style={styles.contentContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {activeTab === "servicios" ? (
-          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Servicios Asignados</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddService}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add-circle" size={30} color="#007AFF" />
-              </TouchableOpacity>
-            </View>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-            {servicios.length === 0 ? (
-                <View style={{alignItems:'center', marginTop: 50}}>
-                    <Text style={{color:'#999'}}>No hay servicios registrados.</Text>
-                </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {activeTab === "servicios" ? "Asignaciones" : "Personal Registrado"}
+            </Text>
+          </View>
+
+          {activeTab === "servicios" ? (
+            // LISTA DE SERVICIOS
+            servicios.length === 0 ? (
+              <Text style={styles.emptyText}>No hay servicios registrados.</Text>
             ) : (
-                servicios.map((servicio, index) => (
-                <Animated.View
-                    key={servicio.SERV_ID}
-                    style={[
-                    styles.tareaCard,
-                    {
-                        transform: [{
-                        translateY: slideAnim.interpolate({
-                            inputRange: [0, 30],
-                            outputRange: [0, index * 10]
-                        })
-                        }]
-                    }
-                    ]}
-                >
-                    <View style={styles.tareaHeader}>
-                    <View style={styles.tareaIdContainer}>
-                        <Text style={styles.tareaId}>{servicio.SERV_NUM}</Text>
+              servicios.map((s) => (
+                <View key={s.SERV_ID} style={styles.tareaCard}>
+                  <View style={styles.tareaHeader}>
+                    <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>#{s.SERV_NUM}</Text></View>
+                    <View style={[styles.estadoBadge, { backgroundColor: getEstadoColor(s.SERV_EST) }]}>
+                      <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE"}</Text>
                     </View>
-                    <View style={[
-                        styles.estadoBadge,
-                        { backgroundColor: getEstadoColor(servicio.SERV_EST) }
-                    ]}>
-                        <Text style={styles.estadoText}>
-                        {getEstadoTexto(servicio.SERV_EST)}
-                        </Text>
-                    </View>
-                    </View>
-
-                    <Text style={styles.tareaDescripcion} numberOfLines={2}>
-                        {servicio.SERV_DESCRIPCION || "Sin descripción"}
-                    </Text>
-
-                    <View style={styles.tareaFooter}>
+                  </View>
+                  <Text style={styles.tareaDescripcion} numberOfLines={2}>{s.SERV_DESCRIPCION || "Sin descripción"}</Text>
+                  <View style={styles.tareaFooter}>
                     <View style={styles.tecnicoInfo}>
-                        <Ionicons name="person-outline" size={16} color="#666" />
-                        <Text style={styles.tecnicoNombre}>
-                        {servicio.SERV_NOM_REC || "Sin asignar"}
-                        </Text>
+                      <Ionicons name="person-circle-outline" size={18} color="#666" />
+                      <Text style={styles.tecnicoNombre}>{s.SERV_NOM_REC || "Por asignar"}</Text>
                     </View>
-                    
-                    {/* BOTÓN CON LA ACCIÓN AGREGADA */}
-                    <TouchableOpacity 
-                        style={styles.actionButton}
-                        onPress={() => handleVerDetalles(servicio)}
-                    >
-                        <Text style={styles.actionText}>Ver Detalles</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+                    <TouchableOpacity style={styles.actionButton} onPress={() => handleVerDetallesServicio(s)}>
+                      <Text style={styles.actionText}>Ver</Text>
+                      <Ionicons name="chevron-forward" size={16} color="#007AFF" />
                     </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )
+          ) : (
+            // LISTA DE USUARIOS
+            usuarios.length === 0 ? (
+              <Text style={styles.emptyText}>No hay usuarios registrados.</Text>
+            ) : (
+              usuarios.map((u) => {
+                const rol = getRolInfo(u);
+                return (
+                  <View key={`${u.origen}-${u.id}`} style={styles.tareaCard}>
+                    <View style={styles.tareaHeader}>
+                      <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>{u.usuario}</Text></View>
+                      <View style={[styles.estadoBadge, { backgroundColor: rol.color }]}>
+                        <Text style={styles.estadoText}>{rol.texto}</Text>
+                      </View>
                     </View>
-                </Animated.View>
-                ))
-            )}
-            <View style={{height: 100}} /> 
-          </Animated.View>
-        ) : (
-          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Gestión de Usuarios</Text>
-              <TouchableOpacity style={styles.addButton}>
-                <Ionicons name="person-add" size={30} color="#007AFF" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.placeholderContainer}>
-              <Ionicons name="people" size={80} color="#E5E5EA" />
-              <Text style={styles.placeholderTitle}>Gestión de Usuarios</Text>
-              <Text style={styles.placeholderText}>
-                Aquí podrás agregar, editar y eliminar usuarios del sistema.
-              </Text>
-              <Text style={styles.placeholderSubtext}>(Próximamente)</Text>
-            </View>
-          </Animated.View>
-        )}
+                    <Text style={styles.tareaDescripcion}>{u.nombre} {u.apellido}</Text>
+                    <View style={styles.tareaFooter}>
+                      <View style={styles.tecnicoInfo}>
+                        <Ionicons name="card-outline" size={18} color="#666" />
+                        <Text style={styles.tecnicoNombre}>ID: {u.cedula}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleGestionarUsuario(u)}
+                      >
+                        <Text style={styles.actionText}>Gestionar</Text>
+                        <Ionicons name="settings-outline" size={16} color="#007AFF" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })
+            )
+          )}
+          <View style={{ height: 100 }} />
+        </Animated.View>
       </ScrollView>
 
-      {activeTab === "servicios" && (
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={handleAddService}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={30} color="#FFF" />
-        </TouchableOpacity>
-      )}
+      {/* Floating Action Button */}
+      <TouchableOpacity style={styles.floatingButton} onPress={handleAddAction}>
+        <Ionicons name="add" size={35} color="#FFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
+  container: { flex: 1, backgroundColor: "#F2F2F7" },
   header: {
     backgroundColor: "#001C38",
-    paddingTop: 60,
+    paddingTop: 50,
     paddingBottom: 50,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 10,
   },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTextContainer: {
-    marginBottom: 5,
-  },
-  welcome: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 5,
-  },
-  userInfo: {
-    fontSize: 16,
-    color: "#88BBDC",
-    marginBottom: 5,
-  },
-  logoutButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    padding: 10,
-    borderRadius: 10,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: -35,
-    marginBottom: 20,
-  },
-  statCard: {
-    backgroundColor: "white",
-    alignItems: "center",
-    padding: 15,
-    borderRadius: 15,
-    width: "30%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1C1C1E",
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  tabContainer: {
-    flexDirection: "row",
-    backgroundColor: "white",
-    marginHorizontal: 20,
-    borderRadius: 15,
-    padding: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 20,
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  activeTab: {
-    backgroundColor: "#F2F2F7",
-  },
-  tabText: {
-    fontSize: 16,
-    color: "#8E8E93",
-    marginLeft: 8,
-    fontWeight: "500",
-  },
-  activeTabText: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1C1C1E",
-  },
-  addButton: {
-    padding: 5,
-  },
-  tareaCard: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tareaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  tareaIdContainer: {
-    backgroundColor: "#F2F2F7",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  tareaId: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#1C1C1E",
-  },
-  estadoBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  estadoText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "600",
-  },
-  tareaDescripcion: {
-    fontSize: 16,
-    color: "#3C3C43",
-    lineHeight: 22,
-    marginBottom: 15,
-  },
-  tareaFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#F2F2F7",
-    paddingTop: 15,
-  },
-  tecnicoInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 10,
-  },
-  tecnicoNombre: {
-    fontSize: 14,
-    color: "#666",
-    marginLeft: 6,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionText: {
-    fontSize: 14,
-    color: "#007AFF",
-    marginRight: 4,
-    fontWeight: "500",
-  },
-  placeholderContainer: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 40,
-    alignItems: "center",
-    marginTop: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  placeholderTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1C1C1E",
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  placeholderSubtext: {
-    fontSize: 14,
-    color: "#8E8E93",
-    marginTop: 10,
-    fontStyle: "italic",
-  },
+  headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  welcome: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
+  userInfo: { fontSize: 16, color: "#88BBDC", marginTop: 2 },
+  logoutButton: { backgroundColor: "rgba(255, 255, 255, 0.15)", padding: 10, borderRadius: 12 },
+  statsContainer: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, marginTop: -35 },
+  statCard: { backgroundColor: "white", alignItems: "center", padding: 15, borderRadius: 20, width: "30%", elevation: 4 },
+  statNumber: { fontSize: 20, fontWeight: "bold", color: "#1C1C1E", marginTop: 5 },
+  statLabel: { fontSize: 11, color: "#666", marginTop: 2 },
+  tabContainer: { flexDirection: "row", backgroundColor: "white", margin: 20, borderRadius: 15, padding: 5, elevation: 3 },
+  tabButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 12 },
+  activeTab: { backgroundColor: "#F2F2F7" },
+  tabText: { fontSize: 15, color: "#8E8E93", marginLeft: 8, fontWeight: "500" },
+  activeTabText: { color: "#007AFF", fontWeight: "bold" },
+  contentContainer: { flex: 1, paddingHorizontal: 20 },
+  sectionHeader: { marginBottom: 15 },
+  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#1C1C1E" },
+  tareaCard: { backgroundColor: "white", borderRadius: 18, padding: 20, marginBottom: 15, elevation: 2 },
+  tareaHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  tareaIdContainer: { backgroundColor: "#F2F2F7", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  tareaId: { fontSize: 14, fontWeight: "bold", color: "#001C38" },
+  estadoBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  estadoText: { fontSize: 10, color: "white", fontWeight: "bold" },
+  tareaDescripcion: { fontSize: 16, color: "#3A3A3C", marginBottom: 15, lineHeight: 22 },
+  tareaFooter: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#F2F2F7", paddingTop: 15 },
+  tecnicoInfo: { flexDirection: "row", alignItems: "center" },
+  tecnicoNombre: { fontSize: 14, color: "#666", marginLeft: 6 },
+  actionButton: { flexDirection: "row", alignItems: "center" },
+  actionText: { fontSize: 14, color: "#007AFF", marginRight: 4, fontWeight: "bold" },
+  emptyText: { textAlign: 'center', color: '#999', marginTop: 40, fontSize: 16 },
   floatingButton: {
     position: "absolute",
     bottom: 30,
-    right: 20,
+    right: 25,
     backgroundColor: "#007AFF",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 65,
+    height: 65,
+    borderRadius: 33,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#007AFF",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
     elevation: 8,
-  },
+    shadowColor: "#007AFF",
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  }
 });
