@@ -183,7 +183,7 @@ export default function HomeAdmin() {
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.welcome}>Panel Central</Text>
+            <Text style={styles.welcome}>Panel de gestion</Text>
             {user && (
               <Text style={styles.userInfo}>{user.nombre_completo || user.nombre}</Text>
             )}
@@ -354,7 +354,7 @@ export default function HomeAdmin() {
                     style={styles.actionButton}
                     onPress={() => activeTab === "servicios" ? handleVerDetallesServicio(item) : handleGestionarUsuario(item)}
                   >
-                    <Text style={styles.actionText}>{activeTab === "servicios" ? "Ver" : "Gestionar"}</Text>
+                    <Text style={styles.actionText}>{activeTab === "servicios" ? "Ver / Editar" : "Gestionar"}</Text>
                     <Ionicons name="chevron-forward" size={16} color="#007AFF" />
                   </TouchableOpacity>
                 </View>
