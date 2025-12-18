@@ -5,25 +5,40 @@ header("Content-Type: application/json; charset=UTF-8");
 include 'db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
+if (!$data) { exit; }
 
-if (!$data) { echo json_encode(["success" => false, "message" => "Sin datos"]); exit; }
+$id       = $data['id'];
+$origen   = $data['origen']; 
+$nombre   = $data['nombre'];
+$apellido = $data['apellido'];
+$celular  = $data['celular'];
+$usuario  = $data['usuario'];
+$clave    = $data['clave']; // Puede venir vacío si no marcaron "Sí"
 
-$id = $data['id'];
-$origen = $data['origen']; // 'MOVIL' o 'WEB'
-$nuevoUsuario = $data['usuario'];
-$nuevaClave = $data['clave'];
-
+// Definir nombres de columnas según tabla
 if ($origen === 'MOVIL') {
-    $sql = "UPDATE usersmovil SET MOV_USU = ?, MOV_CLAVE = ? WHERE MOV_ID = ?";
+    $tabla = "usersmovil";
+    $colNom = "NOM_MOV"; $colApe = "MOV_APE"; $colCel = "MOV_CELU"; $colUsu = "MOV_USU"; $colCla = "MOV_CLAVE"; $colId = "MOV_ID";
 } else {
-    $sql = "UPDATE usersweb SET WEB_USU = ?, WEB_CLAVE = ? WHERE WEB_ID = ?";
+    $tabla = "usersweb";
+    $colNom = "WEB_NOMBRES"; $colApe = "WEB_APELLIDOS"; $colCel = "WEB_CELU"; $colUsu = "WEB_USU"; $colCla = "WEB_CLAVE"; $colId = "WEB_ID";
 }
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("ssi", $nuevoUsuario, $nuevaClave, $id);
+// CONSTRUCCIÓN DINÁMICA DEL SQL
+if (empty($clave)) {
+    // Si no enviaron clave, NO la incluimos en el UPDATE
+    $sql = "UPDATE $tabla SET $colNom=?, $colApe=?, $colCel=?, $colUsu=? WHERE $colId=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssi", $nombre, $apellido, $celular, $usuario, $id);
+} else {
+    // Si enviaron clave, actualizamos TODO
+    $sql = "UPDATE $tabla SET $colNom=?, $colApe=?, $colCel=?, $colUsu=?, $colCla=? WHERE $colId=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssssi", $nombre, $apellido, $celular, $usuario, $clave, $id);
+}
 
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, "message" => "Credenciales actualizadas"]);
+    echo json_encode(["success" => true]);
 } else {
     echo json_encode(["success" => false, "message" => $conn->error]);
 }
