@@ -1,0 +1,11 @@
+El clientre acepta las condiciones: Después de 90 días de reparado, se cobrará bodegaje de ley y no responderemos por los que han sido abandonados...
+
+
+Detalles del cliente  
+Agregar checklist de lo que se revisa
+Numero de orden del taller
+Nombre del cliente
+telefono del cliente
+direccion
+cedula 
+
