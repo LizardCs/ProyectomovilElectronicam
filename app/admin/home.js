@@ -131,6 +131,13 @@ export default function HomeAdmin() {
       params: { servicio: JSON.stringify(servicio) }
     });
   };
+  
+  const handleGestionarUsuario = (usuario) => {
+  router.push({
+    pathname: "/admin/detalle-usuario", // Asegúrate que el archivo se llame así
+    params: { user: JSON.stringify(usuario) }
+  });
+};
 
   // --- HELPERS VISUALES ---
   const getEstadoColor = (estadoNum) => {
