@@ -137,7 +137,7 @@ export default function CrearServicio() {
     const takePhoto = async () => {
         try {
             const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true, aspect: [4, 3], quality: 0.8,
+                allowsEditing: true, aspect: [4, 3], quality: 0.5,
             });
             if (!result.canceled) {
                 setFormData({ ...formData, SERV_IMG_ENV: result.assets[0].uri });

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --azul-marino: #00122e;
+            --azul-electrico: #0047ab;
+            --amarillo-intenso: #ffcc00;
+            --blanco: #ffffff;
+            --gris-claro: #d1d5db;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .logo-container {
+            width: 700px;
+            height: 250px;
+            background: linear-gradient(135deg, var(--azul-marino) 0%, var(--azul-electrico) 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 80px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Línea curva diagonal dinámica */
+        .dynamic-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-electronica {
+            color: var(--blanco);
+            font-size: 55px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            line-height: 0.9;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .text-mantilla {
+            color: var(--amarillo-intenso);
+            font-size: 95px;
+            font-weight: 700;
+            font-style: italic;
+            margin: -5px 0 5px 10px;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .text-sub {
+            color: var(--blanco);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            margin-left: 15px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        /* Estilo tecnológico sutil */
+        .logo-container::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logo-container">
+        <svg class="dynamic-curve" viewBox="0 0 700 250" preserveAspectRatio="none">
+            <path d="M0,250 C150,220 400,50 700,0" 
+                  fill="none" 
+                  stroke="rgba(255, 204, 0, 0.4)" 
+                  stroke-width="3" />
+            <path d="M0,260 C200,230 450,80 750,-10" 
+                  fill="none" 
+                  stroke="rgba(255, 255, 255, 0.1)" 
+                  stroke-width="10" />
+        </svg>
+
+        <div class="content">
+            <h1 class="text-electronica">ELECTRONICA</h1>
+            <div class="text-mantilla">Mantilla</div>
+            <div class="text-sub">Centro de Servicio Autorizado</div>
+        </div>
+    </div>
+
+</body>
+</html>
