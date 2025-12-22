@@ -1,0 +1,41 @@
+# C:/xampp/htdocs/api-expo/documentos/.htaccess
+
+# DESACTIVAR completamente el acceso al directorio
+# Solo permitir acceso a archivos específicos
+
+# Deshabilitar cualquier acceso al índice
+Options -Indexes
+IndexIgnore *
+
+# Permitir acceso SOLO a archivos PDF (NO al directorio)
+<FilesMatch "\.(pdf|PDF)$">
+    Order Allow,Deny
+    Allow from all
+    Satisfy any
+    Require all granted
+    
+    # Cabeceras para PDFs
+    Header set Content-Type application/pdf
+    Header set Content-Disposition inline
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Range"
+    Header set Access-Control-Expose-Headers "Content-Length, Content-Range"
+    Header set Cache-Control "public, max-age=3600"
+</FilesMatch>
+
+# Bloquear TODO lo demás
+<FilesMatch "^[^.]+$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Configurar errores
+ErrorDocument 403 "Acceso prohibido: Solo se permite acceso a archivos PDF específicos"
+ErrorDocument 404 "Archivo PDF no encontrado"
+
+# No permitir archivos .htaccess
+<Files ".htaccess">
+    Order Allow,Deny
+    Deny from all
+</Files>
