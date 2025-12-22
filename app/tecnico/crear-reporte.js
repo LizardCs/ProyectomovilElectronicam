@@ -19,7 +19,7 @@ export default function CrearReporte() {
     const servicio = JSON.parse(params.servicio);
 
     const [loading, setLoading] = useState(false);
-    
+
     // 1. DATOS DEL CLIENTE
     const [nombreCliente, setNombreCliente] = useState("");
     const [cedulaCliente, setCedulaCliente] = useState("");
@@ -95,6 +95,7 @@ export default function CrearReporte() {
         }
     };
 
+    // En la función generarReporteGod(), modifica el objeto que envías al servidor
     const generarReporteGod = async () => {
         if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
             Alert.alert("Atención", "Campos obligatorios: Cliente, Equipo, Daño, Firma y Aceptar Condiciones.");
@@ -104,102 +105,14 @@ export default function CrearReporte() {
         setLoading(true);
 
         const htmlContent = `
-            <html>
-                <style>
-                    body { font-family: 'Helvetica'; padding: 15px; color: #1a1a1a; line-height: 1.2; font-size: 11px; }
-                    .header { text-align: center; border-bottom: 2px solid #001C38; padding-bottom: 10px; margin-bottom: 15px; }
-                    .header h1 { margin: 0; color: #001C38; font-size: 22px; }
-                    .ods-box { position: absolute; top: 15px; right: 20px; color: red; font-weight: bold; font-size: 16px; border: 1px solid red; padding: 4px; }
-                    .section-title { background: #001C38; color: white; padding: 5px; text-align: center; font-size: 11px; font-weight: bold; border-radius: 3px; text-transform: uppercase; margin-top: 10px; }
-                    .table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                    .table td { border: 1px solid #ccc; padding: 6px; }
-                    .check-box { display: inline-block; width: 11px; height: 11px; border: 1px solid #333; text-align: center; line-height: 11px; font-size: 9px; margin-right: 5px; vertical-align: middle; }
-                    .active { background: #001C38 !important; color: white !important; font-weight: bold; }
-                    .photo-container { margin-top: 15px; text-align: center; page-break-inside: avoid; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
-                    .photo-img { width: 80%; max-height: 250px; border-radius: 5px; margin-bottom: 5px; }
-                </style>
-                <body>
-                    <div class="ods-box">N° ${servicio.SERV_NUM}</div>
-                    <div class="header">
-                        <h1>ELECTRÓNICA MANTILLA</h1>
-                        <p>CENTRO DE SERVICIO AUTORIZADO | Ambato - Ecuador</p>
-                    </div>
-
-                    <div class="section-title">DATOS DEL CLIENTE</div>
-                    <table class="table">
-                        <tr><td colspan="2"><strong>Sr(a):</strong> ${nombreCliente}</td><td><strong>C.I:</strong> ${cedulaCliente}</td></tr>
-                        <tr><td><strong>Teléfono:</strong> ${telefonoCliente}</td><td colspan="2"><strong>Dirección:</strong> ${direccionCliente}</td></tr>
-                    </table>
-
-                    <div class="section-title">IDENTIFICACIÓN DEL EQUIPO</div>
-                    <table class="table">
-                        <tr><td><strong>Un:</strong> ${unidad}</td><td><strong>Marca:</strong> ${marca}</td><td><strong>Modelo:</strong> ${modeloEq}</td></tr>
-                        <tr><td colspan="2"><strong>Serie:</strong> ${serieEq}</td><td><strong>Color:</strong> ${colorEq}</td></tr>
-                    </table>
-
-                    <div class="section-title">RECEPCIÓN Y DIAGNÓSTICO</div>
-                    <table class="table">
-                        <tr>
-                            <td><div class="check-box ${checks.garantia ? 'active' : ''}">${checks.garantia ? 'X' : ''}</div> Garantía</td>
-                            <td><div class="check-box ${checks.papeles ? 'active' : ''}">${checks.papeles ? 'X' : ''}</div> Papeles</td>
-                            <td><div class="check-box ${checks.pendiente ? 'active' : ''}">${checks.pendiente ? 'X' : ''}</div> Pendiente</td>
-                            <td><div class="check-box ${checks.completo ? 'active' : ''}">${checks.completo ? 'X' : ''}</div> Completo</td>
-                        </tr>
-                        <tr><td colspan="4"><strong>DAÑO REPORTADO:</strong> ${danioReportado}</td></tr>
-                        <tr>
-                            <td colspan="4">
-                                <strong>ACCESORIOS:</strong> 
-                                SI (${checks.accesorios ? 'X' : ' '}) &nbsp; NO (${!checks.accesorios ? 'X' : ' '})
-                                | <strong>Descripción:</strong> ${accesoriosDesc || "Ninguna"}
-                            </td>
-                        </tr>
-                    </table>
-
-                    <div class="section-title">INSPECCIÓN DE ESTADO FÍSICO</div>
-                    <table class="table">
-                        <tr>
-                            <td><div class="check-box ${checks.nuevo ? 'active' : ''}">${checks.nuevo ? 'X' : ''}</div> Equipo Nuevo</td>
-                            <td><div class="check-box ${checks.usado ? 'active' : ''}">${checks.usado ? 'X' : ''}</div> Equipo Usado</td>
-                            <td colspan="2"><div class="check-box ${checks.excepcion ? 'active' : ''}">${checks.excepcion ? 'X' : ''}</div> Exc. Garantía</td>
-                        </tr>
-                        <tr><td colspan="4"><strong>Detalles:</strong> ${inspeccionEstadoDesc || "Sin observaciones."}</td></tr>
-                    </table>
-
-                    <div class="section-title">PUNTOS DE VERIFICACIÓN TÉCNICA</div>
-                    <table class="table">
-                        <tr>
-                            <td><div class="check-box ${checks.nivelacion ? 'active' : ''}">${checks.nivelacion ? 'X' : ''}</div> Nivelación</td>
-                            <td><div class="check-box ${checks.presionAgua ? 'active' : ''}">${checks.presionAgua ? 'X' : ''}</div> Presión Agua</td>
-                            <td><div class="check-box ${checks.modeloSerieCheck ? 'active' : ''}">${checks.modeloSerieCheck ? 'X' : ''}</div> Modelo/Serie</td>
-                        </tr>
-                        <tr>
-                            <td><div class="check-box ${checks.conexionesElectricas ? 'active' : ''}">${checks.conexionesElectricas ? 'X' : ''}</div> Conex. Eléctricas</td>
-                            <td><div class="check-box ${checks.conexionesAgua ? 'active' : ''}">${checks.conexionesAgua ? 'X' : ''}</div> Conex. Agua</td>
-                            <td><div class="check-box ${checks.equipoInstalado ? 'active' : ''}">${checks.equipoInstalado ? 'X' : ''}</div> Equipo Instalado</td>
-                        </tr>
-                    </table>
-
-                    <div class="section-title">EVIDENCIA MULTIMEDIA</div>
-                    <div class="photo-container"><p><strong>1. Modelo/Serie</strong></p><img src="data:image/jpeg;base64,${fotoModelo?.base64}" class="photo-img"/><p><i>Obs: ${descModelo}</i></p></div>
-                    <div class="photo-container"><p><strong>2. Factura</strong></p><img src="data:image/jpeg;base64,${fotoFactura?.base64}" class="photo-img"/><p><i>Obs: ${descFactura}</i></p></div>
-                    <div class="photo-container"><p><strong>3. Resultado Final</strong></p><img src="data:image/jpeg;base64,${fotoElectrico?.base64}" class="photo-img"/><p><i>Obs: ${descElectrico}</i></p></div>
-
-                    <div style="margin-top:20px; font-size:9px; border:1px solid #ccc; padding:8px;">
-                        <strong>Condiciones:</strong> Después de 90 días de reparado, se cobrará bodegaje de ley y no responderemos por los equipos que han sido abandonados.
-                    </div>
-
-                    <div style="margin-top:30px; text-align:center;">
-                        <p><strong>Recomendaciones Técnicas:</strong> ${recomendaciones || "Ninguna."}</p>
-                        <img src="${firma}" style="width:200px; border-bottom: 1px solid #000;"/><br/>
-                        <strong>FIRMA DE CONFORMIDAD DEL CLIENTE</strong>
-                    </div>
-                </body>
-            </html>
-        `;
+        <html>
+            <!-- ... (tu HTML permanece igual) ... -->
+        </html>
+    `;
 
         try {
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
-            
+
             const response = await fetch('http://192.168.110.167/api-expo/crear-reporte.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -208,16 +121,27 @@ export default function CrearReporte() {
                     nombre: servicio.SERV_NOM_REC,
                     tipo: danioReportado,
                     pdf_base64: base64,
-                    serv_id: servicio.SERV_ID
+                    serv_id: servicio.SERV_ID,
+                    serv_num: servicio.SERV_NUM  // ← NUEVO: Agregar el número de servicio
                 })
             });
+
             const res = await response.json();
             if (res.success) {
-                Alert.alert("Éxito", "Ticket digital generado correctamente.", [{ text: "OK", onPress: () => router.push("/tecnico/home") }]);
+                Alert.alert("Éxito", "Reporte generado correctamente.", [{
+                    text: "OK",
+                    onPress: () => router.push("/tecnico/home")
+                }]);
                 await Sharing.shareAsync(uri);
+            } else {
+                Alert.alert("Error", res.message || "Error al crear reporte");
             }
-        } catch (e) { Alert.alert("Error", "Problema al sincronizar."); }
-        finally { setLoading(false); }
+        } catch (e) {
+            Alert.alert("Error", "Problema al sincronizar: " + e.message);
+        }
+        finally {
+            setLoading(false);
+        }
     };
 
     if (showSig) {
@@ -228,12 +152,12 @@ export default function CrearReporte() {
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}><Ionicons name="close" size={28} color="#FFF" /></TouchableOpacity>
-                <View style={styles.headerTitleContainer}><Text style={styles.headerTitle}>Nuevo Reporte Técnico</Text><Text style={styles.headerSubtitle}>ODS: {servicio.SERV_NUM}</Text></View>
+                <View style={styles.headerTitleContainer}><Text style={styles.headerTitle}>Reporte Técnico</Text><Text style={styles.headerSubtitle}>Nº Servicio: {servicio.SERV_NUM}</Text></View>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-                
+
                 {/* 1. DATOS CLIENTE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
@@ -247,8 +171,8 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, {width: '48%'}]} placeholder="Un: (Lavadora)" value={unidad} onChangeText={setUnidad} />
-                        <TextInput style={[styles.input, {width: '48%'}]} placeholder="Marca" value={marca} onChangeText={setMarca} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Un: (Lavadora)" value={unidad} onChangeText={setUnidad} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} />
                     <TextInput style={styles.input} placeholder="Serie" value={serieEq} onChangeText={setSerieEq} />
@@ -273,11 +197,11 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. Accesorios</Text>
                     <View style={styles.row}>
-                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({...checks, accesorios: true})}>
+                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
                             <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
                             <Text style={styles.radioLabel}>SI</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({...checks, accesorios: false})}>
+                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: false })}>
                             <Ionicons name={!checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={!checks.accesorios ? "#001C38" : "#666"} />
                             <Text style={styles.radioLabel}>NO</Text>
                         </TouchableOpacity>
@@ -331,14 +255,14 @@ export default function CrearReporte() {
                     </View>
                     <Text style={styles.label}>Firma del Cliente</Text>
                     <TouchableOpacity style={styles.signBox} onPress={() => setShowSig(true)}>
-                        {firma ? <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" /> : <View style={{alignItems:'center'}}><Ionicons name="pencil" size={24} color="#999" /><Text style={{color: '#999', marginTop: 5}}>Toque para firmar</Text></View>}
+                        {firma ? <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" /> : <View style={{ alignItems: 'center' }}><Ionicons name="pencil" size={24} color="#999" /><Text style={{ color: '#999', marginTop: 5 }}>Toque para firmar</Text></View>}
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity style={styles.btnSubmit} onPress={generarReporteGod} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>GENERAR TICKET DIGITAL</Text>}
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>ENVIAR REPORTE</Text>}
                 </TouchableOpacity>
-                <View style={{height: 50}} />
+                <View style={{ height: 50 }} />
             </ScrollView>
         </KeyboardAvoidingView>
     );
