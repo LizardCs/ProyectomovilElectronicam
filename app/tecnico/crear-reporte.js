@@ -40,7 +40,7 @@ export default function CrearReporte() {
         nivelacion: false, presionAgua: false,
         modeloSerieCheck: false, conexionesElectricas: false,
         conexionesAgua: false, equipoInstalado: false,
-        accesorios: false, // false = NO, true = SI
+        accesorios: false, 
         aceptaCondiciones: false
     });
 
@@ -60,7 +60,6 @@ export default function CrearReporte() {
     const [firma, setFirma] = useState(null);
     const [showSig, setShowSig] = useState(false);
 
-    // Bloqueo de navegación para proteger datos
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
             const hayProgreso = nombreCliente || unidad || danioReportado || fotoModelo || firma;
@@ -95,7 +94,6 @@ export default function CrearReporte() {
         }
     };
 
-    // En la función generarReporteGod(), modifica el objeto que envías al servidor
     const generarReporteGod = async () => {
         if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
             Alert.alert("Atención", "Campos obligatorios: Cliente, Equipo, Daño, Firma y Aceptar Condiciones.");
@@ -104,11 +102,103 @@ export default function CrearReporte() {
 
         setLoading(true);
 
+        // Helpers para el PDF
+        const renderCheck = (val) => (val ? '☑' : '☐');
+        const imgModelo = fotoModelo ? `data:image/jpeg;base64,${fotoModelo.base64}` : '';
+        const imgFactura = fotoFactura ? `data:image/jpeg;base64,${fotoFactura.base64}` : '';
+        const imgFinal = fotoElectrico ? `data:image/jpeg;base64,${fotoElectrico.base64}` : '';
+
         const htmlContent = `
         <html>
-            <!-- ... (tu HTML permanece igual) ... -->
-        </html>
-    `;
+            <head>
+                <style>
+                    body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
+                    .header { text-align: center; border-bottom: 2px solid #001C38; margin-bottom: 20px; }
+                    .section { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+                    .section-title { background: #001C38; color: white; padding: 8px; font-size: 14px; font-weight: bold; }
+                    .content { padding: 10px; font-size: 12px; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                    .field { flex: 1; }
+                    .label { font-weight: bold; }
+                    .check-item { margin-right: 15px; display: inline-block; }
+                    .photo-container { display: flex; justify-content: space-around; margin-top: 10px; }
+                    .photo-box { width: 30%; text-align: center; font-size: 10px; }
+                    .photo-box img { width: 100%; border: 1px solid #ccc; height: 120px; object-fit: contain; }
+                    .firma { text-align: center; margin-top: 30px; }
+                    .firma img { width: 200px; border-bottom: 1px solid #333; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>ELECTRÓNICA MANTILLA</h2>
+                    <p>Reporte Técnico Digital - Nº Servicio: ${servicio.SERV_NUM}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">1. DATOS DEL CLIENTE</div>
+                    <div class="content">
+                        <div class="row"><div class="field"><span class="label">Nombre:</span> ${nombreCliente}</div><div class="field"><span class="label">C.I:</span> ${cedulaCliente}</div></div>
+                        <div class="row"><div class="field"><span class="label">Telf:</span> ${telefonoCliente}</div><div class="field"><span class="label">Dir:</span> ${direccionCliente}</div></div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">2. IDENTIFICACIÓN DEL EQUIPO</div>
+                    <div class="content">
+                        <div class="row"><div class="field"><span class="label">Un:</span> ${unidad}</div><div class="field"><span class="label">Marca:</span> ${marca}</div></div>
+                        <div class="row"><div class="field"><span class="label">Modelo:</span> ${modeloEq}</div><div class="field"><span class="label">Serie:</span> ${serieEq}</div></div>
+                        <div><span class="label">Color:</span> ${colorEq}</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">3. RECEPCIÓN Y DIAGNÓSTICO</div>
+                    <div class="content">
+                        <div class="check-item">${renderCheck(checks.garantia)} Garantía</div>
+                        <div class="check-item">${renderCheck(checks.papeles)} Papeles</div>
+                        <div class="check-item">${renderCheck(checks.pendiente)} Pendiente</div>
+                        <div class="check-item">${renderCheck(checks.completo)} Completo</div>
+                        <p><span class="label">Daño Reportado:</span> ${danioReportado}</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">4. ACCESORIOS Y ESTADO</div>
+                    <div class="content">
+                        <div><span class="label">Accesorios (SI/NO):</span> ${checks.accesorios ? 'SI' : 'NO'} - ${accesoriosDesc}</div>
+                        <div style="margin-top:5px;">
+                            ${renderCheck(checks.nuevo)} Nuevo | ${renderCheck(checks.usado)} Usado | ${renderCheck(checks.excepcion)} Exc. Garantía
+                        </div>
+                        <p><span class="label">Detalles físicos:</span> ${inspeccionEstadoDesc}</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">5. PUNTOS TÉCNICOS Y EVIDENCIA</div>
+                    <div class="content">
+                        <div class="row">
+                            <div class="field">${renderCheck(checks.nivelacion)} Nivelación</div>
+                            <div class="field">${renderCheck(checks.presionAgua)} Presión Agua</div>
+                        </div>
+                        <div class="row">
+                            <div class="field">${renderCheck(checks.modeloSerieCheck)} Modelo/Serie</div>
+                            <div class="field">${renderCheck(checks.conexionesElectricas)} Conex. Eléctricas</div>
+                        </div>
+                        <div class="photo-container">
+                            <div class="photo-box"><img src="${imgModelo}"/><p>Modelo/Serie</p></div>
+                            <div class="photo-box"><img src="${imgFactura}"/><p>Factura</p></div>
+                            <div class="photo-box"><img src="${imgFinal}"/><p>Final</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="firma">
+                    <p><span class="label">Recomendaciones:</span> ${recomendaciones}</p>
+                    <img src="${firma}"/>
+                    <p>Firma del Cliente: ${nombreCliente}</p>
+                </div>
+            </body>
+        </html>`;
 
         try {
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
@@ -122,24 +212,22 @@ export default function CrearReporte() {
                     tipo: danioReportado,
                     pdf_base64: base64,
                     serv_id: servicio.SERV_ID,
-                    serv_num: servicio.SERV_NUM  // ← NUEVO: Agregar el número de servicio
+                    serv_num: servicio.SERV_NUM
                 })
             });
 
             const res = await response.json();
             if (res.success) {
-                Alert.alert("Éxito", "Reporte generado correctamente.", [{
-                    text: "OK",
-                    onPress: () => router.push("/tecnico/home")
-                }]);
+                Alert.alert("Éxito", "Reporte enviado correctamente.");
                 await Sharing.shareAsync(uri);
+                router.push("/tecnico/home");
             } else {
                 Alert.alert("Error", res.message || "Error al crear reporte");
             }
         } catch (e) {
             Alert.alert("Error", "Problema al sincronizar: " + e.message);
         }
-        finally {
+         finally {
             setLoading(false);
         }
     };
@@ -157,7 +245,7 @@ export default function CrearReporte() {
             </View>
 
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-
+                
                 {/* 1. DATOS CLIENTE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
@@ -179,7 +267,7 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} />
                 </View>
 
-                {/* 3. RECEPCIÓN Y DIAGNÓSTICO (MANTENIENDO LO ANTERIOR) */}
+                {/* 3. RECEPCIÓN Y DIAGNÓSTICO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>3. Recepción y Diagnóstico</Text>
                     <View style={styles.row}>
@@ -193,7 +281,7 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputArea} multiline placeholder="DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
-                {/* 4. ACCESORIOS (LO QUE PEDISTE) */}
+                {/* 4. ACCESORIOS */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. Accesorios</Text>
                     <View style={styles.row}>
@@ -209,7 +297,7 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputAcc} placeholder="Descripción de accesorios..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                 </View>
 
-                {/* 5. INSPECCIÓN ESTADO (MANTENIENDO TEXTO) */}
+                {/* 5. INSPECCIÓN ESTADO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>5. Inspección de Estado</Text>
                     <View style={styles.row}>
@@ -217,10 +305,10 @@ export default function CrearReporte() {
                         <CheckItem label="Equipo Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
                     </View>
                     <CheckItem label="Exc. Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
-                    <TextInput style={styles.inputArea} multiline placeholder="Detalles físicos del equipo..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Detalles físicos..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
                 </View>
 
-                {/* 6. PUNTOS TOMA EN CUENTA (RESTORED) */}
+                {/* 6. PUNTOS A TOMAR EN CUENTA */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>6. Puntos a tomar en cuenta</Text>
                     <View style={styles.row}>
@@ -237,7 +325,7 @@ export default function CrearReporte() {
                     </View>
                 </View>
 
-                {/* 7. EVIDENCIA MULTIMEDIA */}
+                {/* 7. EVIDENCIA FOTOGRÁFICA */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>7. Evidencia Fotográfica</Text>
                     <ItemFoto label="1. Foto Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
