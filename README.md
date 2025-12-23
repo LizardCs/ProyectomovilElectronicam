@@ -1,4 +1,4 @@
-# 🛠️ PROYECTO MOVIL PARA ELECTRONICA MANTILLA
+# 🛠️ PROYECTOMOVILELECTRONICAM
 
 Bienvenido al **Sistema de Gestión Móvil de Electrónica Mantilla**.  
 Este proyecto es una **aplicación universal desarrollada con Expo y React Native**, diseñada para **digitalizar el flujo de trabajo** entre **administradores** y **técnicos de servicio**.
@@ -9,31 +9,39 @@ Este proyecto es una **aplicación universal desarrollada con Expo y React Nativ
 
 Sigue estos pasos para configurar el entorno de desarrollo local.
 
-### 📦 Instalación de Dependencias
+---
 
-Asegúrate de tener **Node.js** instalado y ejecuta el siguiente comando en la raíz del proyecto:
+## 📦 Instalación de Dependencias
+
+Asegúrate de tener **Node.js** instalado y ejecuta:
 
 ```bash
 npm install
-
-##  ▶️ Iniciar la Aplicación
-Ejecuta:
-
-npx expo start
+```
 
 ---
-En la terminal se mostrará un código QR. Puedes abrir la app en:
 
-- 📱 Dispositivo físico: Escanea el QR con la aplicacion de Expo Go
+## ▶️ Iniciar la Aplicación
 
-- 🤖 Emulador Android: Presiona a
+Ejecuta:
 
-- 🍎 Simulador iOS: Presiona i
+```bash
+npx expo start
+```
 
-📂 Estructura del Proyecto
-Este proyecto utiliza File-based routing a través de expo-router.
+En la terminal se mostrará un **código QR**. Puedes abrir la app en:
 
+- 📱 **Dispositivo físico**: Escanea el QR con la aplicación **Expo Go**
+- 🤖 **Emulador Android**: Presiona `a`
+- 🍎 **Simulador iOS**: Presiona `i`
 
+---
+
+## 📂 Estructura del Proyecto
+
+Este proyecto utiliza **File-based routing** a través de **expo-router**.
+
+```plaintext
 PROYECTOMOVILELECTRONICAM/
 │
 ├── app/                        # Rutas y Pantallas
@@ -52,43 +60,59 @@ PROYECTOMOVILELECTRONICAM/
 │   ├── api.js                  # Conexión con servidor PHP
 │   └── mockUsers.js            # Datos de prueba
 └── assets/                     # Imágenes y recursos institucionales
+```
 
+---
 
-##  ✨ Funcionalidades Principales
+## ✨ Funcionalidades Principales
+
 - Gestión de Acceso
 - Login Inteligente
-- Redirección automática según rol:
+- Redirección automática según rol
 - Sesión Persistente
 
-##  👔 Perfil Administrador
+---
+
+## 👔 Perfil Administrador
+
 - Dashboard con estadísticas en tiempo real
-- Visualización de servicios Pendientes y Completados
+- Visualización de servicios **Pendientes** y **Completados**
 - Gestión de usuarios
 - Creación y asignación dinámica de servicios técnicos
 
-##  🔧 Perfil Técnico
+---
+
+## 🔧 Perfil Técnico
+
 - Listado de trabajos asignados
 - Buscador por número de servicio
 - Estados visuales claros:
-   -🟢 Completado
-
-   - 🟠 Pendiente
-
+  - 🟢 Completado
+  - 🟠 Pendiente
 - Navegación a detalles del servicio
-- Generación automatica de reportes técnicos 
+- Generación automática de reportes técnicos
 
-##  🛠️ Tecnologías Utilizadas.
+---
 
-- Framework: Expo (React Native)
+## 🛠️ Tecnologías Utilizadas
 
-- Navegación: expo-router
+- **Framework:** Expo (React Native)
+- **Navegación:** expo-router
+- **Almacenamiento:** @react-native-async-storage/async-storage
+- **Iconos:** Ionicons (@expo/vector-icons)
+- **Animaciones:** API nativa Animated
 
-- Almacenamiento: @react-native-async-storage/async-storage
+---
 
-- Iconos: Ionicons (@expo/vector-icons)
+## 📖 Aprender Más
 
-- Animaciones: API nativa Animated
+- Documentación oficial de Expo
+- Tutoriales paso a paso de Expo
+- Repositorio oficial de Expo en GitHub
 
+---
 
-© 2025 Johan Curicho to Electronica Mantilla
-- Sistema de Gestión Técnica y Rerpotes automaticos.
+## © 2025
+
+**Johan Curicho** para **Electrónica Mantilla**  
+Sistema de Gestión Técnica y Reportes Automáticos
