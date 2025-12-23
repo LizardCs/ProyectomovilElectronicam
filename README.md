@@ -1,4 +1,4 @@
-# 🛠️ PROYECTOMOVILELECTRONICAM
+# 🛠️ PROYECTO MOVIL PARA ELECTRONICA MANTILLA
 
 Bienvenido al **Sistema de Gestión Móvil de Electrónica Mantilla**.  
 Este proyecto es una **aplicación universal desarrollada con Expo y React Native**, diseñada para **digitalizar el flujo de trabajo** entre **administradores** y **técnicos de servicio**.
