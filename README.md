@@ -9,22 +9,17 @@ Este proyecto es una **aplicación universal desarrollada con Expo y React Nativ
 
 Sigue estos pasos para configurar el entorno de desarrollo local.
 
----
+### 📦 Instalación de Dependencias
 
-## 📦 Instalación de Dependencias
-
-Asegúrate de tener **Node.js** instalado y ejecuta:
+Asegúrate de tener **Node.js** instalado y ejecuta el siguiente comando en la raíz del proyecto:
 
 ```bash
 npm install
-```bash
 
 ##  ▶️ Iniciar la Aplicación
 Ejecuta:
 
-```bash
 npx expo start
-
 
 ---
 En la terminal se mostrará un código QR. Puedes abrir la app en:
