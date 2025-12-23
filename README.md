@@ -46,10 +46,6 @@ PROYECTOMOVILELECTRONICAM/
 │
 ├── app/                        # Rutas y Pantallas
 │   ├── index.js                # Login Principal
-│   ├── (main)/                 # Flujo de trabajo técnico
-│   │   ├── home.js             # Dashboard general
-│   │   ├── detalle/[id].js     # Ver detalles del servicio
-│   │   └── reporte/[id].js     # Generar reportes técnicos
 │   ├── admin/
 │   │   └── home.js             # Panel de gestión de Administrador
 │   └── tecnico/
