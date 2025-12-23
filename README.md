@@ -17,13 +17,15 @@ Asegúrate de tener **Node.js** instalado y ejecuta:
 
 ```bash
 npm install
-
+```bash
 
 ##  ▶️ Iniciar la Aplicación
 Ejecuta:
 
 ```bash
 npx expo start
+```bash
+
 En la terminal se mostrará un código QR. Puedes abrir la app en:
 
 - 📱 Dispositivo físico: Escanea el QR con la aplicacion de Expo Go
