@@ -5,7 +5,7 @@ Este proyecto es una **aplicación universal desarrollada con Expo y React Nativ
 
 ---
 
-## 🚀 Empecemos (Get Started)
+## 🚀 Empecemos !
 
 Sigue estos pasos para configurar el entorno de desarrollo local.
 
