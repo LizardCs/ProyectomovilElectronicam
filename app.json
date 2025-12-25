@@ -13,7 +13,6 @@
     },
     "android": {
       "package": "com.johanc05.ProyectomovilElectronicam",
-      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
@@ -41,7 +40,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
