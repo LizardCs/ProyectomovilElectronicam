@@ -21,7 +21,7 @@ export default function HomeTecnico() {
   const [user, setUser] = useState(null);
   const [servicios, setServicios] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Filtros y Búsqueda
   const [filtroActivo, setFiltroActivo] = useState("total");
   const [busqueda, setBusqueda] = useState("");
@@ -36,8 +36,8 @@ export default function HomeTecnico() {
   useFocusEffect(
     useCallback(() => {
       if (user) {
-          const ced = user.cedula || user.MOV_CED;
-          fetchServicios(ced);
+        const ced = user.cedula || user.MOV_CED;
+        fetchServicios(ced);
       }
     }, [user])
   );
@@ -52,8 +52,8 @@ export default function HomeTecnico() {
       } else {
         router.replace('/');
       }
-    } catch (error) { 
-        console.error('Error cargando usuario:', error); 
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
     }
   };
 
@@ -65,10 +65,10 @@ export default function HomeTecnico() {
       const response = await fetch(`http://192.168.110.167/api-expo/obtener-servicios-tecnico.php?cedula=${ced}`);
       const data = await response.json();
       if (data.success) {
-          setServicios(data.servicios);
+        setServicios(data.servicios);
       }
-    } catch (error) { 
-        console.error("Error obteniendo servicios:", error); 
+    } catch (error) {
+      console.error("Error obteniendo servicios:", error);
     }
   };
 
@@ -81,14 +81,14 @@ export default function HomeTecnico() {
 
   const handleLogout = async () => {
     Alert.alert("Cerrar Sesión", "¿Desea salir del sistema?", [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sí, salir", 
-          onPress: async () => {
-            await AsyncStorage.removeItem('@user_data');
-            router.replace('/');
-          } 
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Sí, salir",
+        onPress: async () => {
+          await AsyncStorage.removeItem('@user_data');
+          router.replace('/');
         }
+      }
     ]);
   };
 
@@ -102,11 +102,11 @@ export default function HomeTecnico() {
 
   const obtenerDatosFiltrados = () => {
     return servicios.filter(s => {
-      const cumpleFiltro = 
+      const cumpleFiltro =
         filtroActivo === "total" ? true :
-        filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
-        filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
-      
+          filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
+            filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
+
       const cumpleBusqueda = s.SERV_NUM.toString().toLowerCase().includes(busqueda.toLowerCase());
       return cumpleFiltro && cumpleBusqueda;
     });
@@ -120,8 +120,9 @@ export default function HomeTecnico() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.welcome}>Mis Trabajos</Text>
-            <Text style={styles.userInfo}>{user?.nombre_completo || "Técnico"}</Text>
+            <Text style={styles.welcome}>Servicios Técnicos</Text>
+            <Text style={styles.userInfo}> Bienvenido {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
+            </Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={22} color="#FFF" />
@@ -131,64 +132,64 @@ export default function HomeTecnico() {
 
       {/* Stats / Filtros */}
       <View style={styles.statsContainer}>
-        <TouchableOpacity 
-          style={[styles.statCard, filtroActivo === "total" && styles.statCardActive]} 
+        <TouchableOpacity
+          style={[styles.statCard, filtroActivo === "total" && styles.statCardActive]}
           onPress={() => setFiltroActivo("total")}
         >
           <Ionicons name="list" size={20} color={filtroActivo === "total" ? "#FFF" : "#007AFF"} />
-          <Text style={[styles.statNumber, filtroActivo === "total" && {color:'#FFF'}]}>{servicios.length}</Text>
-          <Text style={[styles.statLabel, filtroActivo === "total" && {color:'#FFF'}]}>Total</Text>
+          <Text style={[styles.statNumber, filtroActivo === "total" && { color: '#FFF' }]}>{servicios.length}</Text>
+          <Text style={[styles.statLabel, filtroActivo === "total" && { color: '#FFF' }]}>Total</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.statCard, filtroActivo === "pendientes" && styles.statCardActive]} 
+        <TouchableOpacity
+          style={[styles.statCard, filtroActivo === "pendientes" && styles.statCardActive]}
           onPress={() => setFiltroActivo("pendientes")}
         >
           <Ionicons name="time" size={20} color={filtroActivo === "pendientes" ? "#FFF" : "#FF9500"} />
-          <Text style={[styles.statNumber, filtroActivo === "pendientes" && {color:'#FFF'}]}>
+          <Text style={[styles.statNumber, filtroActivo === "pendientes" && { color: '#FFF' }]}>
             {servicios.filter(s => parseInt(s.SERV_EST) === 0).length}
           </Text>
-          <Text style={[styles.statLabel, filtroActivo === "pendientes" && {color:'#FFF'}]}>Pendientes</Text>
+          <Text style={[styles.statLabel, filtroActivo === "pendientes" && { color: '#FFF' }]}>Pendientes</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.statCard, filtroActivo === "listos" && styles.statCardActive]} 
+        <TouchableOpacity
+          style={[styles.statCard, filtroActivo === "listos" && styles.statCardActive]}
           onPress={() => setFiltroActivo("listos")}
         >
           <Ionicons name="checkmark-done" size={20} color={filtroActivo === "listos" ? "#FFF" : "#34C759"} />
-          <Text style={[styles.statNumber, filtroActivo === "listos" && {color:'#FFF'}]}>
+          <Text style={[styles.statNumber, filtroActivo === "listos" && { color: '#FFF' }]}>
             {servicios.filter(s => parseInt(s.SERV_EST) === 1).length}
           </Text>
-          <Text style={[styles.statLabel, filtroActivo === "listos" && {color:'#FFF'}]}>Listos</Text>
+          <Text style={[styles.statLabel, filtroActivo === "listos" && { color: '#FFF' }]}>Listos</Text>
         </TouchableOpacity>
       </View>
 
       {/* Buscador */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#999" style={{marginLeft: 15}} />
-        <TextInput 
-          style={styles.searchInput} 
-          placeholder="Buscar por número..." 
+        <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por número..."
           value={busqueda}
           onChangeText={setBusqueda}
           keyboardType="numeric"
         />
         {busqueda !== "" && (
-            <TouchableOpacity onPress={() => setBusqueda("")}>
-                <Ionicons name="close-circle" size={20} color="#CCC" style={{marginRight: 15}} />
-            </TouchableOpacity>
+          <TouchableOpacity onPress={() => setBusqueda("")}>
+            <Ionicons name="close-circle" size={20} color="#CCC" style={{ marginRight: 15 }} />
+          </TouchableOpacity>
         )}
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.contentContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
           {obtenerDatosFiltrados().length === 0 ? (
-            <View style={{alignItems: 'center', marginTop: 40}}>
-                <Ionicons name="construct-outline" size={50} color="#CCC" />
-                <Text style={styles.emptyText}>No hay servicios en esta lista.</Text>
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Ionicons name="construct-outline" size={50} color="#CCC" />
+              <Text style={styles.emptyText}>No hay servicios en esta lista.</Text>
             </View>
           ) : (
             obtenerDatosFiltrados().map((s) => (
@@ -207,9 +208,9 @@ export default function HomeTecnico() {
                     <Ionicons name="person-outline" size={14} color="#666" />
                     <Text style={styles.assignerName}>De: {s.SERV_NOM_ENV}</Text>
                   </View>
-                  
+
                   {/* --- CORRECCIÓN DE ONPRESS AQUÍ --- */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.verBtn}
                     onPress={() => handleVerDetalles(s)}
                   >
@@ -220,7 +221,7 @@ export default function HomeTecnico() {
               </View>
             ))
           )}
-          <View style={{height: 100}} />
+          <View style={{ height: 100 }} />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
