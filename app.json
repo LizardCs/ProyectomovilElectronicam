@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ProyectomovilElectronicam",
+    "name": "E.M.App",
     "slug": "ProyectomovilElectronicam",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,14 +12,16 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.johanc05.ProyectomovilElectronicam",
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      }
     },
     "web": {
       "output": "static",
@@ -38,11 +40,18 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "57e76219-376d-45d3-b0cc-13b92b61b1c1"
+      }
     }
   }
 }
