@@ -62,8 +62,7 @@ export default function HomeTecnico() {
     if (!ced) return;
 
     try {
-      const response = await fetch(`http://192.168.110.167/api-expo/obtener-servicios-tecnico.php?cedula=${ced}`);
-      const data = await response.json();
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios-tecnico.php?cedula=${ced}`);
       if (data.success) {
           setServicios(data.servicios);
       }

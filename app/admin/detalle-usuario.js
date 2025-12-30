@@ -43,7 +43,7 @@ export default function DetalleUsuario() {
 
         setLoading(true);
         try {
-            const response = await fetch('http://192.168.110.167/api-expo/editar-usuario.php', {
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/editar-usuario.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -77,7 +77,7 @@ export default function DetalleUsuario() {
 
     const confirmEliminar = async () => {
         try {
-            const response = await fetch('http://192.168.110.167/api-expo/eliminar-usuario.php', {
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/eliminar-usuario.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: u.id, origen: u.origen })

@@ -87,7 +87,7 @@ export default function HomeAdmin() {
 
   const fetchServicios = async () => {
     try {
-      const response = await fetch('http://192.168.110.167/api-expo/obtener-servicios.php');
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios.php`);
       const data = await response.json();
       if (data.success) setServicios(data.servicios);
     } catch (error) {
@@ -97,7 +97,7 @@ export default function HomeAdmin() {
 
   const fetchUsuarios = async () => {
     try {
-      const response = await fetch('http://192.168.110.167/api-expo/obtener-usuarios.php');
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-usuarios.php`);
       const data = await response.json();
       if (data.success) setUsuarios(data.usuarios);
     } catch (error) {

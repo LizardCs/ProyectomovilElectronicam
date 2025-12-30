@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-    ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
 
 export default function CrearUsuario() {
@@ -25,8 +25,8 @@ export default function CrearUsuario() {
     setLoading(true);
     // Endpoint dinámico según el tipo seleccionado
     const url = tipo === 'movil' 
-      ? 'http://192.168.110.167/api-expo/crear-usuario-movil.php'
-      : 'http://192.168.110.167/api-expo/crear-usuario-web.php';
+      ? `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-movil.php`
+      : `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-web.php`;
 
     try {
       const response = await fetch(url, {

@@ -203,7 +203,7 @@ export default function CrearReporte() {
         try {
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
 
-            const response = await fetch('http://192.168.110.167/api-expo/crear-reporte.php', {
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/crear-reporte.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

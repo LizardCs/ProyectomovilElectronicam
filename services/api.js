@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // CAMBIA ESTA IP POR LA TUYA
-const API_URL = 'http://192.168.110.167/api-expo';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const AuthService = {
   async login(credentials) {

@@ -29,7 +29,7 @@ export default function Login() {
     // Verificar si hay usuario guardado
     checkExistingSession();
     // Mostrar info de la API
-    setApiInfo("API: http://192.168.110.167/api-expo");
+    setApiInfo(`API: ${process.env.EXPO_PUBLIC_API_URL}`);
   }, []);
 
   const checkExistingSession = async () => {
@@ -95,7 +95,7 @@ export default function Login() {
         "• XAMPP Apache y MySQL estén ejecutándose\n" +
         "• Tu IP local sea correcta\n" +
         "• Ambos dispositivos estén en la misma red WiFi\n\n" +
-        "Para Android Emulador usa: http://10.0.2.2/api-expo",
+        `Servidor actual: ${process.env.EXPO_PUBLIC_API_URL}`,
         [{ text: "Entendido" }]
       );
     } finally {
@@ -116,7 +116,7 @@ export default function Login() {
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://192.168.110.167/api-expo/test.php");
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/test.php`);
       const text = await response.text();
       Alert.alert(
         "🔍 Test de conexión",
@@ -127,7 +127,7 @@ export default function Login() {
       Alert.alert(
         "❌ Conexión fallida",
         `No se pudo conectar a la API.\n\n` +
-        `URL probada: http://192.168.110.167/api-expo/test.php\n\n` +
+        `URL probada: ${process.env.EXPO_PUBLIC_API_URL}/test.php\n\n` +
         "Solución:\n" +
         "1. Abre XAMPP y activa Apache\n" +
         "2. Verifica tu IP local con ipconfig\n" +
