@@ -95,7 +95,7 @@ export default function CrearServicio() {
 
     const loadTecnicos = async () => {
         try {
-            const response = await fetch('http://192.168.110.167/api-expo/obtener-tecnicos.php');
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-tecnicos.php`);
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             const data = await response.json();
             if (data.success) {
@@ -164,8 +164,8 @@ export default function CrearServicio() {
         setIsLoading(true);
 
         const url = isEditing 
-            ? 'http://192.168.110.167/api-expo/editar-servicio.php' 
-            : 'http://192.168.110.167/api-expo/crear-servicio.php';
+            ? `${process.env.EXPO_PUBLIC_API_URL}/editar-servicio.php` 
+            : `${process.env.EXPO_PUBLIC_API_URL}/crear-servicio.php`;
 
         try {
             const isWeb = Platform.OS === 'web';
@@ -365,10 +365,8 @@ export default function CrearServicio() {
                         </View>
                     </View>
 
-                    {/* ======================================================= */}
                     {/* RESUMEN DE LA ASIGNACIÓN (RESTAURADO)                   */}
-                    {/* ======================================================= */}
-                    <View style={styles.summaryCard}>
+                   <View style={styles.summaryCard}>
                         <View style={styles.summaryHeader}>
                             <Ionicons name="information-circle" size={22} color="#FF9500" />
                             <Text style={styles.summaryTitle}>Resumen de la Asignación</Text>
@@ -395,7 +393,6 @@ export default function CrearServicio() {
                             ) : null}
                         </View>
                     </View>
-                    {/* ======================================================= */}
 
                 </View>
 
