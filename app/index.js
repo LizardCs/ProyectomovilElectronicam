@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -14,43 +16,39 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
+import Svg, { Path } from 'react-native-svg';
 
 // Importar el servicio de API
 import { AuthService } from "../services/api";
+
+const { width } = Dimensions.get('window');
 
 export default function Login() {
   const router = useRouter();
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [apiInfo, setApiInfo] = useState("");
 
   useEffect(() => {
-    // Verificar si hay usuario guardado
     checkExistingSession();
     // Mostrar info de la API
-    setApiInfo(`API: ${process.env.EXPO_PUBLIC_API_URL}`);
+    setApiInfo("API: http://192.168.110.167/api-expo");
   }, []);
 
   const checkExistingSession = async () => {
     try {
       const user = await AuthService.getStoredUser();
       if (user) {
-        // Si hay usuario guardado, redirigir según rol
-        if (user.rol === 1) {
-          router.replace("/admin/home");
-        } else {
-          router.replace("/tecnico/home");
-        }
+        user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
       }
     } catch (error) {
-      console.log('No hay sesión previa');
+      console.log('Sin sesión previa');
     }
   };
 
   const handleLogin = async () => {
     if (!usuario || !clave) {
-      Alert.alert("Error", "Por favor completa todos los campos");
+      Alert.alert("Campos incompletos", "Por favor ingresa tus credenciales.");
       return;
     }
 
@@ -58,33 +56,15 @@ export default function Login() {
     Keyboard.dismiss();
 
     try {
-      console.log("🔐 Intentando login con:", { usuario, clave });
-      
       const response = await AuthService.login({ 
         usuario: usuario.trim(), 
         clave: clave.trim() 
       });
       
-      console.log("📥 Respuesta del servidor:", response);
-      
       if (response.success && response.user) {
-        // Login exitoso
-        console.log("✅ Usuario autenticado:", response.user);
-        
-        // Redirigir según el rol (1=admin, 0=tecnico)
-        if (response.user.rol === 1) {
-          router.replace("/admin/home");
-        } else {
-          router.replace("/tecnico/home");
-        }
-        
+        response.user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
       } else {
-        // Login fallido
-        Alert.alert(
-          "❌ Error de autenticación",
-          response.message || "Credenciales incorrectas",
-          [{ text: "Intentar nuevamente" }]
-        );
+        Alert.alert("Acceso Denegado", response.message || "Usuario o contraseña incorrectos.");
       }
     } catch (error) {
       console.error("❌ Error completo en login:", error);
@@ -95,7 +75,7 @@ export default function Login() {
         "• XAMPP Apache y MySQL estén ejecutándose\n" +
         "• Tu IP local sea correcta\n" +
         "• Ambos dispositivos estén en la misma red WiFi\n\n" +
-        `Servidor actual: ${process.env.EXPO_PUBLIC_API_URL}`,
+        "Para Android Emulador usa: http://10.0.2.2/api-expo",
         [{ text: "Entendido" }]
       );
     } finally {
@@ -116,7 +96,7 @@ export default function Login() {
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/test.php`);
+      const response = await fetch("http://192.168.110.167/api-expo/test.php");
       const text = await response.text();
       Alert.alert(
         "🔍 Test de conexión",
@@ -127,7 +107,7 @@ export default function Login() {
       Alert.alert(
         "❌ Conexión fallida",
         `No se pudo conectar a la API.\n\n` +
-        `URL probada: ${process.env.EXPO_PUBLIC_API_URL}/test.php\n\n` +
+        `URL probada: http://192.168.110.167/api-expo/test.php\n\n` +
         "Solución:\n" +
         "1. Abre XAMPP y activa Apache\n" +
         "2. Verifica tu IP local con ipconfig\n" +
@@ -141,141 +121,96 @@ export default function Login() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView 
+      <LinearGradient 
+        colors={['#0f172a', '#1e3a8a', '#1e40af']} 
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Header con logo */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>EM</Text>
-            </View>
-            <View style={styles.logoTextContainer}>
-              <Text style={styles.institutionName}>Electrónica</Text>
-              <Text style={styles.institutionSubname}>Mantilla ⭐</Text>
-            </View>
-          </View>
-          <Text style={styles.welcomeText}>
-            Sistema de gestión técnica
-          </Text>
-          
-          {/* Botón para probar conexión */}
-          <TouchableOpacity 
-            onPress={handleTestConnection}
-            style={styles.testButton}
-            disabled={isLoading}
-          >
-            <Ionicons name="wifi-outline" size={16} color="#88BBDC" />
-            <Text style={styles.testButtonText}>Probar conexión API</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.apiInfo}>{apiInfo}</Text>
+        {/* LÍNEA CURVA DECORATIVA */}
+        <View style={StyleSheet.absoluteFill}>
+          <Svg height="100%" width="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <Path 
+              d="M0,40 C30,35 70,10 100,0" 
+              stroke="#fde68a" 
+              strokeWidth="0.5" 
+              fill="none" 
+              opacity="0.2"
+            />
+          </Svg>
         </View>
 
-        {/* Formulario de login */}
-        <View style={styles.formContainer}>
-          <View style={styles.formHeader}>
-            <Text style={styles.loginTitle}>Iniciar Sesión</Text>
-            <Text style={styles.loginSubtitle}>
-              Ingresa tus credenciales
-            </Text>
-          </View>
-
-          {/* Campo de usuario */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Usuario</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons 
-                name="person-outline" 
-                size={22} 
-                color="#0A6CC9" 
-                style={styles.inputIcon}
-              />
-              <TextInput
-                placeholder="Ej: admin@mantilla.com"
-                placeholderTextColor="#88BBDC"
-                value={usuario}
-                onChangeText={setUsuario}
-                style={styles.input}
-                autoCapitalize="none"
-                autoComplete="username"
-                returnKeyType="next"
-              />
-            </View>
-          </View>
-
-          {/* Campo de contraseña */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Contraseña</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons 
-                name="lock-closed-outline" 
-                size={22} 
-                color="#0A6CC9" 
-                style={styles.inputIcon}
-              />
-              <TextInput
-                placeholder="••••••••"
-                placeholderTextColor="#88BBDC"
-                secureTextEntry
-                value={clave}
-                onChangeText={setClave}
-                style={styles.input}
-                autoComplete="password"
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-            </View>
-          </View>
-
-          {/* Botón de login */}
-          <TouchableOpacity 
-            onPress={handleLogin} 
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            disabled={isLoading}
-            activeOpacity={0.9}
-          >
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#000000" />
-                <Text style={styles.buttonText}>Conectando...</Text>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.innerContainer}>
+            
+            {/* CABECERA: TEXTO UNIFICADO SIN LOGO */}
+            <View style={styles.header}>
+              <View style={styles.brandContainer}>
+                <Text style={styles.brandTitle}>ELECTRÓNICA</Text>
+                <Text style={styles.brandName}>MANTILLA</Text>
+                <View style={styles.brandDivider} />
               </View>
-            ) : (
-              <>
-                <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                <Ionicons name="arrow-forward" size={22} color="#000000" />
-              </>
-            )}
-          </TouchableOpacity>
+            </View>
 
-          {/* Enlace para recuperar contraseña */}
-          <TouchableOpacity 
-            onPress={handleForgotPassword} 
-            style={styles.forgotButton}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-            <Ionicons name="help-circle-outline" size={18} color="#0A6CC9" />
-          </TouchableOpacity>
+            {/* FORMULARIO */}
+            <View style={styles.formCard}>
+              <Text style={styles.loginTitle}>Gestión de Servicios</Text>
+              <Text style={styles.loginSubtitle}>Bienvenido</Text>
 
-          {/* Información de credenciales */}
-          <View style={styles.demoCredentials}>
-            <Text style={styles.demoTitle}>Datos de prueba en BD:</Text>
-            <Text style={styles.demoText}>• Usuario: admin</Text>
-            <Text style={styles.demoText}>• Contraseña: password</Text>
-            <Text style={styles.demoText}>• MOV_ROL: 1 (Admin) / 0 (Técnico)</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="person-outline" size={20} color="#1e40af" style={styles.icon} />
+                <TextInput
+                  placeholder="Usuario"
+                  placeholderTextColor="#94a3b8"
+                  value={usuario}
+                  onChangeText={setUsuario}
+                  style={styles.input}
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color="#1e40af" style={styles.icon} />
+                <TextInput
+                  placeholder="Contraseña"
+                  placeholderTextColor="#94a3b8"
+                  secureTextEntry
+                  value={clave}
+                  onChangeText={setClave}
+                  style={styles.input}
+                />
+              </View>
+
+              <TouchableOpacity 
+                onPress={handleLogin} 
+                style={[styles.button, isLoading && styles.buttonDisabled]}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#1e3a8a" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>INICIAR SESIÓN</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#1e3a8a" />
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => Alert.alert("Soporte", "Contacte al administrador para restablecer su clave.")}>
+                <Text style={styles.forgotText}>¿Olvidó sus credenciales?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* FOOTER */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>© 2025 ELECTRÓNICA MANTILLA</Text>
+              <Text style={styles.footerSub}>SISTEMA DE GESTIÓN CORPORATIVO</Text>
+            </View>
+
           </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2024 Electrónica Mantilla. Conectado a XAMPP
-          </Text>
-          <Text style={styles.footerVersion}>v2.1.0</Text>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </TouchableWithoutFeedback>
   );
 }
@@ -283,221 +218,125 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#002A4D",
-    justifyContent: "space-between",
   },
-  header: {
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    backgroundColor: "#001C38",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#FFD700",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#002A4D",
-  },
-  logoTextContainer: {
-    flexDirection: "column",
-  },
-  institutionName: {
-    fontSize: 22,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  institutionSubname: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#0A6CC9",
-    marginTop: -2,
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: "#88BBDC",
-    textAlign: "center",
-    marginTop: 5,
-    marginBottom: 10,
-  },
-  testButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(10, 108, 201, 0.2)",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 5,
-    marginBottom: 10,
-  },
-  testButtonText: {
-    color: "#88BBDC",
-    fontSize: 14,
-    fontWeight: "500",
-    marginLeft: 8,
-  },
-  apiInfo: {
-    fontSize: 11,
-    color: "#0A6CC9",
-    textAlign: "center",
-    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
-  },
-  formContainer: {
+  innerContainer: {
     flex: 1,
     paddingHorizontal: 30,
-    paddingTop: 40,
+    justifyContent: "center",
   },
-  formHeader: {
-    marginBottom: 35,
+  header: {
     alignItems: "center",
+    marginBottom: 50, // Espacio aumentado al no haber logo
+  },
+  brandContainer: {
+    alignItems: "center",
+  },
+  brandTitle: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "300",
+    letterSpacing: 8, // Espaciado elegante
+    marginBottom: 5,
+  },
+  brandName: {
+    color: "#fde68a",
+    fontSize: 38,
+    fontWeight: "900", // Más grueso para impacto
+    letterSpacing: 2,
+    textTransform: "uppercase", // Unificado a mayúsculas
+  },
+  brandDivider: {
+    width: 40,
+    height: 3,
+    backgroundColor: "#fde68a",
+    marginTop: 10,
+    borderRadius: 2,
+  },
+  formCard: {
+    backgroundColor: "white",
+    borderRadius: 30,
+    padding: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   loginTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 8,
-  },
-  loginSubtitle: {
-    fontSize: 16,
-    color: "#88BBDC",
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#1e3a8a",
     textAlign: "center",
   },
-  inputGroup: {
-    marginBottom: 22,
-  },
-  inputLabel: {
-    fontSize: 16,
+  loginSubtitle: {
+    fontSize: 11,
+    color: "#64748b",
+    textAlign: "center",
+    marginBottom: 25,
     fontWeight: "600",
-    color: "#FFFFFF",
-    marginBottom: 8,
-    marginLeft: 5,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  inputWrapper: {
+  inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1.5,
-    borderColor: "rgba(10, 108, 201, 0.3)",
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: Platform.OS === "ios" ? 16 : 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-  inputIcon: {
-    marginRight: 12,
+  icon: {
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "500",
+    paddingVertical: 14,
+    color: "#1e293b",
+    fontSize: 15,
   },
   button: {
     flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#fde68a",
+    borderRadius: 12,
+    paddingVertical: 16,
     justifyContent: "center",
-    backgroundColor: "#FFD700",
-    borderRadius: 14,
-    paddingVertical: 18,
-    marginTop: 30,
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    alignItems: "center",
+    marginTop: 10,
+    gap: 10,
   },
   buttonDisabled: {
-    opacity: 0.8,
-  },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    opacity: 0.6,
   },
   buttonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000000",
-    marginRight: 10,
-  },
-  forgotButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-    paddingVertical: 10,
+    color: "#1e3a8a",
+    fontSize: 14,
+    fontWeight: "800",
   },
   forgotText: {
-    fontSize: 16,
-    color: "#0A6CC9",
-    marginRight: 8,
-    fontWeight: "500",
-  },
-  demoCredentials: {
-    backgroundColor: "rgba(10, 108, 201, 0.1)",
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 40,
-    borderWidth: 1,
-    borderColor: "rgba(10, 108, 201, 0.2)",
-  },
-  demoTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#FFD700",
-    marginBottom: 8,
-  },
-  demoText: {
-    fontSize: 13,
-    color: "#88BBDC",
-    marginBottom: 4,
+    textAlign: "center",
+    color: "#1e40af",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 20,
   },
   footer: {
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    backgroundColor: "#001C38",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
     alignItems: "center",
   },
   footerText: {
-    fontSize: 12,
-    color: "#88BBDC",
-    textAlign: "center",
-    marginBottom: 5,
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 10,
+    fontWeight: "bold",
+    letterSpacing: 1,
   },
-  footerVersion: {
-    fontSize: 11,
-    color: "#0A6CC9",
-    fontWeight: "500",
+  footerSub: {
+    color: "rgba(255,255,255,0.3)",
+    fontSize: 8,
+    marginTop: 2,
   },
 });

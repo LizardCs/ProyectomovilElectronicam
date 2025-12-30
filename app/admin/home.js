@@ -126,6 +126,8 @@ export default function HomeAdmin() {
 
   // --- LÓGICA DE FILTRADO DINÁMICO ---
   const obtenerDatosFiltrados = () => {
+    const query = busqueda.toLowerCase().trim();
+
     if (activeTab === "servicios") {
       return servicios.filter(s => {
         const cumpleFiltro =
@@ -133,15 +135,26 @@ export default function HomeAdmin() {
             filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
               filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
 
-        const cumpleBusqueda = s.SERV_NUM.toString().toLowerCase().includes(busqueda.toLowerCase());
+        const cumpleBusqueda = s.SERV_NUM.toString().toLowerCase().includes(query);
         return cumpleFiltro && cumpleBusqueda;
       });
     } else {
+      // FILTRADO PARA USUARIOS
       return usuarios.filter(u => {
-        if (filtroActivo === "total") return true;
-        if (filtroActivo === "movil") return u.origen === "MOVIL";
-        if (filtroActivo === "web") return u.origen === "WEB";
-        return true;
+        // Primero verificamos el filtro de las tarjetas (Total/Móvil/Web)
+        const cumpleFiltro =
+          filtroActivo === "total" ? true :
+            filtroActivo === "movil" ? u.origen === "MOVIL" :
+              filtroActivo === "web" ? u.origen === "WEB" : true;
+
+        // Luego verificamos la búsqueda por texto
+        const cumpleBusqueda =
+          (u.nombre || "").toLowerCase().includes(query) ||
+          (u.apellido || "").toLowerCase().includes(query) ||
+          (u.cedula || "").toString().includes(query) ||
+          (u.usuario || "").toLowerCase().includes(query);
+
+        return cumpleFiltro && cumpleBusqueda;
       });
     }
   };
@@ -170,8 +183,8 @@ export default function HomeAdmin() {
   };
 
   const getRolInfo = (item) => {
-    if (item.origen === 'WEB') return { texto: "ACCESO WEB", color: "#5856D6" };
-    if (parseInt(item.rol) === 1) return { texto: "ADMIN MÓVIL", color: "#007AFF" };
+    if (item.origen === 'WEB') return { texto: "REPORTES WEB", color: "#5856D6" };
+    if (parseInt(item.rol) === 1) return { texto: "ADMIN", color: "#007AFF" };
     return { texto: "TÉCNICO", color: "#34C759" };
   };
 
@@ -183,9 +196,11 @@ export default function HomeAdmin() {
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.welcome}>Panel de gestion</Text>
+            <Text style={styles.welcome}>Gestion de servicios</Text>
             {user && (
-              <Text style={styles.userInfo}>{user.nombre_completo || user.nombre}</Text>
+              <Text style={styles.userInfo}>
+                Bienvenido {(user.nombre_completo || user.nombre || "").trim().split(" ")[0]}
+              </Text>
             )}
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -268,24 +283,28 @@ export default function HomeAdmin() {
         </TouchableOpacity>
       </View>
 
-      {/* BUSCADOR (Solo aparece en servicios) */}
-      {activeTab === "servicios" && (
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por N° de servicio..."
-            value={busqueda}
-            onChangeText={setBusqueda}
-            keyboardType="numeric"
-          />
-          {busqueda !== "" && (
-            <TouchableOpacity onPress={() => setBusqueda("")}>
-              <Ionicons name="close-circle" size={20} color="#CCC" style={{ marginRight: 15 }} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+      {/* BUSCADOR DINÁMICO */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={
+            activeTab === "servicios"
+              ? "Buscar por N° de servicio..."
+              : "Buscar por nombre, cédula o usuario..."
+          }
+          value={busqueda}
+          onChangeText={setBusqueda}
+          // Si es servicios usamos numérico, si es usuarios usamos default para permitir nombres
+          keyboardType={activeTab === "servicios" ? "numeric" : "default"}
+          autoCapitalize="none"
+        />
+        {busqueda !== "" && (
+          <TouchableOpacity onPress={() => setBusqueda("")}>
+            <Ionicons name="close-circle" size={20} color="#CCC" style={{ marginRight: 15 }} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Content Area */}
       <ScrollView
@@ -304,6 +323,7 @@ export default function HomeAdmin() {
               </View>
             )}
           </View>
+
 
           {obtenerDatosFiltrados().length === 0 ? (
             <View style={styles.emptyContainer}>

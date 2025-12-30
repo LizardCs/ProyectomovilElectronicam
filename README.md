@@ -1,50 +1,114 @@
-# Welcome to your Expo app 👋
+# 🛠️ PROYECTO MOVIL PARA ELECTRONICA MANTILLA
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Bienvenido al **Sistema de Gestión Móvil de Electrónica Mantilla**.  
+Este proyecto es una **aplicación universal desarrollada con Expo y React Native**, diseñada para **digitalizar el flujo de trabajo** entre **administradores** y **técnicos de servicio**.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Empecemos !
 
-   ```bash
-   npm install
-   ```
+Sigue estos pasos para configurar el entorno de desarrollo local.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 📦 Instalación de Dependencias
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Asegúrate de tener **Node.js** instalado y ejecuta:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ▶️ Iniciar la Aplicación
 
-To learn more about developing your project with Expo, look at the following resources:
+Ejecuta:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+En la terminal se mostrará un **código QR**. Puedes abrir la app en:
 
-Join our community of developers creating universal apps.
+- 📱 **Dispositivo físico**: Escanea el QR con la aplicación **Expo Go**
+- 🤖 **Emulador Android**: Presiona `a`
+- 🍎 **Simulador iOS**: Presiona `i`
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 📂 Estructura del Proyecto
+
+Este proyecto utiliza **File-based routing** a través de **expo-router**.
+
+```plaintext
+PROYECTOMOVILELECTRONICAM/
+│
+├── app/                        # Rutas y Pantallas
+│   ├── index.js                # Login Principal
+│   ├── admin/
+│   │   └── home.js             # Panel de gestión de Administrador
+│   └── tecnico/
+│       └── home.js             # Panel de tareas del Técnico
+│
+├── components/                 # Componentes de UI reutilizables
+├── services/                   # Lógica de datos
+│   ├── api.js                  # Conexión con servidor PHP
+│   └── mockUsers.js            # Datos de prueba
+└── assets/                     # Imágenes y recursos institucionales
+```
+
+---
+
+## ✨ Funcionalidades Principales
+
+- Gestión de Acceso
+- Login Inteligente
+- Redirección automática según rol
+- Sesión Persistente
+
+---
+
+## 👔 Perfil Administrador
+
+- Dashboard con estadísticas en tiempo real
+- Visualización de servicios **Pendientes** y **Completados**
+- Gestión de usuarios
+- Creación y asignación dinámica de servicios técnicos
+
+---
+
+## 🔧 Perfil Técnico
+
+- Listado de trabajos asignados
+- Buscador por número de servicio
+- Estados visuales claros:
+  - 🟢 Completado
+  - 🟠 Pendiente
+- Navegación a detalles del servicio
+- Generación automática de reportes técnicos
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Framework:** Expo (React Native)
+- **Navegación:** expo-router
+- **Almacenamiento:** @react-native-async-storage/async-storage
+- **Iconos:** Ionicons (@expo/vector-icons)
+- **Animaciones:** API nativa Animated
+
+---
+
+## 📖 Aprender Más
+
+- Documentación oficial de Expo
+- Tutoriales paso a paso de Expo
+- Repositorio oficial de Expo en GitHub
+
+---
+
+## © 2025
+
+**Johan Curicho** para **Electrónica Mantilla**  
+Sistema de Gestión Técnica y Reportes Automáticos
