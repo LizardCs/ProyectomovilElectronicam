@@ -6,7 +6,7 @@ import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // Corregido para quitar el warning
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CrearUsuario() {
   const router = useRouter();

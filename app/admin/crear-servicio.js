@@ -19,7 +19,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // Importación para el área segura
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CrearServicio() {
     const router = useRouter();

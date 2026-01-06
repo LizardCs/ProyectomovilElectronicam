@@ -7,7 +7,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export const AuthService = {
   async login(credentials) {
     try {
-      console.log('🔐 Enviando login a:', `${API_URL}/login.php`);
+      //console.log('🔐 Enviando login a:', `${API_URL}/login.php`);
       
       const response = await fetch(`${API_URL}/login.php`, {
         method: 'POST',

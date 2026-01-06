@@ -17,7 +17,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // <-- CAMBIADO (Soluciona el Warning)
+import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from 'react-native-svg';
 
 import { AuthService } from "../services/api";
@@ -41,7 +41,7 @@ export default function Login() {
                 user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
             }
         } catch (error) {
-            console.log('Sin sesión previa');
+            //console.log('Sin sesión previa');
         }
     };
 
