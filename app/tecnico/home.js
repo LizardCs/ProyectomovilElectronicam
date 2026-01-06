@@ -6,7 +6,6 @@ import {
   Alert,
   Animated,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeTecnico() {
   const router = useRouter();
@@ -22,7 +22,6 @@ export default function HomeTecnico() {
   const [servicios, setServicios] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Filtros y Búsqueda
   const [filtroActivo, setFiltroActivo] = useState("total");
   const [busqueda, setBusqueda] = useState("");
 
@@ -62,12 +61,20 @@ export default function HomeTecnico() {
     if (!ced) return;
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios-tecnico.php?cedula=${ced}`);
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios-tecnico.php?cedula=${ced}`;
+      const response = await fetch(url);
+      
+      const data = await response.json();
+
       if (data.success) {
-        setServicios(data.servicios);
+        setServicios(data.servicios || []);
+      } else {
+        console.log("Aviso: ", data.message || "No se encontraron servicios");
+        setServicios([]);
       }
     } catch (error) {
       console.error("Error obteniendo servicios:", error);
+      Alert.alert("Error", "No se pudo conectar con el servidor.");
     }
   };
 
@@ -91,22 +98,22 @@ export default function HomeTecnico() {
     ]);
   };
 
-  // --- CORRECCIÓN DE RUTA AQUÍ ---
   const handleVerDetalles = (servicio) => {
     router.push({
-      pathname: "/tecnico/detalle-serviciotecnico", // Nombre exacto del archivo
+      pathname: "/tecnico/detalle-serviciotecnico",
       params: { servicio: JSON.stringify(servicio) }
     });
   };
 
   const obtenerDatosFiltrados = () => {
+    if (!Array.isArray(servicios)) return [];
     return servicios.filter(s => {
       const cumpleFiltro =
         filtroActivo === "total" ? true :
-          filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
-            filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
+        filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
+        filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
 
-      const cumpleBusqueda = s.SERV_NUM.toString().toLowerCase().includes(busqueda.toLowerCase());
+      const cumpleBusqueda = s.SERV_NUM?.toString().toLowerCase().includes(busqueda.toLowerCase());
       return cumpleFiltro && cumpleBusqueda;
     });
   };
@@ -120,7 +127,8 @@ export default function HomeTecnico() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.welcome}>Servicios Técnicos</Text>
-            <Text style={styles.userInfo}> Bienvenido {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
+            <Text style={styles.userInfo}> 
+              Bienvenido {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
             </Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -208,7 +216,6 @@ export default function HomeTecnico() {
                     <Text style={styles.assignerName}>De: {s.SERV_NOM_ENV}</Text>
                   </View>
 
-                  {/* --- CORRECCIÓN DE ONPRESS AQUÍ --- */}
                   <TouchableOpacity
                     style={styles.verBtn}
                     onPress={() => handleVerDetalles(s)}
@@ -229,7 +236,7 @@ export default function HomeTecnico() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { backgroundColor: "#001C38", paddingTop: 50, paddingBottom: 50, paddingHorizontal: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  header: { backgroundColor: "#001C38", paddingTop: 20, paddingBottom: 50, paddingHorizontal: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   welcome: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
   userInfo: { fontSize: 16, color: "#88BBDC" },
