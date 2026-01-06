@@ -1,20 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar"; // <-- CAMBIADO
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // <-- CORREGIDO PARA EL WARNING
 
 export default function HomeTecnico() {
   const router = useRouter();
@@ -63,13 +63,11 @@ export default function HomeTecnico() {
     try {
       const url = `${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios-tecnico.php?cedula=${ced}`;
       const response = await fetch(url);
-      
       const data = await response.json();
 
       if (data.success) {
         setServicios(data.servicios || []);
       } else {
-        console.log("Aviso: ", data.message || "No se encontraron servicios");
         setServicios([]);
       }
     } catch (error) {
@@ -119,8 +117,8 @@ export default function HomeTecnico() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#001C38" barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar style="light" backgroundColor="#001C38" />
 
       {/* Header */}
       <View style={styles.header}>
@@ -236,7 +234,14 @@ export default function HomeTecnico() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { backgroundColor: "#001C38", paddingTop: 20, paddingBottom: 50, paddingHorizontal: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  header: { 
+    backgroundColor: "#001C38", 
+    paddingTop: 10, // Ajustado porque SafeAreaView maneja el borde superior
+    paddingBottom: 50, 
+    paddingHorizontal: 20, 
+    borderBottomLeftRadius: 30, 
+    borderBottomRightRadius: 30 
+  },
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   welcome: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
   userInfo: { fontSize: 16, color: "#88BBDC" },

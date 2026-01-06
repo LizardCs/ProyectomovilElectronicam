@@ -1,69 +1,68 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import {
     Image,
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DetalleServicioAdmin() {
     const router = useRouter();
     const params = useLocalSearchParams();
 
-    // Recuperamos el objeto servicio que pasamos como string desde el Home
     const servicio = params.servicio ? JSON.parse(params.servicio) : null;
 
     if (!servicio) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
                 <Text style={{ marginTop: 50, textAlign: 'center' }}>No se encontró información.</Text>
                 <TouchableOpacity onPress={() => router.back()} style={{ alignItems: 'center', marginTop: 20 }}>
                     <Text style={{ color: 'blue' }}>Volver</Text>
                 </TouchableOpacity>
-            </View>
+            </SafeAreaView>
         );
     }
 
-    // Lógica: 1 = Completado, 0 = Pendiente
     const esCompletado = parseInt(servicio.SERV_EST) === 1;
-
-    // Construir la URI de la imagen Base64
     const imageUri = `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}`;
 
     const handleSalir = () => {
-        router.back(); // Regresa al Home
+        router.back();
     };
 
     const handleEditar = () => {
-        // Enviamos el servicio a la pantalla de crear
         router.push({
             pathname: "/admin/crear-servicio",
-            params: { servicioEditar: JSON.stringify(servicio) } // Pasamos los datos
+            params: { servicioEditar: JSON.stringify(servicio) }
         });
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#001C38" barStyle="light-content" />
+        // Agregamos 'bottom' en edges para que respete la barra de navegación del sistema
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <StatusBar style="light" backgroundColor="#001C38" />
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={handleSalir} style={styles.backButton}>
+                <TouchableOpacity onPress={handleSalir}>
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Detalles del Servicio</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView style={styles.contentContainer}>
+            {/* Aplicamos el estilo al contenido interno del ScrollView */}
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.contentContainer} 
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.card}>
-
-                    {/* Título */}
                     <View style={styles.titleContainer}>
                         <Ionicons name="construct" size={24} color="#007AFF" />
                         <Text style={styles.titleText}>Servicio a Realizar</Text>
@@ -71,7 +70,6 @@ export default function DetalleServicioAdmin() {
 
                     <View style={styles.divider} />
 
-                    {/* Imagen */}
                     <Text style={styles.label}>Comprobante / Foto:</Text>
                     <View style={styles.imageContainer}>
                         <Image
@@ -81,7 +79,6 @@ export default function DetalleServicioAdmin() {
                         />
                     </View>
 
-                    {/* Fila: Número y Estado */}
                     <View style={styles.infoRow}>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.label}>N° Asignación:</Text>
@@ -100,7 +97,6 @@ export default function DetalleServicioAdmin() {
                         </View>
                     </View>
 
-                    {/* Técnico */}
                     <View style={styles.infoGroup}>
                         <Text style={styles.label}>Técnico Asignado:</Text>
                         <View style={styles.tecnicoBox}>
@@ -109,13 +105,11 @@ export default function DetalleServicioAdmin() {
                         </View>
                     </View>
 
-                    {/* Fecha */}
                     <View style={styles.infoGroup}>
                         <Text style={styles.label}>Fecha y Hora de Asignación:</Text>
                         <Text style={styles.value}>{servicio.SERV_FECH_ASIG}</Text>
                     </View>
 
-                    {/* Descripción */}
                     <View style={styles.infoGroup}>
                         <Text style={styles.label}>Descripción del Trabajo:</Text>
                         <View style={styles.descriptionBox}>
@@ -124,15 +118,11 @@ export default function DetalleServicioAdmin() {
                             </Text>
                         </View>
                     </View>
-
                 </View>
-                <View style={{ height: 20 }} />
             </ScrollView>
 
-            {/* Footer con Botones */}
+            {/* Footer de botones */}
             <View style={styles.footer}>
-
-                {/* Botón Salir */}
                 <TouchableOpacity
                     style={[styles.button, styles.btnSalir]}
                     onPress={handleSalir}
@@ -141,7 +131,6 @@ export default function DetalleServicioAdmin() {
                     <Text style={styles.btnText}>Salir</Text>
                 </TouchableOpacity>
 
-                {/* Botón Editar (Solo visible si NO está completado) */}
                 {!esCompletado && (
                     <TouchableOpacity
                         style={[styles.button, styles.btnEditar]}
@@ -151,7 +140,6 @@ export default function DetalleServicioAdmin() {
                         <Text style={styles.btnText}>Editar</Text>
                     </TouchableOpacity>
                 )}
-
             </View>
         </SafeAreaView>
     );
@@ -164,7 +152,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: "#001C38",
-        paddingTop: 50,
+        paddingTop: 10,
         paddingBottom: 20,
         paddingHorizontal: 20,
         flexDirection: "row",
@@ -172,10 +160,6 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         borderBottomLeftRadius: 20,
         borderBottomRightRadius: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
         elevation: 10,
     },
     headerTitle: {
@@ -183,17 +167,17 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#FFF",
     },
+    scrollView: {
+        flex: 1,
+    },
     contentContainer: {
         padding: 20,
+        paddingBottom: 40, // <-- ESPACIO EXTRA al final del contenido interno
     },
     card: {
         backgroundColor: "#FFF",
         borderRadius: 20,
         padding: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
         elevation: 3,
     },
     titleContainer: {
@@ -289,15 +273,13 @@ const styles = StyleSheet.create({
     },
     footer: {
         backgroundColor: "#FFF",
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingTop: 15,
+        paddingBottom: 10, // Ajustado para que SafeAreaView maneje el resto
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         flexDirection: "row",
         justifyContent: "space-between",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
         elevation: 20,
     },
     button: {

@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar"; // Agregado
 import { useState } from "react";
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // Corregido para quitar el warning
 
 export default function CrearUsuario() {
   const router = useRouter();
@@ -23,7 +25,6 @@ export default function CrearUsuario() {
     }
 
     setLoading(true);
-    // Endpoint dinámico según el tipo seleccionado
     const url = tipo === 'movil' 
       ? `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-movil.php`
       : `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-web.php`;
@@ -45,98 +46,126 @@ export default function CrearUsuario() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#FFF" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Registrar Usuario</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView style={styles.scrollContainer}>
-        {/* PASO 1: SELECCIONAR TIPO */}
-        <Text style={styles.labelSection}>¿Qué tipo de acceso desea crear?</Text>
-        <View style={styles.tipoContainer}>
-          <TouchableOpacity 
-            style={[styles.tipoBtn, tipo === 'movil' && styles.tipoBtnActive]} 
-            onPress={() => setTipo('movil')}
-          >
-            <Ionicons name="phone-portrait-outline" size={24} color={tipo === 'movil' ? "#FFF" : "#007AFF"} />
-            <Text style={[styles.tipoText, tipo === 'movil' && {color: '#FFF'}]}>APP MÓVIL</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar style="light" backgroundColor="#001C38" />
+      
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        {/* Header con padding ajustado */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.tipoBtn, tipo === 'web' && styles.tipoBtnActive]} 
-            onPress={() => setTipo('web')}
-          >
-            <Ionicons name="desktop-outline" size={24} color={tipo === 'web' ? "#FFF" : "#007AFF"} />
-            <Text style={[styles.tipoText, tipo === 'web' && {color: '#FFF'}]}>SISTEMA WEB</Text>
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Registrar Usuario</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        {/* PASO 2: FORMULARIO DINÁMICO */}
-        {tipo && (
-          <View style={styles.formCard}>
-            <Text style={styles.label}>Cédula de Identidad</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={form.cedula} onChangeText={(t)=>setForm({...form, cedula:t})} />
+        <ScrollView 
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent} // Estilo para el espacio final
+          showsVerticalScrollIndicator={false}
+        >
+          {/* PASO 1: SELECCIONAR TIPO */}
+          <Text style={styles.labelSection}>¿Qué tipo de acceso desea crear?</Text>
+          <View style={styles.tipoContainer}>
+            <TouchableOpacity 
+              style={[styles.tipoBtn, tipo === 'movil' && styles.tipoBtnActive]} 
+              onPress={() => setTipo('movil')}
+            >
+              <Ionicons name="phone-portrait-outline" size={24} color={tipo === 'movil' ? "#FFF" : "#007AFF"} />
+              <Text style={[styles.tipoText, tipo === 'movil' && {color: '#FFF'}]}>APP MÓVIL</Text>
+            </TouchableOpacity>
 
-            <View style={{flexDirection:'row', gap:10}}>
-              <View style={{flex:1}}>
-                <Text style={styles.label}>Nombres</Text>
-                <TextInput style={styles.input} value={form.nombre} onChangeText={(t)=>setForm({...form, nombre:t})} />
-              </View>
-              <View style={{flex:1}}>
-                <Text style={styles.label}>Apellidos</Text>
-                <TextInput style={styles.input} value={form.apellido} onChangeText={(t)=>setForm({...form, apellido:t})} />
-              </View>
-            </View>
-
-            <Text style={styles.label}>Teléfono Celular</Text>
-            <TextInput style={styles.input} keyboardType="phone-pad" value={form.celular} onChangeText={(t)=>setForm({...form, celular:t})} />
-
-            <View style={styles.divider} />
-
-            <Text style={styles.label}>Nombre de Usuario</Text>
-            <TextInput style={styles.input} autoCapitalize="none" value={form.usuario} onChangeText={(t)=>setForm({...form, usuario:t})} />
-
-            <Text style={styles.label}>Contraseña de Acceso</Text>
-            <TextInput style={styles.input} secureTextEntry value={form.clave} onChangeText={(t)=>setForm({...form, clave:t})} />
-
-            {/* Solo si es móvil, mostrar el ROL */}
-            {tipo === 'movil' && (
-              <>
-                <Text style={styles.label}>Asignar Rol</Text>
-                <View style={styles.tipoContainer}>
-                   <TouchableOpacity 
-                    style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
-                    onPress={() => setForm({...form, rol: "0"})}
-                   >
-                     <Text style={form.rol === "0" ? {color: '#FFF'} : {}}>Técnico</Text>
-                   </TouchableOpacity>
-                   <TouchableOpacity 
-                    style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
-                    onPress={() => setForm({...form, rol: "1"})}
-                   >
-                     <Text style={form.rol === "1" ? {color: '#FFF'} : {}}>Administrador</Text>
-                   </TouchableOpacity>
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity style={styles.submitButton} onPress={handleGuardar} disabled={loading}>
-              {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Crear Usuario {tipo.toUpperCase()}</Text>}
+            <TouchableOpacity 
+              style={[styles.tipoBtn, tipo === 'web' && styles.tipoBtnActive]} 
+              onPress={() => setTipo('web')}
+            >
+              <Ionicons name="desktop-outline" size={24} color={tipo === 'web' ? "#FFF" : "#007AFF"} />
+              <Text style={[styles.tipoText, tipo === 'web' && {color: '#FFF'}]}>SISTEMA WEB</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          {/* PASO 2: FORMULARIO DINÁMICO */}
+          {tipo && (
+            <View style={styles.formCard}>
+              <Text style={styles.label}>Cédula de Identidad</Text>
+              <TextInput style={styles.input} keyboardType="numeric" value={form.cedula} onChangeText={(t)=>setForm({...form, cedula:t})} />
+
+              <View style={{flexDirection:'row', gap:10}}>
+                <View style={{flex:1}}>
+                  <Text style={styles.label}>Nombres</Text>
+                  <TextInput style={styles.input} value={form.nombre} onChangeText={(t)=>setForm({...form, nombre:t})} />
+                </View>
+                <View style={{flex:1}}>
+                  <Text style={styles.label}>Apellidos</Text>
+                  <TextInput style={styles.input} value={form.apellido} onChangeText={(t)=>setForm({...form, apellido:t})} />
+                </View>
+              </View>
+
+              <Text style={styles.label}>Teléfono Celular</Text>
+              <TextInput style={styles.input} keyboardType="phone-pad" value={form.celular} onChangeText={(t)=>setForm({...form, celular:t})} />
+
+              <View style={styles.divider} />
+
+              <Text style={styles.label}>Nombre de Usuario</Text>
+              <TextInput style={styles.input} autoCapitalize="none" value={form.usuario} onChangeText={(t)=>setForm({...form, usuario:t})} />
+
+              <Text style={styles.label}>Contraseña de Acceso</Text>
+              <TextInput style={styles.input} secureTextEntry value={form.clave} onChangeText={(t)=>setForm({...form, clave:t})} />
+
+              {/* Solo si es móvil, mostrar el ROL */}
+              {tipo === 'movil' && (
+                <>
+                  <Text style={styles.label}>Asignar Rol</Text>
+                  <View style={styles.tipoContainer}>
+                     <TouchableOpacity 
+                      style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
+                      onPress={() => setForm({...form, rol: "0"})}
+                     >
+                       <Text style={form.rol === "0" ? {color: '#FFF'} : {}}>Técnico</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity 
+                      style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
+                      onPress={() => setForm({...form, rol: "1"})}
+                     >
+                       <Text style={form.rol === "1" ? {color: '#FFF'} : {}}>Administrador</Text>
+                     </TouchableOpacity>
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity style={styles.submitButton} onPress={handleGuardar} disabled={loading}>
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Crear Usuario {tipo.toUpperCase()}</Text>}
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { backgroundColor: "#001C38", paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  header: { 
+    backgroundColor: "#001C38", 
+    paddingTop: 10, // Reducido porque SafeAreaView ya da el espacio
+    paddingBottom: 20, 
+    paddingHorizontal: 20, 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between",
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+  },
   headerTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF" },
-  scrollContainer: { padding: 20 },
+  scrollContainer: { flex: 1 },
+  scrollContent: { 
+    padding: 20,
+    paddingBottom: 40 // Espacio extra para que el botón submit no quede pegado abajo
+  },
   labelSection: { fontSize: 16, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#444' },
   tipoContainer: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   tipoBtn: { flex: 1, backgroundColor: '#FFF', padding: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#007AFF' },

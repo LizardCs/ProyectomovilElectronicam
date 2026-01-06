@@ -196,7 +196,7 @@ export default function HomeAdmin() {
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.welcome}>Gestion de servicios</Text>
+            <Text style={styles.welcome}>Gestionamiento</Text>
             {user && (
               <Text style={styles.userInfo}>
                 Bienvenido {(user.nombre_completo || user.nombre || "").trim().split(" ")[0]}

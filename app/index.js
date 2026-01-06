@@ -1,24 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar"; // <-- AGREGADO
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // <-- CAMBIADO (Soluciona el Warning)
 import Svg, { Path } from 'react-native-svg';
 
-// Importar el servicio de API
 import { AuthService } from "../services/api";
 
 const { width } = Dimensions.get('window');
@@ -95,7 +96,9 @@ export default function Login() {
                 colors={['#0f172a', '#1e3a8a', '#1e40af']} 
                 style={styles.container}
             >
-                {/* LÍNEA CURVA DECORATIVA */}
+                {/* Asegura que los iconos de la barra de estado sean blancos */}
+                <StatusBar style="light" /> 
+
                 <View style={StyleSheet.absoluteFill}>
                     <Svg height="100%" width="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                         <Path 
@@ -108,81 +111,82 @@ export default function Login() {
                     </Svg>
                 </View>
 
-                <KeyboardAvoidingView 
-                    style={{ flex: 1 }}
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                >
-                    <View style={styles.innerContainer}>
-                        
-                        <View style={styles.header}>
-                            <View style={styles.brandContainer}>
-                                <Text style={styles.brandTitle}>ELECTRÓNICA</Text>
-                                <Text style={styles.brandName}>MANTILLA</Text>
-                                <View style={styles.brandDivider} />
-                                {/* Se eliminó el texto apiInfo de aquí */}
-                            </View>
-                        </View>
-
-                        <View style={styles.formCard}>
-                            <Text style={styles.loginTitle}>Gestión de Servicios</Text>
-                            <Text style={styles.loginSubtitle}>Bienvenido</Text>
-
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="person-outline" size={20} color="#1e40af" style={styles.icon} />
-                                <TextInput
-                                    placeholder="Usuario"
-                                    placeholderTextColor="#94a3b8"
-                                    value={usuario}
-                                    onChangeText={setUsuario}
-                                    style={styles.input}
-                                    autoCapitalize="none"
-                                />
+                {/* Usamos SafeAreaView para evitar que el logo choque con el notch */}
+                <SafeAreaView style={{ flex: 1 }}>
+                    <KeyboardAvoidingView 
+                        style={{ flex: 1 }}
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    >
+                        <View style={styles.innerContainer}>
+                            
+                            <View style={styles.header}>
+                                <View style={styles.brandContainer}>
+                                    <Text style={styles.brandTitle}>ELECTRÓNICA</Text>
+                                    <Text style={styles.brandName}>MANTILLA</Text>
+                                    <View style={styles.brandDivider} />
+                                </View>
                             </View>
 
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="lock-closed-outline" size={20} color="#1e40af" style={styles.icon} />
-                                <TextInput
-                                    placeholder="Contraseña"
-                                    placeholderTextColor="#94a3b8"
-                                    secureTextEntry
-                                    value={clave}
-                                    onChangeText={setClave}
-                                    style={styles.input}
-                                />
+                            <View style={styles.formCard}>
+                                <Text style={styles.loginTitle}>Gestión de Servicios</Text>
+                                <Text style={styles.loginSubtitle}>Bienvenido</Text>
+
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="person-outline" size={20} color="#1e40af" style={styles.icon} />
+                                    <TextInput
+                                        placeholder="Usuario"
+                                        placeholderTextColor="#94a3b8"
+                                        value={usuario}
+                                        onChangeText={setUsuario}
+                                        style={styles.input}
+                                        autoCapitalize="none"
+                                    />
+                                </View>
+
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="lock-closed-outline" size={20} color="#1e40af" style={styles.icon} />
+                                    <TextInput
+                                        placeholder="Contraseña"
+                                        placeholderTextColor="#94a3b8"
+                                        secureTextEntry
+                                        value={clave}
+                                        onChangeText={setClave}
+                                        style={styles.input}
+                                    />
+                                </View>
+
+                                <TouchableOpacity 
+                                    onPress={handleLogin} 
+                                    style={[styles.button, isLoading && styles.buttonDisabled]}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator color="#1e3a8a" />
+                                    ) : (
+                                        <>
+                                            <Text style={styles.buttonText}>INICIAR SESIÓN</Text>
+                                            <Ionicons name="arrow-forward" size={20} color="#1e3a8a" />
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={() => Alert.alert("Soporte", "Contacte al administrador para restablecer su clave.")}>
+                                    <Text style={styles.forgotText}>¿Olvidó sus credenciales?</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={handleTestConnection} style={{ marginTop: 15 }}>
+                                    <Text style={{ textAlign: 'center', color: '#cbd5e1', fontSize: 10 }}>Acceso de Soporte</Text>
+                                </TouchableOpacity>
                             </View>
 
-                            <TouchableOpacity 
-                                onPress={handleLogin} 
-                                style={[styles.button, isLoading && styles.buttonDisabled]}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator color="#1e3a8a" />
-                                ) : (
-                                    <>
-                                        <Text style={styles.buttonText}>INICIAR SESIÓN</Text>
-                                        <Ionicons name="arrow-forward" size={20} color="#1e3a8a" />
-                                    </>
-                                )}
-                            </TouchableOpacity>
+                            <View style={styles.footer}>
+                                <Text style={styles.footerText}>© 2025 ELECTRÓNICA MANTILLA</Text>
+                                <Text style={styles.footerSub}>SISTEMA DE GESTIÓN CORPORATIVO</Text>
+                            </View>
 
-                            <TouchableOpacity onPress={() => Alert.alert("Soporte", "Contacte al administrador para restablecer su clave.")}>
-                                <Text style={styles.forgotText}>¿Olvidó sus credenciales?</Text>
-                            </TouchableOpacity>
-
-                            {/* El botón de test sigue funcionando pero de forma discreta */}
-                            <TouchableOpacity onPress={handleTestConnection} style={{ marginTop: 15 }}>
-                                <Text style={{ textAlign: 'center', color: '#cbd5e1', fontSize: 10 }}>Acceso de Soporte</Text>
-                            </TouchableOpacity>
                         </View>
-
-                        <View style={styles.footer}>
-                            <Text style={styles.footerText}>© 2025 ELECTRÓNICA MANTILLA</Text>
-                            <Text style={styles.footerSub}>SISTEMA DE GESTIÓN CORPORATIVO</Text>
-                        </View>
-
-                    </View>
-                </KeyboardAvoidingView>
+                    </KeyboardAvoidingView>
+                </SafeAreaView>
             </LinearGradient>
         </TouchableWithoutFeedback>
     );

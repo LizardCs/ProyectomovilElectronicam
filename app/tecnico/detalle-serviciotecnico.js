@@ -1,19 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar"; // <-- CAMBIADO
 import { useState } from "react";
 import {
     Dimensions,
     Image,
     Modal,
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from "react-native";
 import ImageZoom from 'react-native-image-pan-zoom';
+import { SafeAreaView } from "react-native-safe-area-context"; // <-- CORREGIDO
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,13 +23,19 @@ export default function DetalleServicioTecnico() {
     
     const [isImageVisible, setIsImageVisible] = useState(false);
 
+    // Parseo de datos (JS puro)
     const servicio = params.servicio ? JSON.parse(params.servicio) : null;
 
     if (!servicio) {
         return (
-            <View style={styles.container}>
-                <Text style={{ marginTop: 50, textAlign: 'center' }}>Error al cargar información.</Text>
-            </View>
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>Error al cargar información.</Text>
+                    <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+                        <Text style={{ color: '#007AFF' }}>Volver</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -37,8 +43,8 @@ export default function DetalleServicioTecnico() {
     const esCompletado = parseInt(servicio.SERV_EST) === 1;
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#001C38" barStyle="light-content" />
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <StatusBar style="light" backgroundColor="#001C38" />
 
             {/* Modal de Zoom */}
             <Modal visible={isImageVisible} transparent={true} animationType="fade">
@@ -77,7 +83,11 @@ export default function DetalleServicioTecnico() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.scrollView} 
+                contentContainerStyle={styles.scrollContent} // <-- ESPACIO EXTRA AL FINAL
+                showsVerticalScrollIndicator={false}
+            >
                 
                 {/* Imagen Principal */}
                 <View style={styles.imageSection}>
@@ -105,7 +115,6 @@ export default function DetalleServicioTecnico() {
                             <Text style={styles.label}>N° Comprobante</Text>
                             <Text style={styles.serviceNumber}>#{servicio.SERV_NUM}</Text>
                         </View>
-                        {/* BADGE MEJORADO Y CENTRADO */}
                         <View style={[styles.badge, { backgroundColor: esCompletado ? "#34C759" : "#FF9500" }]}>
                             <Text style={styles.badgeText}>
                                 {esCompletado ? "COMPLETADO" : "PENDIENTE"}
@@ -140,8 +149,6 @@ export default function DetalleServicioTecnico() {
                         </Text>
                     </View>
                 </View>
-
-                <View style={{ height: 40 }} />
             </ScrollView>
 
             {/* Footer */}
@@ -168,12 +175,22 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F2F2F7" },
     header: { 
         backgroundColor: "#001C38", 
-        paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, 
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        borderBottomLeftRadius: 20, borderBottomRightRadius: 20
+        paddingTop: 10, // Ajustado para SafeAreaView
+        paddingBottom: 20, 
+        paddingHorizontal: 20, 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "space-between",
+        borderBottomLeftRadius: 20, 
+        borderBottomRightRadius: 20,
+        elevation: 10
     },
     headerTitle: { fontSize: 18, fontWeight: "bold", color: "#FFF" },
-    contentContainer: { padding: 20 },
+    scrollView: { flex: 1 },
+    scrollContent: { 
+        padding: 20,
+        paddingBottom: 60 // Espacio para que la descripción no choque con el footer
+    },
     imageSection: { marginBottom: 20 },
     sectionLabel: { fontSize: 13, fontWeight: 'bold', color: '#666', marginBottom: 10, textTransform: 'uppercase' },
     imageContainer: { width: '100%', height: 250, borderRadius: 20, overflow: 'hidden', backgroundColor: '#FFF', elevation: 5 },
@@ -188,24 +205,19 @@ const styles = StyleSheet.create({
     rowJustify: { 
         flexDirection: 'row', 
         justifyContent: 'space-between',
-        alignItems: 'center', // Asegura que el Badge y el texto estén centrados verticalmente entre sí
+        alignItems: 'center',
     },
     serviceNumber: { fontSize: 24, fontWeight: 'bold', color: '#001C38' },
     label: { fontSize: 11, color: '#8E8E93', fontWeight: '700', textTransform: 'uppercase', marginBottom: 2 },
     value: { fontSize: 16, color: '#1C1C1E', fontWeight: 'bold' },
 
-    // --- DISEÑO DE BADGE MEJORADO ---
     badge: { 
         paddingHorizontal: 14, 
         paddingVertical: 8, 
-        borderRadius: 20, // Forma de píldora
-        minWidth: 110,    // Evita que se vea muy pequeño
+        borderRadius: 20, 
+        minWidth: 110, 
         alignItems: 'center', 
         justifyContent: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
         elevation: 2
     },
     badgeText: { 
@@ -215,14 +227,23 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 0.5 
     },
-    // --------------------------------
 
     divider: { height: 1, backgroundColor: '#F2F2F7', marginVertical: 15 },
     infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
     infoText: { marginLeft: 12 },
     descriptionContainer: { backgroundColor: '#F8F9FA', padding: 15, borderRadius: 15, marginTop: 5, borderWidth: 1, borderColor: '#EEE' },
     descriptionText: { fontSize: 15, color: '#444', lineHeight: 22 },
-    footer: { backgroundColor: '#FFF', padding: 20, flexDirection: 'row', borderTopLeftRadius: 30, borderTopRightRadius: 30, gap: 15, elevation: 20 },
+    footer: { 
+        backgroundColor: '#FFF', 
+        paddingHorizontal: 20,
+        paddingTop: 15,
+        paddingBottom: 10, // Ajustado para SafeAreaView
+        flexDirection: 'row', 
+        borderTopLeftRadius: 30, 
+        borderTopRightRadius: 30, 
+        gap: 15, 
+        elevation: 20 
+    },
     button: { flex: 1, height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
     btnSalir: { backgroundColor: '#F2F2F7', borderWidth: 1, borderColor: '#DDD' },
     btnTextSalir: { color: '#444', fontWeight: 'bold', fontSize: 16 },

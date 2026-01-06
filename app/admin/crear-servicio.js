@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImageManipulator from 'expo-image-manipulator'; // <--- NUEVO IMPORT
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar"; // Importación corregida
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -18,6 +19,7 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context"; // Importación para el área segura
 
 export default function CrearServicio() {
     const router = useRouter();
@@ -49,11 +51,8 @@ export default function CrearServicio() {
         checkEditMode();
     }, []);
 
-    // --- FUNCIÓN DE OPTIMIZACIÓN (NUEVA) ---
     const optimizeImage = async (uri) => {
         try {
-            // Redimensionamos a un ancho máximo de 800px y bajamos la calidad al 70%
-            // Esto reduce el peso de ~300KB a ~50-80KB sin perder legibilidad
             const result = await ImageManipulator.manipulateAsync(
                 uri,
                 [{ resize: { width: 800 } }],
@@ -62,7 +61,7 @@ export default function CrearServicio() {
             return result.uri;
         } catch (error) {
             console.error("Error optimizando imagen:", error);
-            return uri; // Si falla, devolvemos la original
+            return uri;
         }
     };
 
@@ -89,11 +88,9 @@ export default function CrearServicio() {
     const loadUser = async () => {
         try {
             const userJson = await AsyncStorage.getItem('@user_data');
-
             if (userJson) {
                 const userData = JSON.parse(userJson);
                 setUser(userData);
-
                 const cedulaReal = userData.cedula || userData.MOV_CED || userData.id || "Admin";
 
                 if (!params.servicioEditar) {
@@ -112,12 +109,9 @@ export default function CrearServicio() {
     const loadTecnicos = async () => {
         try {
             const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-tecnicos.php`);
-            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             const data = await response.json();
             if (data.success) {
                 setTecnicos(data.tecnicos);
-            } else {
-                setTecnicos([{ MOV_CED: "999", nombre_completo: "Sin técnicos" }]);
             }
         } catch (error) {
             console.error('Error técnicos:', error);
@@ -136,16 +130,14 @@ export default function CrearServicio() {
         if (field === 'SERV_NUM') {
             const numericValue = value.replace(/[^0-9]/g, '');
             setFormData({ ...formData, [field]: numericValue });
-        }
-        else if (field === 'SERV_CED_REC') {
+        } else if (field === 'SERV_CED_REC') {
             const tecnicoSeleccionado = tecnicos.find(t => t.MOV_CED === value);
             setFormData({
                 ...formData,
                 [field]: value,
                 SERV_NOM_REC: tecnicoSeleccionado ? tecnicoSeleccionado.nombre_completo : ""
             });
-        }
-        else {
+        } else {
             setFormData({ ...formData, [field]: value });
         }
     };
@@ -153,10 +145,9 @@ export default function CrearServicio() {
     const takePhoto = async () => {
         try {
             const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true, aspect: [4, 3], quality: 1, // Calidad 1 aquí porque luego optimizamos manualmente
+                allowsEditing: true, aspect: [4, 3], quality: 1,
             });
             if (!result.canceled) {
-                // <--- CAMBIO: OPTIMIZAMOS ANTES DE ASIGNAR AL ESTADO
                 const optimizedUri = await optimizeImage(result.assets[0].uri);
                 setFormData({ ...formData, SERV_IMG_ENV: optimizedUri });
             }
@@ -166,10 +157,9 @@ export default function CrearServicio() {
     const pickImage = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                allowsEditing: true, aspect: [4, 3], quality: 1, // Calidad 1 aquí porque luego optimizamos manualmente
+                allowsEditing: true, aspect: [4, 3], quality: 1,
             });
             if (!result.canceled) {
-                // <--- CAMBIO: OPTIMIZAMOS ANTES DE ASIGNAR AL ESTADO
                 const optimizedUri = await optimizeImage(result.assets[0].uri);
                 setFormData({ ...formData, SERV_IMG_ENV: optimizedUri });
             }
@@ -182,27 +172,22 @@ export default function CrearServicio() {
         if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico"); return; }
 
         setIsLoading(true);
-
         const url = isEditing 
             ? `${process.env.EXPO_PUBLIC_API_URL}/editar-servicio.php` 
             : `${process.env.EXPO_PUBLIC_API_URL}/crear-servicio.php`;
 
         try {
             const isWeb = Platform.OS === 'web';
-
             if (isWeb) {
-                const servicioData = { ...formData };
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(servicioData)
+                    body: JSON.stringify(formData)
                 });
                 const result = await response.json();
                 processResult(result);
-
             } else {
                 const formDataToSend = new FormData();
-                
                 formDataToSend.append('SERV_NUM', formData.SERV_NUM);
                 formDataToSend.append('SERV_DESCRIPCION', formData.SERV_DESCRIPCION || '');
                 formDataToSend.append('SERV_CED_REC', formData.SERV_CED_REC);
@@ -224,12 +209,7 @@ export default function CrearServicio() {
                         const filename = uri.split('/').pop();
                         const match = /\.(\w+)$/.exec(filename);
                         const type = match ? `image/${match[1]}` : `image/jpeg`;
-                        
-                        formDataToSend.append('SERV_IMG_ENV', {
-                            uri: uri,
-                            name: filename,
-                            type: type,
-                        });
+                        formDataToSend.append('SERV_IMG_ENV', { uri, name: filename, type });
                     }
                 }
 
@@ -241,9 +221,7 @@ export default function CrearServicio() {
                 const result = await response.json();
                 processResult(result);
             }
-
         } catch (error) {
-            console.error(error);
             Alert.alert("Error", "Ocurrió un error en la conexión.");
         } finally {
             setIsLoading(false);
@@ -255,13 +233,10 @@ export default function CrearServicio() {
             Alert.alert(
                 "Éxito", 
                 isEditing ? "Servicio actualizado correctamente" : "Servicio creado correctamente",
-                [{ text: "OK", onPress: () => {
-                    if(isEditing) router.push("/admin/home");
-                    else router.replace("/admin/home");
-                }}]
+                [{ text: "OK", onPress: () => router.push("/admin/home") }]
             );
         } else {
-            throw new Error(result.message);
+            Alert.alert("Error", result.message);
         }
     };
 
@@ -274,165 +249,171 @@ export default function CrearServicio() {
     };
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>
-                    {isEditing ? "Editar Servicio" : "Asignación de Servicios"}
-                </Text>
-                <View style={{ width: 40 }} />
-            </View>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <StatusBar style="light" backgroundColor="#001C38" />
 
-            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-                <View style={styles.formCard}>
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+                {/* Header con padding corregido */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>
+                        {isEditing ? "Editar Servicio" : "Asignación de Servicios"}
+                    </Text>
+                    <View style={{ width: 40 }} />
+                </View>
 
-                    {/* FOTO */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="camera" size={22} color="#007AFF" />
-                            <Text style={styles.sectionTitle}>Comprobante</Text>
-                        </View>
-                        {formData.SERV_IMG_ENV ? (
-                            <View style={styles.imagePreviewContainer}>
-                                <Image source={{ uri: formData.SERV_IMG_ENV }} style={styles.imagePreview} />
-                                <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
-                                    <Text style={styles.imageActionText}>Cambiar Foto</Text>
-                                </TouchableOpacity>
+                <ScrollView 
+                    style={styles.scrollContainer} 
+                    contentContainerStyle={styles.scrollContent} // Estilo de padding inferior
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.formCard}>
+                        {/* FOTO */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="camera" size={22} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Comprobante</Text>
                             </View>
-                        ) : (
-                            <View style={styles.cameraButtons}>
-                                <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
-                                    <Ionicons name="camera" size={30} color="#007AFF" />
-                                    <Text>Cámara</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.cameraButton} onPress={pickImage}>
-                                    <Ionicons name="images" size={30} color="#34C759" />
-                                    <Text>Galería</Text>
-                                </TouchableOpacity>
+                            {formData.SERV_IMG_ENV ? (
+                                <View style={styles.imagePreviewContainer}>
+                                    <Image source={{ uri: formData.SERV_IMG_ENV }} style={styles.imagePreview} />
+                                    <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
+                                        <Text style={styles.imageActionText}>Cambiar Foto</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <View style={styles.cameraButtons}>
+                                    <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
+                                        <Ionicons name="camera" size={30} color="#007AFF" />
+                                        <Text>Cámara</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.cameraButton} onPress={pickImage}>
+                                        <Ionicons name="images" size={30} color="#34C759" />
+                                        <Text>Galería</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* NÚMERO */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="document" size={22} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Número de Servicio</Text>
                             </View>
-                        )}
-                    </View>
-
-                    {/* NÚMERO */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="document" size={22} color="#007AFF" />
-                            <Text style={styles.sectionTitle}>Número de Servicio</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ej: 2024001"
+                                value={formData.SERV_NUM}
+                                onChangeText={(text) => handleChange("SERV_NUM", text)}
+                                keyboardType="numeric"
+                            />
                         </View>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej: 2024001"
-                            value={formData.SERV_NUM}
-                            onChangeText={(text) => handleChange("SERV_NUM", text)}
-                            keyboardType="numeric"
-                        />
-                    </View>
 
-                    {/* DESCRIPCIÓN */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="clipboard" size={22} color="#007AFF" />
-                            <Text style={styles.sectionTitle}>Descripción</Text>
+                        {/* DESCRIPCIÓN */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="clipboard" size={22} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Descripción</Text>
+                            </View>
+                            <TextInput
+                                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                                placeholder="Detalle el trabajo a realizar..."
+                                value={formData.SERV_DESCRIPCION}
+                                onChangeText={(text) => handleChange("SERV_DESCRIPCION", text)}
+                                multiline={true}
+                                numberOfLines={4}
+                            />
                         </View>
-                        <TextInput
-                            style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                            placeholder="Detalle el trabajo a realizar..."
-                            value={formData.SERV_DESCRIPCION}
-                            onChangeText={(text) => handleChange("SERV_DESCRIPCION", text)}
-                            multiline={true}
-                            numberOfLines={4}
-                        />
-                    </View>
 
-                    {/* TÉCNICO */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="people" size={22} color="#007AFF" />
-                            <Text style={styles.sectionTitle}>Seleccionar Técnico</Text>
-                        </View>
-                        <View style={styles.pickerContainer}>
-                            {tecnicos.map((tecnico) => (
-                                <TouchableOpacity
-                                    key={tecnico.MOV_CED}
-                                    style={[
-                                        styles.tecnicoOption,
-                                        formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoOptionSelected
-                                    ]}
-                                    onPress={() => handleChange("SERV_CED_REC", tecnico.MOV_CED)}
-                                >
-                                    <View style={styles.tecnicoInfo}>
-                                        <Ionicons
-                                            name={formData.SERV_CED_REC === tecnico.MOV_CED ? "checkmark-circle" : "ellipse-outline"}
-                                            size={20}
-                                            color={formData.SERV_CED_REC === tecnico.MOV_CED ? "#007AFF" : "#999"}
-                                        />
-                                        <View style={styles.tecnicoDetails}>
-                                            <Text style={[
-                                                styles.tecnicoName,
-                                                formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoNameSelected
-                                            ]}>
-                                                {tecnico.nombre_completo}
-                                            </Text>
-                                            <Text style={styles.tecnicoCedula}>
-                                                CI: {tecnico.MOV_CED}
-                                            </Text>
+                        {/* TÉCNICO */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="people" size={22} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Seleccionar Técnico</Text>
+                            </View>
+                            <View style={styles.pickerContainer}>
+                                {tecnicos.map((tecnico) => (
+                                    <TouchableOpacity
+                                        key={tecnico.MOV_CED}
+                                        style={[
+                                            styles.tecnicoOption,
+                                            formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoOptionSelected
+                                        ]}
+                                        onPress={() => handleChange("SERV_CED_REC", tecnico.MOV_CED)}
+                                    >
+                                        <View style={styles.tecnicoInfo}>
+                                            <Ionicons
+                                                name={formData.SERV_CED_REC === tecnico.MOV_CED ? "checkmark-circle" : "ellipse-outline"}
+                                                size={20}
+                                                color={formData.SERV_CED_REC === tecnico.MOV_CED ? "#007AFF" : "#999"}
+                                            />
+                                            <View style={styles.tecnicoDetails}>
+                                                <Text style={[
+                                                    styles.tecnicoName,
+                                                    formData.SERV_CED_REC === tecnico.MOV_CED && styles.tecnicoNameSelected
+                                                ]}>
+                                                    {tecnico.nombre_completo}
+                                                </Text>
+                                                <Text style={styles.tecnicoCedula}>CI: {tecnico.MOV_CED}</Text>
+                                            </View>
                                         </View>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-
-                    {/* RESUMEN DE LA ASIGNACIÓN (RESTAURADO) */}
-                   <View style={styles.summaryCard}>
-                        <View style={styles.summaryHeader}>
-                            <Ionicons name="information-circle" size={22} color="#FF9500" />
-                            <Text style={styles.summaryTitle}>Resumen de la Asignación</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
 
-                        <View style={styles.summaryItems}>
-                            <View style={styles.summaryItem}>
-                                <Text style={styles.summaryLabel}>Estado:</Text>
-                                <View style={[styles.statusBadge, { backgroundColor: formData.SERV_EST === 1 ? '#E8F5E9' : '#FFF8E1' }]}>
-                                    <Text style={[styles.statusText, { color: formData.SERV_EST === 1 ? '#2E7D32' : '#FF8F00' }]}>
-                                        {formData.SERV_EST === 1 ? "COMPLETADO" : "PENDIENTE"}
-                                    </Text>
-                                </View>
+                        {/* RESUMEN */}
+                        <View style={styles.summaryCard}>
+                            <View style={styles.summaryHeader}>
+                                <Ionicons name="information-circle" size={22} color="#FF9500" />
+                                <Text style={styles.summaryTitle}>Resumen de la Asignación</Text>
                             </View>
-                            <View style={styles.summaryItem}>
-                                <Text style={styles.summaryLabel}>Asignado por:</Text>
-                                <Text style={styles.summaryValue}>{formData.SERV_NOM_ENV}</Text>
-                            </View>
-                            {formData.SERV_NOM_REC ? (
+                            <View style={styles.summaryItems}>
                                 <View style={styles.summaryItem}>
-                                    <Text style={styles.summaryLabel}>Asignado a:</Text>
-                                    <Text style={styles.summaryValue}>{formData.SERV_NOM_REC}</Text>
+                                    <Text style={styles.summaryLabel}>Estado:</Text>
+                                    <View style={[styles.statusBadge, { backgroundColor: formData.SERV_EST === 1 ? '#E8F5E9' : '#FFF8E1' }]}>
+                                        <Text style={[styles.statusText, { color: formData.SERV_EST === 1 ? '#2E7D32' : '#FF8F00' }]}>
+                                            {formData.SERV_EST === 1 ? "COMPLETADO" : "PENDIENTE"}
+                                        </Text>
+                                    </View>
                                 </View>
-                            ) : null}
+                                <View style={styles.summaryItem}>
+                                    <Text style={styles.summaryLabel}>Asignado por:</Text>
+                                    <Text style={styles.summaryValue}>{formData.SERV_NOM_ENV}</Text>
+                                </View>
+                                {formData.SERV_NOM_REC ? (
+                                    <View style={styles.summaryItem}>
+                                        <Text style={styles.summaryLabel}>Asignado a:</Text>
+                                        <Text style={styles.summaryValue}>{formData.SERV_NOM_REC}</Text>
+                                    </View>
+                                ) : null}
+                            </View>
                         </View>
                     </View>
 
-                </View>
-
-                {/* BOTONES */}
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                        <Text style={styles.cancelButtonText}>Cancelar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
-                        {isLoading ? (
-                            <ActivityIndicator color="#FFF" />
-                        ) : (
-                            <Text style={styles.submitButtonText}>
-                                {isEditing ? "Actualizar" : "Asignar"}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
-                <View style={{ height: 50 }} />
-            </ScrollView>
+                    {/* BOTONES */}
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                            <Text style={styles.cancelButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
+                            {isLoading ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>
+                                    {isEditing ? "Actualizar" : "Asignar"}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             <Modal visible={showCancelModal} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
@@ -440,23 +421,41 @@ export default function CrearServicio() {
                         <Text style={styles.modalTitle}>¿Salir?</Text>
                         <Text>Se perderán los cambios.</Text>
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity onPress={() => setShowCancelModal(false)} style={styles.modalButtonCancel}><Text>No</Text></TouchableOpacity>
-                            <TouchableOpacity onPress={() => { setShowCancelModal(false); router.back(); }} style={styles.modalButtonConfirm}><Text style={{ color: 'white' }}>Sí</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => setShowCancelModal(false)} style={styles.modalButtonCancel}>
+                                <Text>No</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => { setShowCancelModal(false); router.back(); }} style={styles.modalButtonConfirm}>
+                                <Text style={{ color: 'white' }}>Sí</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F2F2F7" },
-    header: { backgroundColor: "#001C38", paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    header: { 
+        backgroundColor: "#001C38", 
+        paddingTop: 10, 
+        paddingBottom: 20, 
+        paddingHorizontal: 20, 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "space-between",
+        borderBottomLeftRadius: 15,
+        borderBottomRightRadius: 15,
+    },
     headerTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF" },
     backButton: { padding: 5 },
-    scrollContainer: { flex: 1, padding: 20 },
-    formCard: { backgroundColor: "#FFF", borderRadius: 15, padding: 20, marginBottom: 20 },
+    scrollContainer: { flex: 1 },
+    scrollContent: { 
+        padding: 20, 
+        paddingBottom: 40 // Espacio extra al final
+    },
+    formCard: { backgroundColor: "#FFF", borderRadius: 15, padding: 20, marginBottom: 20, elevation: 2 },
     section: { marginBottom: 20, borderBottomWidth: 1, borderBottomColor: "#EEE", paddingBottom: 15 },
     sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
     sectionTitle: { fontSize: 16, fontWeight: "bold", marginLeft: 10, color: "#333" },
@@ -475,7 +474,6 @@ const styles = StyleSheet.create({
     tecnicoName: { fontSize: 16, color: "#333" },
     tecnicoNameSelected: { color: "#007AFF", fontWeight: "600" },
     tecnicoCedula: { fontSize: 13, color: "#666", marginTop: 2 },
-    
     summaryCard: { backgroundColor: "#FFF8E1", borderRadius: 15, padding: 20, marginTop: 10, borderWidth: 1, borderColor: "#FFECB3" },
     summaryHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
     summaryTitle: { fontSize: 16, fontWeight: "600", color: "#FF8F00", marginLeft: 10 },
@@ -485,7 +483,6 @@ const styles = StyleSheet.create({
     summaryValue: { fontSize: 14, color: "#1C1C1E", fontWeight: "500" },
     statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15 },
     statusText: { fontSize: 12, fontWeight: "600" },
-
     actionButtons: { flexDirection: "row", gap: 10 },
     cancelButton: { flex: 1, padding: 15, backgroundColor: "#DDD", borderRadius: 10, alignItems: "center" },
     cancelButtonText: { fontWeight: "bold", color: "#333" },

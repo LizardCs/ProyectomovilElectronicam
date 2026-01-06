@@ -1,5 +1,6 @@
-import { Ionicons } from "@expo/vector-icons"; // Importación necesaria
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
     ActivityIndicator,
@@ -7,26 +8,26 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DetalleUsuario() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const u = JSON.parse(params.user);
+    
+    const u = params.user ? JSON.parse(params.user) : {};
 
     const [loading, setLoading] = useState(false);
-    const [nombre, setNombre] = useState(u.nombre);
-    const [apellido, setApellido] = useState(u.apellido);
+    const [nombre, setNombre] = useState(u.nombre || "");
+    const [apellido, setApellido] = useState(u.apellido || "");
     const [celular, setCelular] = useState(u.celular || "");
-    const [usuario, setUsuario] = useState(u.usuario);
+    const [usuario, setUsuario] = useState(u.usuario || "");
 
-    // --- ESTADOS PARA CONTRASEÑA ---
     const [cambiarClave, setCambiarClave] = useState(false);
     const [clave, setClave] = useState("");
 
@@ -90,112 +91,133 @@ export default function DetalleUsuario() {
     };
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-            <StatusBar backgroundColor="#001C38" barStyle="light-content" />
-
-            {/* Header Restaurado */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Gestionar Usuario</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-                
-                {/* INFO BLOQUEADA (ID Y ROL) - RESTAURADA */}
-                <View style={styles.infoCard}>
-                    <View style={styles.lockedHeader}>
-                        <Ionicons name="lock-closed" size={18} color="#999" />
-                        <Text style={styles.lockedTitle}>Información Protegida</Text>
-                    </View>
-                    
-                    <Text style={styles.label}>Cédula de Identidad</Text>
-                    <Text style={styles.readOnlyText}>{u.cedula}</Text>
-
-                    <Text style={styles.label}>Tipo de Acceso / Rol</Text>
-                    <Text style={styles.readOnlyText}>
-                        {u.origen === 'WEB' ? 'SISTEMA WEB' : (parseInt(u.rol) === 1 ? 'ADMINISTRADOR MÓVIL' : 'TÉCNICO MÓVIL')}
-                    </Text>
-                </View>
-
-                {/* FORMULARIO EDITABLE */}
-                <View style={[styles.infoCard, { marginTop: 20 }]}>
-                    <View style={styles.lockedHeader}>
-                        <Ionicons name="create" size={18} color="#007AFF" />
-                        <Text style={[styles.lockedTitle, { color: '#007AFF' }]}>Editar Datos</Text>
-                    </View>
-
-                    <Text style={styles.label}>Nombres</Text>
-                    <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
-
-                    <Text style={styles.label}>Apellidos</Text>
-                    <TextInput style={styles.input} value={apellido} onChangeText={setApellido} />
-
-                    <Text style={styles.label}>Teléfono Celular</Text>
-                    <TextInput style={styles.input} value={celular} onChangeText={setCelular} keyboardType="phone-pad" />
-
-                    <Text style={styles.label}>Nombre de Usuario</Text>
-                    <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} autoCapitalize="none" />
-
-                    <View style={styles.divider} />
-
-                    {/* SELECTOR DE ACTUALIZAR CONTRASEÑA */}
-                    <View style={styles.passwordHeader}>
-                        <Text style={styles.labelPassword}>¿Actualizar contraseña?</Text>
-                        <View style={styles.checkContainer}>
-                            <TouchableOpacity
-                                style={[styles.checkBtn, !cambiarClave && styles.checkBtnActiveNo]}
-                                onPress={() => { setCambiarClave(false); setClave(""); }}
-                            >
-                                <Text style={!cambiarClave ? { color: '#FFF', fontWeight: 'bold' } : { color: '#666' }}>No</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.checkBtn, cambiarClave && styles.checkBtnActiveSi]}
-                                onPress={() => setCambiarClave(true)}
-                            >
-                                <Text style={cambiarClave ? { color: '#FFF', fontWeight: 'bold' } : { color: '#666' }}>Sí</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* CAMPO DE CLAVE CONDICIONAL */}
-                    {cambiarClave && (
-                        <View style={styles.inputClaveAnim}>
-                            <Text style={styles.label}>Nueva Contraseña</Text>
-                            <TextInput
-                                style={[styles.input, { borderColor: '#007AFF', backgroundColor: '#F0F7FF' }]}
-                                secureTextEntry
-                                value={clave}
-                                onChangeText={setClave}
-                                placeholder="Escriba la nueva clave..."
-                            />
-                        </View>
-                    )}
-
-                    <TouchableOpacity style={styles.saveBtn} onPress={handleActualizar} disabled={loading}>
-                        {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Actualizar Información</Text>}
+        // Agregamos 'bottom' para que respete la barra de gestos/botones del sistema
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <StatusBar style="light" backgroundColor="#001C38" />
+            
+            <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Ionicons name="arrow-back" size={24} color="#FFF" />
                     </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Gestionar Usuario</Text>
+                    <View style={{ width: 40 }} />
                 </View>
 
-                {/* BOTÓN ELIMINAR - RESTAURADO */}
-                <TouchableOpacity style={styles.deleteBtn} onPress={handleEliminar}>
-                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                    <Text style={styles.deleteBtnText}>Eliminar Usuario del Sistema</Text>
-                </TouchableOpacity>
+                <ScrollView 
+                    style={styles.scrollView} 
+                    contentContainerStyle={styles.scrollContent} // Estilo para el padding interno
+                    showsVerticalScrollIndicator={false}
+                >
+                    
+                    {/* INFO BLOQUEADA */}
+                    <View style={styles.infoCard}>
+                        <View style={styles.lockedHeader}>
+                            <Ionicons name="lock-closed" size={18} color="#999" />
+                            <Text style={styles.lockedTitle}>Información Protegida</Text>
+                        </View>
+                        
+                        <Text style={styles.label}>Cédula de Identidad</Text>
+                        <Text style={styles.readOnlyText}>{u.cedula}</Text>
 
-                <View style={{ height: 50 }} />
-            </ScrollView>
-        </KeyboardAvoidingView>
+                        <Text style={styles.label}>Tipo de Acceso / Rol</Text>
+                        <Text style={styles.readOnlyText}>
+                            {u.origen === 'WEB' ? 'SISTEMA WEB' : (parseInt(u.rol) === 1 ? 'ADMINISTRADOR MÓVIL' : 'TÉCNICO MÓVIL')}
+                        </Text>
+                    </View>
+
+                    {/* FORMULARIO EDITABLE */}
+                    <View style={[styles.infoCard, { marginTop: 20 }]}>
+                        <View style={styles.lockedHeader}>
+                            <Ionicons name="create" size={18} color="#007AFF" />
+                            <Text style={[styles.lockedTitle, { color: '#007AFF' }]}>Editar Datos</Text>
+                        </View>
+
+                        <Text style={styles.label}>Nombres</Text>
+                        <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
+
+                        <Text style={styles.label}>Apellidos</Text>
+                        <TextInput style={styles.input} value={apellido} onChangeText={setApellido} />
+
+                        <Text style={styles.label}>Teléfono Celular</Text>
+                        <TextInput style={styles.input} value={celular} onChangeText={setCelular} keyboardType="phone-pad" />
+
+                        <Text style={styles.label}>Nombre de Usuario</Text>
+                        <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} autoCapitalize="none" />
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.passwordHeader}>
+                            <Text style={styles.labelPassword}>¿Actualizar contraseña?</Text>
+                            <View style={styles.checkContainer}>
+                                <TouchableOpacity
+                                    style={[styles.checkBtn, !cambiarClave && styles.checkBtnActiveNo]}
+                                    onPress={() => { setCambiarClave(false); setClave(""); }}
+                                >
+                                    <Text style={!cambiarClave ? { color: '#FFF', fontWeight: 'bold' } : { color: '#666' }}>No</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.checkBtn, cambiarClave && styles.checkBtnActiveSi]}
+                                    onPress={() => setCambiarClave(true)}
+                                >
+                                    <Text style={cambiarClave ? { color: '#FFF', fontWeight: 'bold' } : { color: '#666' }}>Sí</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {cambiarClave && (
+                            <View style={styles.inputClaveAnim}>
+                                <Text style={styles.label}>Nueva Contraseña</Text>
+                                <TextInput
+                                    style={[styles.input, { borderColor: '#007AFF', backgroundColor: '#F0F7FF' }]}
+                                    secureTextEntry
+                                    value={clave}
+                                    onChangeText={setClave}
+                                    placeholder="Escriba la nueva clave..."
+                                />
+                            </View>
+                        )}
+
+                        <TouchableOpacity style={styles.saveBtn} onPress={handleActualizar} disabled={loading}>
+                            {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveBtnText}>Actualizar Información</Text>}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* BOTÓN ELIMINAR */}
+                    <TouchableOpacity style={styles.deleteBtn} onPress={handleEliminar}>
+                        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                        <Text style={styles.deleteBtnText}>Eliminar Usuario del Sistema</Text>
+                    </TouchableOpacity>
+
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F2F2F7" },
-    header: { backgroundColor: "#001C38", paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    header: { 
+        backgroundColor: "#001C38", 
+        paddingTop: 10, 
+        paddingBottom: 20, 
+        paddingHorizontal: 20, 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "space-between",
+        borderBottomLeftRadius: 15,
+        borderBottomRightRadius: 15,
+    },
     headerTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF" },
-    scrollContainer: { padding: 20 },
+    scrollView: { flex: 1 },
+    scrollContent: { 
+        padding: 20, 
+        paddingBottom: 60 // <-- ESPACIO EXTRA para que el botón de eliminar no pegue abajo
+    },
     infoCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 15, elevation: 3, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
     lockedHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingBottom: 10 },
     lockedTitle: { marginLeft: 8, fontSize: 14, fontWeight: 'bold', color: '#999' },
