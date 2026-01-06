@@ -283,7 +283,7 @@ export default function CrearReporte() {
 
                 {/* 4. ACCESORIOS */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>4. Accesorios</Text>
+                    <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios? </Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
                             <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
@@ -299,7 +299,7 @@ export default function CrearReporte() {
 
                 {/* 5. INSPECCIÓN ESTADO */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>5. Inspección de Estado</Text>
+                    <Text style={styles.sectionTitle}>5. Estado</Text>
                     <View style={styles.row}>
                         <CheckItem label="Equipo Nuevo" value={checks.nuevo} onToggle={() => toggleCheck('nuevo')} />
                         <CheckItem label="Equipo Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
@@ -310,7 +310,7 @@ export default function CrearReporte() {
 
                 {/* 6. PUNTOS A TOMAR EN CUENTA */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>6. Puntos a tomar en cuenta</Text>
+                    <Text style={styles.sectionTitle}>6. Tomar en cuenta</Text>
                     <View style={styles.row}>
                         <CheckItem label="Nivelación" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
                         <CheckItem label="Presión Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
@@ -328,17 +328,17 @@ export default function CrearReporte() {
                 {/* 7. EVIDENCIA FOTOGRÁFICA */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>7. Evidencia Fotográfica</Text>
-                    <ItemFoto label="1. Foto Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
-                    <ItemFoto label="2. Foto Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
-                    <ItemFoto label="3. Reporte Final" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
+                    <ItemFoto label="1. Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
+                    <ItemFoto label="2. Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
+                    <ItemFoto label="3. Revisión Electrica" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
                 </View>
 
                 {/* 8. CIERRE */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>8. Conformidad</Text>
-                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones finales..." value={recomendaciones} onChangeText={setRecomendaciones} />
+                    <Text style={styles.sectionTitle}>8. FINALIZACIÓN </Text>
+                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones..." value={recomendaciones} onChangeText={setRecomendaciones} />
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>Acepto términos de bodegaje (90 días) y conformidad.</Text>
+                        <Text style={styles.termsText}>El cliente acepta los terminos de conformidad </Text>
                         <Switch value={checks.aceptaCondiciones} onValueChange={() => toggleCheck('aceptaCondiciones')} />
                     </View>
                     <Text style={styles.label}>Firma del Cliente</Text>
@@ -370,7 +370,7 @@ const ItemFoto = ({ label, icon, color, foto, desc, onFoto, onDesc }) => (
         <TouchableOpacity style={styles.photoBtn} onPress={onFoto}>
             {foto ? <Image source={{ uri: foto.uri }} style={styles.fill} /> : <Ionicons name={icon} size={40} color={color} />}
         </TouchableOpacity>
-        <TextInput style={styles.inputSmall} placeholder="Descripción de la foto..." value={desc} onChangeText={onDesc} />
+        <TextInput style={styles.inputSmall} placeholder="Ingrese descripción..." value={desc} onChangeText={onDesc} />
     </View>
 );
 
