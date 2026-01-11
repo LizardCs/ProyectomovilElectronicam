@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar"; // <-- AGREGADO
+import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -20,7 +20,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from 'react-native-svg';
 
-import { AuthService } from "../services/api";
+// --- NUEVAS IMPORTACIONES ---
+import { login } from "../services/login";
+import { SessionService } from "../services/session";
 
 const { width } = Dimensions.get('window');
 
@@ -36,12 +38,13 @@ export default function Login() {
 
     const checkExistingSession = async () => {
         try {
-            const user = await AuthService.getStoredUser();
+            // Usamos el nuevo servicio de sesión
+            const user = await SessionService.getStoredUser();
             if (user) {
                 user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
             }
         } catch (error) {
-            //console.log('Sin sesión previa');
+            console.log('Sin sesión previa');
         }
     };
 
@@ -55,28 +58,29 @@ export default function Login() {
         Keyboard.dismiss();
 
         try {
-            const response = await AuthService.login({ 
-                usuario: usuario.trim(), 
-                clave: clave.trim() 
-            });
+            // LLAMADA AL NUEVO SERVICIO LOGIN.JS
+            const response = await login(usuario.trim(), clave.trim());
             
             if (response.success && response.user) {
-                response.user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
+                // Guardamos la sesión localmente
+                await SessionService.saveUser(response.user);
+                
+                // Redirigimos según lo que devuelva el servicio
+                router.replace(response.redirect_to);
             } else {
                 Alert.alert("Acceso Denegado", response.message || "Usuario o contraseña incorrectos.");
             }
         } catch (error) {
-            console.error("❌ Error completo en login:", error);
+            console.error("❌ Error en Login:", error);
             Alert.alert(
                 "🔌 Error de conexión",
-                "No se pudo conectar al servidor de Electrónica Mantilla.\n\n" +
-                "Verifica que XAMPP esté encendido y que el dispositivo esté en la misma red WiFi."
+                "No se pudo conectar con el servidor en la nube.\n\n" +
+                "Verifica tu conexión a internet."
             );
         } finally {
             setIsLoading(false);
         }
     };
-
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -84,7 +88,6 @@ export default function Login() {
                 colors={['#0f172a', '#1e3a8a', '#1e40af']} 
                 style={styles.container}
             >
-                {/* Asegura que los iconos de la barra de estado sean blancos */}
                 <StatusBar style="light" /> 
 
                 <View style={StyleSheet.absoluteFill}>
@@ -99,7 +102,6 @@ export default function Login() {
                     </Svg>
                 </View>
 
-                {/* Usamos SafeAreaView para evitar que el logo choque con el notch */}
                 <SafeAreaView style={{ flex: 1 }}>
                     <KeyboardAvoidingView 
                         style={{ flex: 1 }}
@@ -176,6 +178,7 @@ export default function Login() {
     );
 }
 
+// ... (Los estilos se mantienen iguales)
 const styles = StyleSheet.create({
     container: { flex: 1 },
     innerContainer: { flex: 1, paddingHorizontal: 30, justifyContent: "center" },

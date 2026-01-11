@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar"; // <-- CAMBIADO
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -14,7 +13,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context"; // <-- CORREGIDO PARA EL WARNING
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// --- NUEVAS IMPORTACIONES MODULARES ---
+import { obtenerServiciosTecnico } from "../../services/obtenerServiciosTecnico";
+import { SessionService } from "../../services/session";
 
 export default function HomeTecnico() {
   const router = useRouter();
@@ -32,10 +35,11 @@ export default function HomeTecnico() {
     Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
   }, []);
 
+  // Recarga automática cuando la pantalla vuelve a tener el foco
   useFocusEffect(
     useCallback(() => {
       if (user) {
-        const ced = user.cedula || user.MOV_CED;
+        const ced = user.cedula;
         fetchServicios(ced);
       }
     }, [user])
@@ -43,11 +47,10 @@ export default function HomeTecnico() {
 
   const loadUser = async () => {
     try {
-      const userJson = await AsyncStorage.getItem('@user_data');
-      if (userJson) {
-        const userData = JSON.parse(userJson);
+      const userData = await SessionService.getStoredUser();
+      if (userData) {
         setUser(userData);
-        fetchServicios(userData.cedula || userData.MOV_CED);
+        fetchServicios(userData.cedula);
       } else {
         router.replace('/');
       }
@@ -56,29 +59,27 @@ export default function HomeTecnico() {
     }
   };
 
+  // --- LLAMADA AL SERVICIO obtenerServiciosTecnico.js ---
   const fetchServicios = async (cedulaTecnico) => {
-    const ced = cedulaTecnico || user?.cedula || user?.MOV_CED;
+    const ced = cedulaTecnico || user?.cedula;
     if (!ced) return;
 
     try {
-      const url = `${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios-tecnico.php?cedula=${ced}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.success) {
-        setServicios(data.servicios || []);
+      const res = await obtenerServiciosTecnico(ced);
+      if (res.success) {
+        setServicios(res.servicios || []);
       } else {
         setServicios([]);
       }
     } catch (error) {
       console.error("Error obteniendo servicios:", error);
-      Alert.alert("Error", "No se pudo conectar con el servidor.");
+      Alert.alert("Error", "No se pudo sincronizar con la nube.");
     }
   };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    const ced = user?.cedula || user?.MOV_CED;
+    const ced = user?.cedula;
     await fetchServicios(ced);
     setRefreshing(false);
   }, [user]);
@@ -89,7 +90,7 @@ export default function HomeTecnico() {
       {
         text: "Sí, salir",
         onPress: async () => {
-          await AsyncStorage.removeItem('@user_data');
+          await SessionService.logout();
           router.replace('/');
         }
       }
@@ -124,9 +125,9 @@ export default function HomeTecnico() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.welcome}>Servicios Técnicos</Text>
+            <Text style={styles.welcome}>Panel Técnico</Text>
             <Text style={styles.userInfo}> 
-              Bienvenido {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
+              Hola, {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
             </Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -150,18 +151,18 @@ export default function HomeTecnico() {
           style={[styles.statCard, filtroActivo === "pendientes" && styles.statCardActive]}
           onPress={() => setFiltroActivo("pendientes")}
         >
-          <Ionicons name="time" size={20} color={filtroActivo === "pendientes" ? "#FFF" : "#FF9500"} />
+          <Ionicons name="alert-circle" size={20} color={filtroActivo === "pendientes" ? "#FFF" : "#FF9500"} />
           <Text style={[styles.statNumber, filtroActivo === "pendientes" && { color: '#FFF' }]}>
             {servicios.filter(s => parseInt(s.SERV_EST) === 0).length}
           </Text>
-          <Text style={[styles.statLabel, filtroActivo === "pendientes" && { color: '#FFF' }]}>Pendientes</Text>
+          <Text style={[styles.statLabel, filtroActivo === "pendientes" && { color: '#FFF' }]}>Por hacer</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.statCard, filtroActivo === "listos" && styles.statCardActive]}
           onPress={() => setFiltroActivo("listos")}
         >
-          <Ionicons name="checkmark-done" size={20} color={filtroActivo === "listos" ? "#FFF" : "#34C759"} />
+          <Ionicons name="checkmark-circle" size={20} color={filtroActivo === "listos" ? "#FFF" : "#34C759"} />
           <Text style={[styles.statNumber, filtroActivo === "listos" && { color: '#FFF' }]}>
             {servicios.filter(s => parseInt(s.SERV_EST) === 1).length}
           </Text>
@@ -174,7 +175,7 @@ export default function HomeTecnico() {
         <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Buscar por número..."
+          placeholder="Buscar por número de servicio..."
           value={busqueda}
           onChangeText={setBusqueda}
           keyboardType="numeric"
@@ -194,31 +195,31 @@ export default function HomeTecnico() {
           {obtenerDatosFiltrados().length === 0 ? (
             <View style={{ alignItems: 'center', marginTop: 40 }}>
               <Ionicons name="construct-outline" size={50} color="#CCC" />
-              <Text style={styles.emptyText}>No hay servicios en esta lista.</Text>
+              <Text style={styles.emptyText}>No tienes servicios asignados aún.</Text>
             </View>
           ) : (
             obtenerDatosFiltrados().map((s) => (
               <View key={s.SERV_ID} style={styles.tareaCard}>
                 <View style={styles.tareaHeader}>
-                  <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>#{s.SERV_NUM}</Text></View>
+                  <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>ORDEN #{s.SERV_NUM}</Text></View>
                   <View style={[styles.estadoBadge, { backgroundColor: parseInt(s.SERV_EST) === 1 ? "#34C759" : "#FF9500" }]}>
-                    <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE"}</Text>
+                    <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "LISTO" : "PENDIENTE"}</Text>
                   </View>
                 </View>
 
-                <Text style={styles.tareaDescripcion} numberOfLines={2}>{s.SERV_DESCRIPCION || "Sin descripción"}</Text>
+                <Text style={styles.tareaDescripcion} numberOfLines={2}>{s.SERV_DESCRIPCION || "Sin detalles adicionales."}</Text>
 
                 <View style={styles.tareaFooter}>
                   <View style={styles.assignerInfo}>
                     <Ionicons name="person-outline" size={14} color="#666" />
-                    <Text style={styles.assignerName}>De: {s.SERV_NOM_ENV}</Text>
+                    <Text style={styles.assignerName}>Asignado por: {s.SERV_NOM_ENV}</Text>
                   </View>
 
                   <TouchableOpacity
                     style={styles.verBtn}
                     onPress={() => handleVerDetalles(s)}
                   >
-                    <Text style={styles.verBtnText}>Ver Detalles</Text>
+                    <Text style={styles.verBtnText}>Gestionar</Text>
                     <Ionicons name="chevron-forward" size={16} color="#007AFF" />
                   </TouchableOpacity>
                 </View>
@@ -234,14 +235,7 @@ export default function HomeTecnico() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { 
-    backgroundColor: "#001C38", 
-    paddingTop: 10, // Ajustado porque SafeAreaView maneja el borde superior
-    paddingBottom: 50, 
-    paddingHorizontal: 20, 
-    borderBottomLeftRadius: 30, 
-    borderBottomRightRadius: 30 
-  },
+  header: { backgroundColor: "#001C38", paddingTop: 10, paddingBottom: 50, paddingHorizontal: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   welcome: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
   userInfo: { fontSize: 16, color: "#88BBDC" },
@@ -257,14 +251,14 @@ const styles = StyleSheet.create({
   tareaCard: { backgroundColor: "white", borderRadius: 18, padding: 18, marginBottom: 15, elevation: 2 },
   tareaHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
   tareaIdContainer: { backgroundColor: "#F2F2F7", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  tareaId: { fontWeight: "bold", color: "#001C38" },
+  tareaId: { fontWeight: "bold", color: "#001C38", fontSize: 12 },
   estadoBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   estadoText: { fontSize: 10, color: "white", fontWeight: "bold" },
   tareaDescripcion: { fontSize: 15, color: "#3A3A3C", marginBottom: 15, lineHeight: 20 },
   tareaFooter: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#F2F2F7", paddingTop: 12, alignItems: 'center' },
   assignerInfo: { flexDirection: 'row', alignItems: 'center' },
-  assignerName: { fontSize: 12, color: '#666', marginLeft: 5 },
-  verBtn: { flexDirection: 'row', alignItems: 'center' },
-  verBtnText: { color: '#007AFF', fontWeight: 'bold', marginRight: 2, fontSize: 13 },
+  assignerName: { fontSize: 11, color: '#666', marginLeft: 5 },
+  verBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E3F2FD', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  verBtnText: { color: '#007AFF', fontWeight: 'bold', marginRight: 2, fontSize: 12 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 10 }
 });

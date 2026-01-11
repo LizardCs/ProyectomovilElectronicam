@@ -16,10 +16,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// --- NUEVAS IMPORTACIONES MODULARES ---
+import { editarUsuarios } from "../../services/editarUsuarios";
+import { eliminarUsuario } from "../../services/eliminarUsuario";
+
 export default function DetalleUsuario() {
     const router = useRouter();
     const params = useLocalSearchParams();
     
+    // Obtenemos el objeto usuario pasado por parámetros
     const u = params.user ? JSON.parse(params.user) : {};
 
     const [loading, setLoading] = useState(false);
@@ -31,6 +36,7 @@ export default function DetalleUsuario() {
     const [cambiarClave, setCambiarClave] = useState(false);
     const [clave, setClave] = useState("");
 
+    // --- MANEJO DE ACTUALIZACIÓN ---
     const handleActualizar = async () => {
         if (!nombre || !apellido || !usuario) {
             Alert.alert("Error", "Campos obligatorios vacíos.");
@@ -44,54 +50,60 @@ export default function DetalleUsuario() {
 
         setLoading(true);
         try {
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/editar-usuario.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: u.id,
-                    origen: u.origen,
-                    nombre,
-                    apellido,
-                    celular,
-                    usuario,
-                    clave: cambiarClave ? clave : ""
-                })
+            // LLAMADA AL SERVICIO editarUsuarios.js
+            const res = await editarUsuarios({
+                id: u.id,
+                origen: u.origen,
+                nombre,
+                apellido,
+                celular,
+                usuario,
+                clave: cambiarClave ? clave : ""
             });
-            const res = await response.json();
+
             if (res.success) {
-                Alert.alert("Éxito", "Usuario actualizado");
+                Alert.alert("Éxito", "Usuario actualizado correctamente.");
                 router.back();
+            } else {
+                Alert.alert("Error", res.message || "No se pudo actualizar el usuario.");
             }
         } catch (e) { 
-            Alert.alert("Error", "Fallo de conexión"); 
+            console.error(e);
+            Alert.alert("Error", "Ocurrió un error al conectar con la base de datos."); 
         } finally { 
             setLoading(false); 
         }
     };
 
+    // --- MANEJO DE ELIMINACIÓN ---
     const handleEliminar = () => {
-        Alert.alert("Eliminar Usuario", "¿Estás seguro de eliminar a este usuario?", [
+        Alert.alert("Eliminar Usuario", `¿Estás seguro de eliminar a ${nombre}? Esta acción es permanente.`, [
             { text: "Cancelar", style: "cancel" },
             { text: "Eliminar", style: "destructive", onPress: confirmEliminar }
         ]);
     };
 
     const confirmEliminar = async () => {
+        setLoading(true);
         try {
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/eliminar-usuario.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: u.id, origen: u.origen })
-            });
-            const res = await response.json();
-            if (res.success) router.back();
+            // LLAMADA AL SERVICIO eliminarUsuario.js
+            const res = await eliminarUsuario(u.id, u.origen);
+            
+            if (res.success) {
+                Alert.alert("Eliminado", "El usuario ha sido borrado del sistema.");
+                router.back();
+            } else {
+                Alert.alert("Error", res.message || "No se pudo eliminar el usuario.");
+            }
         } catch (e) { 
-            Alert.alert("Error", "No se pudo eliminar"); 
+            console.error(e);
+            Alert.alert("Error", "Fallo de conexión al intentar eliminar."); 
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        // Agregamos 'bottom' para que respete la barra de gestos/botones del sistema
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <StatusBar style="light" backgroundColor="#001C38" />
             
@@ -110,7 +122,7 @@ export default function DetalleUsuario() {
 
                 <ScrollView 
                     style={styles.scrollView} 
-                    contentContainerStyle={styles.scrollContent} // Estilo para el padding interno
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
                     
@@ -188,7 +200,7 @@ export default function DetalleUsuario() {
                     </View>
 
                     {/* BOTÓN ELIMINAR */}
-                    <TouchableOpacity style={styles.deleteBtn} onPress={handleEliminar}>
+                    <TouchableOpacity style={styles.deleteBtn} onPress={handleEliminar} disabled={loading}>
                         <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                         <Text style={styles.deleteBtnText}>Eliminar Usuario del Sistema</Text>
                     </TouchableOpacity>
@@ -216,7 +228,7 @@ const styles = StyleSheet.create({
     scrollView: { flex: 1 },
     scrollContent: { 
         padding: 20, 
-        paddingBottom: 60 // <-- ESPACIO EXTRA para que el botón de eliminar no pegue abajo
+        paddingBottom: 60 
     },
     infoCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 15, elevation: 3, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
     lockedHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingBottom: 10 },

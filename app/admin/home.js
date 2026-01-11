@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -15,6 +14,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+
+// --- NUEVAS IMPORTACIONES MODULARES ---
+import { obtenerServicios } from "../../services/obtenerServicios";
+import { obtenerUsuarios } from "../../services/obtenerUsuarios";
+import { SessionService } from "../../services/session";
 
 export default function HomeAdmin() {
   const router = useRouter();
@@ -41,7 +45,6 @@ export default function HomeAdmin() {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-      // Resetear filtros al cambiar entre servicios y usuarios
       setFiltroActivo("total");
       setBusqueda("");
     }, [activeTab])
@@ -65,15 +68,11 @@ export default function HomeAdmin() {
   };
 
   const loadUser = async () => {
-    try {
-      const userJson = await AsyncStorage.getItem('@user_data');
-      if (userJson) {
-        setUser(JSON.parse(userJson));
-      } else {
-        router.replace('/');
-      }
-    } catch (error) {
-      console.error('Error cargando usuario:', error);
+    const userData = await SessionService.getStoredUser();
+    if (userData) {
+      setUser(userData);
+    } else {
+      router.replace('/');
     }
   };
 
@@ -85,23 +84,23 @@ export default function HomeAdmin() {
     }
   };
 
+  // --- LLAMADA AL SERVICIO obtenerServicios.js ---
   const fetchServicios = async () => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-servicios.php`);
-      const data = await response.json();
-      if (data.success) setServicios(data.servicios);
+      const res = await obtenerServicios();
+      if (res.success) setServicios(res.servicios);
     } catch (error) {
-      console.error("Error obteniendo servicios:", error);
+      console.error("Error cargando servicios:", error);
     }
   };
 
+  // --- LLAMADA AL SERVICIO obtenerUsuarios.js ---
   const fetchUsuarios = async () => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/obtener-usuarios.php`);
-      const data = await response.json();
-      if (data.success) setUsuarios(data.usuarios);
+      const res = await obtenerUsuarios();
+      if (res.success) setUsuarios(res.usuarios);
     } catch (error) {
-      console.error("Error obteniendo usuarios:", error);
+      console.error("Error cargando usuarios:", error);
     }
   };
 
@@ -117,14 +116,14 @@ export default function HomeAdmin() {
       {
         text: "Sí, salir",
         onPress: async () => {
-          await AsyncStorage.removeItem('@user_data');
+          await SessionService.logout();
           router.replace('/');
         }
       }
     ]);
   };
 
-  // --- LÓGICA DE FILTRADO DINÁMICO ---
+  // --- LÓGICA DE FILTRADO DINÁMICO (Sin cambios, compatible con Supabase) ---
   const obtenerDatosFiltrados = () => {
     const query = busqueda.toLowerCase().trim();
 
@@ -139,15 +138,12 @@ export default function HomeAdmin() {
         return cumpleFiltro && cumpleBusqueda;
       });
     } else {
-      // FILTRADO PARA USUARIOS
       return usuarios.filter(u => {
-        // Primero verificamos el filtro de las tarjetas (Total/Móvil/Web)
         const cumpleFiltro =
           filtroActivo === "total" ? true :
             filtroActivo === "movil" ? u.origen === "MOVIL" :
               filtroActivo === "web" ? u.origen === "WEB" : true;
 
-        // Luego verificamos la búsqueda por texto
         const cumpleBusqueda =
           (u.nombre || "").toLowerCase().includes(query) ||
           (u.apellido || "").toLowerCase().includes(query) ||
@@ -159,13 +155,8 @@ export default function HomeAdmin() {
     }
   };
 
-  // --- LÓGICA DE NAVEGACIÓN ---
   const handleAddAction = () => {
-    if (activeTab === "servicios") {
-      router.push("/admin/crear-servicio");
-    } else {
-      router.push("/admin/crear-usuario");
-    }
+    activeTab === "servicios" ? router.push("/admin/crear-servicio") : router.push("/admin/crear-usuario");
   };
 
   const handleVerDetallesServicio = (servicio) => {
@@ -211,7 +202,6 @@ export default function HomeAdmin() {
 
       {/* Stats Cards como FILTROS */}
       <Animated.View style={[styles.statsContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        {/* TOTAL */}
         <TouchableOpacity
           style={[styles.statCard, filtroActivo === "total" && styles.statCardActive]}
           onPress={() => setFiltroActivo("total")}
@@ -223,7 +213,6 @@ export default function HomeAdmin() {
           <Text style={[styles.statLabel, filtroActivo === "total" && { color: '#FFF' }]}>Total</Text>
         </TouchableOpacity>
 
-        {/* PENDIENTES / MÓVIL */}
         <TouchableOpacity
           style={[styles.statCard, (filtroActivo === "pendientes" || filtroActivo === "movil") && styles.statCardActive]}
           onPress={() => setFiltroActivo(activeTab === "servicios" ? "pendientes" : "movil")}
@@ -243,7 +232,6 @@ export default function HomeAdmin() {
           </Text>
         </TouchableOpacity>
 
-        {/* LISTOS / WEB */}
         <TouchableOpacity
           style={[styles.statCard, (filtroActivo === "listos" || filtroActivo === "web") && styles.statCardActive]}
           onPress={() => setFiltroActivo(activeTab === "servicios" ? "listos" : "web")}
@@ -288,14 +276,9 @@ export default function HomeAdmin() {
         <Ionicons name="search" size={20} color="#999" style={{ marginLeft: 15 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder={
-            activeTab === "servicios"
-              ? "Buscar por N° de servicio..."
-              : "Buscar por nombre, cédula o usuario..."
-          }
+          placeholder={activeTab === "servicios" ? "Buscar por N° de servicio..." : "Buscar por nombre, cédula o usuario..."}
           value={busqueda}
           onChangeText={setBusqueda}
-          // Si es servicios usamos numérico, si es usuarios usamos default para permitir nombres
           keyboardType={activeTab === "servicios" ? "numeric" : "default"}
           autoCapitalize="none"
         />
@@ -312,7 +295,6 @@ export default function HomeAdmin() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
               {activeTab === "servicios" ? "Asignaciones" : "Personal Registrado"}
@@ -323,7 +305,6 @@ export default function HomeAdmin() {
               </View>
             )}
           </View>
-
 
           {obtenerDatosFiltrados().length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -341,16 +322,10 @@ export default function HomeAdmin() {
                   </View>
                   <View style={[
                     styles.estadoBadge,
-                    {
-                      backgroundColor: activeTab === "servicios"
-                        ? (parseInt(item.SERV_EST) === 1 ? "#34C759" : "#FF9500")
-                        : getRolInfo(item).color
-                    }
+                    { backgroundColor: activeTab === "servicios" ? (parseInt(item.SERV_EST) === 1 ? "#34C759" : "#FF9500") : getRolInfo(item).color }
                   ]}>
                     <Text style={styles.estadoText}>
-                      {activeTab === "servicios"
-                        ? (parseInt(item.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE")
-                        : getRolInfo(item).texto}
+                      {activeTab === "servicios" ? (parseInt(item.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE") : getRolInfo(item).texto}
                     </Text>
                   </View>
                 </View>
@@ -361,11 +336,7 @@ export default function HomeAdmin() {
 
                 <View style={styles.tareaFooter}>
                   <View style={styles.tecnicoInfo}>
-                    <Ionicons
-                      name={activeTab === "servicios" ? "person-circle-outline" : "card-outline"}
-                      size={18}
-                      color="#666"
-                    />
+                    <Ionicons name={activeTab === "servicios" ? "person-circle-outline" : "card-outline"} size={18} color="#666" />
                     <Text style={styles.tecnicoNombre}>
                       {activeTab === "servicios" ? (item.SERV_NOM_REC || "Por asignar") : `CI: ${item.cedula}`}
                     </Text>
@@ -385,7 +356,6 @@ export default function HomeAdmin() {
         </Animated.View>
       </ScrollView>
 
-      {/* Floating Action Button */}
       <TouchableOpacity style={styles.floatingButton} onPress={handleAddAction}>
         <Ionicons name="add" size={35} color="#FFF" />
       </TouchableOpacity>
@@ -395,15 +365,7 @@ export default function HomeAdmin() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: {
-    backgroundColor: "#001C38",
-    paddingTop: 50,
-    paddingBottom: 50,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    elevation: 10,
-  },
+  header: { backgroundColor: "#001C38", paddingTop: 50, paddingBottom: 50, paddingHorizontal: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 10 },
   headerContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   welcome: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
   userInfo: { fontSize: 16, color: "#88BBDC", marginTop: 2 },
@@ -439,19 +401,5 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 14, color: "#007AFF", marginRight: 4, fontWeight: "bold" },
   emptyContainer: { alignItems: 'center', marginTop: 40 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 10, fontSize: 16 },
-  floatingButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 25,
-    backgroundColor: "#007AFF",
-    width: 65,
-    height: 65,
-    borderRadius: 33,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 8,
-    shadowColor: "#007AFF",
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-  }
+  floatingButton: { position: "absolute", bottom: 30, right: 25, backgroundColor: "#007AFF", width: 65, height: 65, borderRadius: 33, justifyContent: "center", alignItems: "center", elevation: 8, shadowColor: "#007AFF", shadowOpacity: 0.4, shadowRadius: 10 }
 });

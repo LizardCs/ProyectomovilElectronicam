@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar"; // Agregado
+import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
@@ -8,41 +8,57 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// --- NUEVAS IMPORTACIONES MODULARES ---
+import { crearUsuarioMovil } from "../../services/crearUsuarioMovil";
+import { crearUsuarioWeb } from "../../services/crearUsuarioWeb";
+
 export default function CrearUsuario() {
   const router = useRouter();
   const [tipo, setTipo] = useState(null); // 'movil' o 'web'
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
-    cedula: "", nombre: "", apellido: "", celular: "",
-    usuario: "", clave: "", rol: "0" // rol solo para movil
+    cedula: "", 
+    nombre: "", 
+    apellido: "", 
+    celular: "",
+    usuario: "", 
+    clave: "", 
+    rol: "0" // rol solo para movil
   });
 
   const handleGuardar = async () => {
+    // Validaciones básicas (Igual que en tu PHP)
     if (!form.cedula || !form.usuario || !form.clave) {
-      Alert.alert("Error", "Completa los campos principales");
+      Alert.alert("Error", "La cédula, usuario y clave son obligatorios.");
       return;
     }
 
     setLoading(true);
-    const url = tipo === 'movil' 
-      ? `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-movil.php`
-      : `${process.env.EXPO_PUBLIC_API_URL}/crear-usuario-web.php`;
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-      const res = await response.json();
-      if (res.success) {
-        Alert.alert("Éxito", "Usuario creado correctamente", [
-          { text: "OK", onPress: () => router.back() }
-        ]);
+      let response;
+
+      // LLAMADA AL SERVICIO CORRESPONDIENTE SEGÚN EL TIPO
+      if (tipo === 'movil') {
+        response = await crearUsuarioMovil(form);
+      } else {
+        response = await crearUsuarioWeb(form);
       }
-    } catch (e) { Alert.alert("Error", "No hay conexión"); }
-    finally { setLoading(false); }
+
+      if (response.success) {
+        Alert.alert("Éxito", response.message || "Usuario creado correctamente", [
+          { text: "Continuar", onPress: () => router.back() }
+        ]);
+      } else {
+        Alert.alert("No se pudo crear", response.message);
+      }
+    } catch (e) { 
+      console.error(e);
+      Alert.alert("Error", "Hubo un fallo en la conexión con la base de datos."); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   return (
@@ -53,7 +69,7 @@ export default function CrearUsuario() {
         style={{ flex: 1 }} 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Header con padding ajustado */}
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#FFF" />
@@ -64,7 +80,7 @@ export default function CrearUsuario() {
 
         <ScrollView 
           style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent} // Estilo para el espacio final
+          contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
         >
           {/* PASO 1: SELECCIONAR TIPO */}
@@ -124,20 +140,20 @@ export default function CrearUsuario() {
                       style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
                       onPress={() => setForm({...form, rol: "0"})}
                      >
-                       <Text style={form.rol === "0" ? {color: '#FFF'} : {}}>Técnico</Text>
+                       <Text style={form.rol === "0" ? {color: '#FFF', fontWeight:'bold'} : {}}>Técnico</Text>
                      </TouchableOpacity>
                      <TouchableOpacity 
                       style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
                       onPress={() => setForm({...form, rol: "1"})}
                      >
-                       <Text style={form.rol === "1" ? {color: '#FFF'} : {}}>Administrador</Text>
+                       <Text style={form.rol === "1" ? {color: '#FFF', fontWeight:'bold'} : {}}>Administrador</Text>
                      </TouchableOpacity>
                   </View>
                 </>
               )}
 
               <TouchableOpacity style={styles.submitButton} onPress={handleGuardar} disabled={loading}>
-                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Crear Usuario {tipo.toUpperCase()}</Text>}
+                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Confirmar Registro {tipo.toUpperCase()}</Text>}
               </TouchableOpacity>
             </View>
           )}
@@ -147,25 +163,13 @@ export default function CrearUsuario() {
   );
 }
 
+// Estilos (Se mantienen iguales)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
-  header: { 
-    backgroundColor: "#001C38", 
-    paddingTop: 10, // Reducido porque SafeAreaView ya da el espacio
-    paddingBottom: 20, 
-    paddingHorizontal: 20, 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "space-between",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-  },
+  header: { backgroundColor: "#001C38", paddingTop: 10, paddingBottom: 20, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomLeftRadius: 15, borderBottomRightRadius: 15 },
   headerTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF" },
   scrollContainer: { flex: 1 },
-  scrollContent: { 
-    padding: 20,
-    paddingBottom: 40 // Espacio extra para que el botón submit no quede pegado abajo
-  },
+  scrollContent: { padding: 20, paddingBottom: 40 },
   labelSection: { fontSize: 16, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#444' },
   tipoContainer: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   tipoBtn: { flex: 1, backgroundColor: '#FFF', padding: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#007AFF' },

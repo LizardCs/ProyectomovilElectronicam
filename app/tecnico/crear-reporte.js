@@ -12,6 +12,9 @@ import {
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
 
+// --- NUEVA IMPORTACIÓN DEL SERVICIO ---
+import { crearReporte } from "../../services/crearReporte";
+
 export default function CrearReporte() {
     const router = useRouter();
     const navigation = useNavigation();
@@ -102,7 +105,6 @@ export default function CrearReporte() {
 
         setLoading(true);
 
-        // Helpers para el PDF
         const renderCheck = (val) => (val ? '☑' : '☐');
         const imgModelo = fotoModelo ? `data:image/jpeg;base64,${fotoModelo.base64}` : '';
         const imgFactura = fotoFactura ? `data:image/jpeg;base64,${fotoFactura.base64}` : '';
@@ -201,46 +203,55 @@ export default function CrearReporte() {
         </html>`;
 
         try {
+            // Generar el archivo PDF
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
 
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/crear-reporte.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cedula: servicio.SERV_CED_REC,
-                    nombre: servicio.SERV_NOM_REC,
-                    tipo: danioReportado,
-                    pdf_base64: base64,
-                    serv_id: servicio.SERV_ID,
-                    serv_num: servicio.SERV_NUM
-                })
+            // LLAMADA AL SERVICIO crearReporte.js
+            const res = await crearReporte({
+                cedula: servicio.SERV_CED_REC,
+                nombre: servicio.SERV_NOM_REC,
+                tipo: danioReportado,
+                pdf_base64: base64,
+                serv_id: servicio.SERV_ID,
+                serv_num: servicio.SERV_NUM
             });
 
-            const res = await response.json();
             if (res.success) {
-                Alert.alert("Éxito", "Reporte enviado correctamente.");
-                await Sharing.shareAsync(uri);
+                Alert.alert("Éxito", "Reporte guardado y servicio finalizado.");
+                await Sharing.shareAsync(uri); // Compartir el PDF
                 router.push("/tecnico/home");
             } else {
-                Alert.alert("Error", res.message || "Error al crear reporte");
+                Alert.alert("Error", res.message || "Error al subir el reporte");
             }
         } catch (e) {
-            Alert.alert("Error", "Problema al sincronizar: " + e.message);
-        }
-         finally {
+            Alert.alert("Error", "Problema al sincronizar con la nube: " + e.message);
+        } finally {
             setLoading(false);
         }
     };
 
     if (showSig) {
-        return <View style={StyleSheet.absoluteFill}><SignatureScreen onOK={(sig) => { setFirma(sig); setShowSig(false); }} onEmpty={() => setShowSig(false)} descriptionText="Firma del Cliente" confirmText="Guardar" clearText="Limpiar" /></View>;
+        return (
+            <View style={StyleSheet.absoluteFill}>
+                <SignatureScreen 
+                    onOK={(sig) => { setFirma(sig); setShowSig(false); }} 
+                    onEmpty={() => setShowSig(false)} 
+                    descriptionText="Firma del Cliente" 
+                    confirmText="Guardar" 
+                    clearText="Limpiar" 
+                />
+            </View>
+        );
     }
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}><Ionicons name="close" size={28} color="#FFF" /></TouchableOpacity>
-                <View style={styles.headerTitleContainer}><Text style={styles.headerTitle}>Reporte Técnico</Text><Text style={styles.headerSubtitle}>Nº Servicio: {servicio.SERV_NUM}</Text></View>
+                <View style={styles.headerTitleContainer}>
+                    <Text style={styles.headerTitle}>Generar Reporte Técnico</Text>
+                    <Text style={styles.headerSubtitle}>Orden Nº: {servicio.SERV_NUM}</Text>
+                </View>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -249,21 +260,21 @@ export default function CrearReporte() {
                 {/* 1. DATOS CLIENTE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
-                    <TextInput style={styles.input} placeholder="Nombre completo" value={nombreCliente} onChangeText={setNombreCliente} />
-                    <TextInput style={styles.input} placeholder="Cédula" keyboardType="numeric" value={cedulaCliente} onChangeText={setCedulaCliente} />
-                    <TextInput style={styles.input} placeholder="Teléfono" keyboardType="phone-pad" value={telefonoCliente} onChangeText={setTelefonoCliente} />
-                    <TextInput style={styles.input} placeholder="Dirección" value={direccionCliente} onChangeText={setDireccionCliente} />
+                    <TextInput style={styles.input} placeholder="Nombre del cliente" value={nombreCliente} onChangeText={setNombreCliente} />
+                    <TextInput style={styles.input} placeholder="Número de cédula" keyboardType="numeric" value={cedulaCliente} onChangeText={setCedulaCliente} />
+                    <TextInput style={styles.input} placeholder="Teléfono de contacto" keyboardType="phone-pad" value={telefonoCliente} onChangeText={setTelefonoCliente} />
+                    <TextInput style={styles.input} placeholder="Dirección del domicilio" value={direccionCliente} onChangeText={setDireccionCliente} />
                 </View>
 
                 {/* 2. IDENTIFICACION EQUIPO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Un: (Lavadora)" value={unidad} onChangeText={setUnidad} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Unidad (Ej. Lavadora)" value={unidad} onChangeText={setUnidad} />
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} />
-                    <TextInput style={styles.input} placeholder="Serie" value={serieEq} onChangeText={setSerieEq} />
+                    <TextInput style={styles.input} placeholder="N° Serie" value={serieEq} onChangeText={setSerieEq} />
                     <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} />
                 </View>
 
@@ -271,84 +282,80 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>3. Recepción y Diagnóstico</Text>
                     <View style={styles.row}>
-                        <CheckItem label="Garantía" value={checks.garantia} onToggle={() => toggleCheck('garantia')} />
-                        <CheckItem label="Papeles" value={checks.papeles} onToggle={() => toggleCheck('papeles')} />
+                        <CheckItem label="En Garantía" value={checks.garantia} onToggle={() => toggleCheck('garantia')} />
+                        <CheckItem label="Con Papeles" value={checks.papeles} onToggle={() => toggleCheck('papeles')} />
                     </View>
                     <View style={styles.row}>
                         <CheckItem label="Pendiente" value={checks.pendiente} onToggle={() => toggleCheck('pendiente')} />
-                        <CheckItem label="Completo" value={checks.completo} onToggle={() => toggleCheck('completo')} />
+                        <CheckItem label="Caja Completa" value={checks.completo} onToggle={() => toggleCheck('completo')} />
                     </View>
-                    <TextInput style={styles.inputArea} multiline placeholder="DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
+                    <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
                 {/* 4. ACCESORIOS */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios? </Text>
+                    <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
                             <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
-                            <Text style={styles.radioLabel}>SI</Text>
+                            <Text style={styles.radioLabel}>SÍ</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: false })}>
                             <Ionicons name={!checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={!checks.accesorios ? "#001C38" : "#666"} />
                             <Text style={styles.radioLabel}>NO</Text>
                         </TouchableOpacity>
                     </View>
-                    <TextInput style={styles.inputAcc} placeholder="Descripción de accesorios..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                    <TextInput style={styles.inputAcc} placeholder="Especifique accesorios recibidos..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                 </View>
 
                 {/* 5. INSPECCIÓN ESTADO */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>5. Estado</Text>
+                    <Text style={styles.sectionTitle}>5. Inspección de Estado</Text>
                     <View style={styles.row}>
-                        <CheckItem label="Equipo Nuevo" value={checks.nuevo} onToggle={() => toggleCheck('nuevo')} />
-                        <CheckItem label="Equipo Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
+                        <CheckItem label="Estado Nuevo" value={checks.nuevo} onToggle={() => toggleCheck('nuevo')} />
+                        <CheckItem label="Estado Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
                     </View>
-                    <CheckItem label="Exc. Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
-                    <TextInput style={styles.inputArea} multiline placeholder="Detalles físicos..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
+                    <CheckItem label="Fuera de Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Observaciones físicas (rayones, golpes)..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
                 </View>
 
-                {/* 6. PUNTOS A TOMAR EN CUENTA */}
+                {/* 6. PUNTOS TÉCNICOS */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>6. Tomar en cuenta</Text>
+                    <Text style={styles.sectionTitle}>6. Verificación Técnica</Text>
                     <View style={styles.row}>
-                        <CheckItem label="Nivelación" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
-                        <CheckItem label="Presión Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
+                        <CheckItem label="Nivelación Ok" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
+                        <CheckItem label="Presión de Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
                     </View>
                     <View style={styles.row}>
-                        <CheckItem label="Modelo/Serie" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
-                        <CheckItem label="Conex. Elec." value={checks.conexionesElectricas} onToggle={() => toggleCheck('conexionesElectricas')} />
-                    </View>
-                    <View style={styles.row}>
-                        <CheckItem label="Conex. Agua" value={checks.conexionesAgua} onToggle={() => toggleCheck('conexionesAgua')} />
-                        <CheckItem label="Equipo Instalado" value={checks.equipoInstalado} onToggle={() => toggleCheck('equipoInstalado')} />
+                        <CheckItem label="Verif. Modelo" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
+                        <CheckItem label="Inst. Eléctrica" value={checks.conexionesElectricas} onToggle={() => toggleCheck('conexionesElectricas')} />
                     </View>
                 </View>
 
                 {/* 7. EVIDENCIA FOTOGRÁFICA */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>7. Evidencia Fotográfica</Text>
-                    <ItemFoto label="1. Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
-                    <ItemFoto label="2. Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
-                    <ItemFoto label="3. Revisión Electrica" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
+                    <Text style={styles.sectionTitle}>7. Registro Fotográfico</Text>
+                    <ItemFoto label="Foto Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
+                    <ItemFoto label="Foto de la Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
+                    <ItemFoto label="Evidencia de Revisión" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
                 </View>
 
                 {/* 8. CIERRE */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>8. FINALIZACIÓN </Text>
-                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones..." value={recomendaciones} onChangeText={setRecomendaciones} />
+                    <Text style={styles.sectionTitle}>8. Firma y Cierre</Text>
+                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones para el cliente..." value={recomendaciones} onChangeText={setRecomendaciones} />
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>El cliente acepta los terminos de conformidad </Text>
+                        <Text style={styles.termsText}>Certifico que el trabajo ha sido realizado y acepto los términos de conformidad.</Text>
                         <Switch value={checks.aceptaCondiciones} onValueChange={() => toggleCheck('aceptaCondiciones')} />
                     </View>
-                    <Text style={styles.label}>Firma del Cliente</Text>
+                    <Text style={styles.label}>Firma Digital del Cliente</Text>
                     <TouchableOpacity style={styles.signBox} onPress={() => setShowSig(true)}>
-                        {firma ? <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" /> : <View style={{ alignItems: 'center' }}><Ionicons name="pencil" size={24} color="#999" /><Text style={{ color: '#999', marginTop: 5 }}>Toque para firmar</Text></View>}
+                        {firma ? <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" /> : <View style={{ alignItems: 'center' }}><Ionicons name="pencil-outline" size={24} color="#999" /><Text style={{ color: '#999', marginTop: 5 }}>Presione aquí para firmar</Text></View>}
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity style={styles.btnSubmit} onPress={generarReporteGod} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>ENVIAR REPORTE</Text>}
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>GUARDAR Y FINALIZAR TRABAJO</Text>}
                 </TouchableOpacity>
                 <View style={{ height: 50 }} />
             </ScrollView>
@@ -356,7 +363,7 @@ export default function CrearReporte() {
     );
 }
 
-// COMPONENTES AUXILIARES
+// ... (Componentes auxiliares y estilos se mantienen igual)
 const CheckItem = ({ label, value, onToggle }) => (
     <TouchableOpacity style={styles.checkItem} onPress={onToggle}>
         <Ionicons name={value ? "checkbox" : "square-outline"} size={22} color={value ? "#001C38" : "#666"} />
@@ -370,7 +377,7 @@ const ItemFoto = ({ label, icon, color, foto, desc, onFoto, onDesc }) => (
         <TouchableOpacity style={styles.photoBtn} onPress={onFoto}>
             {foto ? <Image source={{ uri: foto.uri }} style={styles.fill} /> : <Ionicons name={icon} size={40} color={color} />}
         </TouchableOpacity>
-        <TextInput style={styles.inputSmall} placeholder="Ingrese descripción..." value={desc} onChangeText={onDesc} />
+        <TextInput style={styles.inputSmall} placeholder="Descripción de la foto..." value={desc} onChangeText={onDesc} />
     </View>
 );
 
