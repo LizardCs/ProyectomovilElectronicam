@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     Dimensions,
     Image,
     Modal,
@@ -15,25 +16,52 @@ import {
 import ImageZoom from 'react-native-image-pan-zoom';
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// --- IMPORTACIÓN DEL NUEVO SERVICIO ---
+import { obtenerImagenServicio } from "../../services/obtenerImagenServicio";
+
 const { width, height } = Dimensions.get("window");
 
 export default function DetalleServicioTecnico() {
     const router = useRouter();
     const params = useLocalSearchParams();
     
+    // Estados para la imagen y carga
     const [isImageVisible, setIsImageVisible] = useState(false);
+    const [fotoUri, setFotoUri] = useState(null);
+    const [cargandoFoto, setCargandoFoto] = useState(true);
 
-    // Parseo de datos del servicio (Vienen mapeados en MAYÚSCULAS desde el Home)
+    // Parseo de datos básicos (Vienen sin la foto desde la lista)
     const servicio = useMemo(() => {
         return params.servicio ? JSON.parse(params.servicio) : null;
     }, [params.servicio]);
+
+    // EFECTO PARA CARGAR LA FOTO AL ENTRAR
+    useEffect(() => {
+        if (servicio?.SERV_ID) {
+            cargarFotoReal();
+        }
+    }, [servicio]);
+
+    const cargarFotoReal = async () => {
+        setCargandoFoto(true);
+        const res = await obtenerImagenServicio(servicio.SERV_ID);
+        
+        if (res.success && res.imagen) {
+            // Validamos si ya tiene el prefijo Base64, si no, se lo ponemos
+            const uri = res.imagen.startsWith('data:') 
+                ? res.imagen 
+                : `data:image/jpeg;base64,${res.imagen}`;
+            setFotoUri(uri);
+        }
+        setCargandoFoto(false);
+    };
 
     if (!servicio) {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Ionicons name="alert-circle-outline" size={50} color="#CCC" />
-                    <Text style={{ marginTop: 10, color: '#666' }}>Error al cargar información del servicio.</Text>
+                    <Text style={{ marginTop: 10, color: '#666' }}>Error al cargar información.</Text>
                     <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
                         <Text style={{ color: '#007AFF', fontWeight: 'bold' }}>Volver al inicio</Text>
                     </TouchableOpacity>
@@ -41,14 +69,6 @@ export default function DetalleServicioTecnico() {
             </SafeAreaView>
         );
     }
-
-    // Aseguramos que el URI de la imagen tenga el formato correcto para mostrar Base64
-    const imageUri = useMemo(() => {
-        if (!servicio.SERV_IMG_ENV) return null;
-        return servicio.SERV_IMG_ENV.startsWith('data:') 
-            ? servicio.SERV_IMG_ENV 
-            : `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}`;
-    }, [servicio.SERV_IMG_ENV]);
 
     const esCompletado = parseInt(servicio.SERV_EST) === 1;
 
@@ -75,7 +95,7 @@ export default function DetalleServicioTecnico() {
                         panToMove={true}
                     >
                         <Image
-                            source={{ uri: imageUri }}
+                            source={{ uri: fotoUri }}
                             style={{ width: '100%', height: '100%' }}
                             resizeMode="contain"
                         />
@@ -99,18 +119,23 @@ export default function DetalleServicioTecnico() {
                 showsVerticalScrollIndicator={false}
             >
                 
-                {/* Sección de Imagen */}
+                {/* Sección de Imagen con Loader */}
                 <View style={styles.imageSection}>
                     <Text style={styles.sectionLabel}>Referencia visual del equipo:</Text>
                     <TouchableOpacity 
                         activeOpacity={0.9} 
-                        onPress={() => imageUri && setIsImageVisible(true)}
+                        onPress={() => !cargandoFoto && fotoUri && setIsImageVisible(true)}
                         style={styles.imageContainer}
                     >
-                        {imageUri ? (
+                        {cargandoFoto ? (
+                            <View style={styles.loaderContainer}>
+                                <ActivityIndicator size="large" color="#007AFF" />
+                                <Text style={styles.loaderText}>Cargando imagen...</Text>
+                            </View>
+                        ) : fotoUri ? (
                             <>
                                 <Image
-                                    source={{ uri: imageUri }}
+                                    source={{ uri: fotoUri }}
                                     style={styles.image}
                                     resizeMode="cover"
                                 />
@@ -136,7 +161,7 @@ export default function DetalleServicioTecnico() {
                         </View>
                         <View style={[styles.badge, { backgroundColor: esCompletado ? "#34C759" : "#FF9500" }]}>
                             <Text style={styles.badgeText}>
-                                {esCompletado ? "LISTO" : "EN COLA"}
+                                {esCompletado ? "LISTO" : "PENDIENTE"}
                             </Text>
                         </View>
                     </View>
@@ -187,7 +212,7 @@ export default function DetalleServicioTecnico() {
                         })}
                     >
                         <Ionicons name="document-text" size={20} color="#FFF" />
-                        <Text style={styles.btnTextComenzar}>Finalizar y Reportar</Text>
+                        <Text style={styles.btnTextComenzar}>Iniciar reporte</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -206,6 +231,8 @@ const styles = StyleSheet.create({
     imageContainer: { width: '100%', height: 250, borderRadius: 20, overflow: 'hidden', backgroundColor: '#FFF', elevation: 5, borderWidth: 1, borderColor: '#DDD' },
     image: { width: '100%', height: '100%' },
     zoomHint: { position: 'absolute', bottom: 15, right: 15, backgroundColor: 'rgba(0,0,0,0.6)', padding: 10, borderRadius: 30 },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' },
+    loaderText: { marginTop: 10, color: '#007AFF', fontSize: 12 },
     modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
     closeModalBtn: { position: 'absolute', top: 50, right: 20, zIndex: 100 },
     zoomText: { color: '#FFF', position: 'absolute', bottom: 40, fontSize: 14, opacity: 0.7 },

@@ -2,11 +2,10 @@ import { supabase } from './supabase';
 
 /**
  * Lógica extraída de login.php
- * Verifica las credenciales del usuario y devuelve su información de perfil y rol.
+ * Verifica credenciales en 'usersmovil' usando nombres en MAYÚSCULAS.
  */
 export const login = async (usuario, clave) => {
   try {
-    // 1. Validación de entrada (Igual que en el PHP)
     if (!usuario || !clave) {
       return { 
         success: false, 
@@ -17,16 +16,15 @@ export const login = async (usuario, clave) => {
     const usuarioLimpio = usuario.trim();
     const claveLimpia = clave.trim();
 
-    // 2. Consulta SQL en Supabase
-    // Mapeamos los campos que solicitaba tu SELECT en PHP
+    // 1. Consulta a Supabase con nombres de columna en MAYÚSCULAS
     const { data, error } = await supabase
       .from('usersmovil')
-      .select('mov_id, mov_ced, nom_mov, mov_ape, mov_rol, mov_celu, mov_usu')
-      .eq('mov_usu', usuarioLimpio)
-      .eq('mov_clave', claveLimpia)
-      .single(); // Esperamos una sola coincidencia
+      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_ROL, MOV_CELU, MOV_USU')
+      .eq('MOV_USU', usuarioLimpio)
+      .eq('MOV_CLAVE', claveLimpia)
+      .single(); 
 
-    // 3. Manejo de errores o credenciales incorrectas
+    // 2. Manejo de errores o credenciales incorrectas
     if (error || !data) {
       return { 
         success: false, 
@@ -34,34 +32,35 @@ export const login = async (usuario, clave) => {
       };
     }
 
-    // 4. Determinar rol y ruta (Lógica de negocio del PHP)
-    const esAdmin = parseInt(data.mov_rol) === 1;
+    // 3. Determinar rol y ruta (Admin = 1, Técnico = 0)
+    // Usamos las propiedades en MAYÚSCULAS que devuelve la DB
+    const esAdmin = parseInt(data.MOV_ROL) === 1;
     const rol_nombre = esAdmin ? "admin" : "tecnico";
     const redirect_to = esAdmin ? "/admin/home" : "/tecnico/home";
 
-    // 5. Respuesta exitosa con el formato exacto de tu PHP
+    // 4. Respuesta con el formato que espera tu App (mapeado para no romper la UI)
     return {
       success: true,
       message: "Login exitoso",
       user: {
-        id: data.mov_id,
-        cedula: data.mov_ced,
-        nombre: data.nom_mov,
-        apellido: data.mov_ape,
-        nombre_completo: `${data.nom_mov} ${data.mov_ape}`,
-        telefono: data.mov_celu || '',
-        usuario: data.mov_usu,
-        rol: data.mov_rol,
+        id: data.MOV_ID,
+        cedula: data.MOV_CED,
+        nombre: data.NOM_MOV,
+        apellido: data.MOV_APE,
+        nombre_completo: `${data.NOM_MOV} ${data.MOV_APE}`,
+        telefono: data.MOV_CELU || '',
+        usuario: data.MOV_USU,
+        rol: data.MOV_ROL,
         rol_nombre: rol_nombre
       },
       redirect_to: redirect_to
     };
 
   } catch (error) {
-    console.error("Error en login.js:", error.message);
+    console.error("❌ Error en login.js:", error.message);
     return { 
       success: false, 
-      message: "Error de conexión con el servicio de autenticación" 
+      message: "Error de conexión con el servidor de seguridad" 
     };
   }
 };

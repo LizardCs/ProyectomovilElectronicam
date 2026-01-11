@@ -2,47 +2,49 @@ import { supabase } from './supabase';
 
 /**
  * Lógica extraída de obtener-usuarios.php
- * Recupera y unifica los usuarios de las tablas 'usersmovil' y 'usersweb'.
+ * Recupera y unifica los usuarios de 'usersmovil' y 'usersweb' usando MAYÚSCULAS.
  */
 export const obtenerUsuarios = async () => {
   try {
-    // 1. Obtener datos de la tabla Móvil (Personal)
+    // 1. Obtener datos de la tabla Móvil (Personal Técnico/Admin)
     const { data: dataMovil, error: errorMovil } = await supabase
       .from('usersmovil')
-      .select('mov_id, mov_ced, nom_mov, mov_ape, mov_usu, mov_rol');
+      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL');
 
     if (errorMovil) throw errorMovil;
 
-    // 2. Obtener datos de la tabla Web (Clientes/Reportes)
+    // 2. Obtener datos de la tabla Web (Clientes)
     const { data: dataWeb, error: errorWeb } = await supabase
       .from('usersweb')
-      .select('web_id, web_ced, web_nombres, web_apellidos, web_usu');
+      .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU');
 
     if (errorWeb) throw errorWeb;
 
-    // 3. Mapeo y Unificación (Simulando el alias 'as' del PHP)
+    // 3. Mapeo y Unificación (Convertimos de la DB a lo que espera la UI)
     const usuariosMovil = dataMovil.map(u => ({
-      id: u.mov_id,
-      cedula: u.mov_ced,
-      nombre: u.nom_mov,
-      apellido: u.mov_ape,
-      usuario: u.mov_usu,
-      rol: u.mov_rol,
+      id: u.MOV_ID,
+      cedula: u.MOV_CED,
+      nombre: u.NOM_MOV,
+      apellido: u.MOV_APE,
+      usuario: u.MOV_USU,
+      rol: u.MOV_ROL,
       origen: 'MOVIL'
     }));
 
     const usuariosWeb = dataWeb.map(u => ({
-      id: u.web_id,
-      cedula: u.web_ced,
-      nombre: u.web_nombres,
-      apellido: u.web_apellidos,
-      usuario: u.web_usu,
-      rol: 'WEB', // Rol fijo como en tu PHP
+      id: u.WEB_ID,
+      cedula: u.WEB_CED,
+      nombre: u.WEB_NOMBRES,
+      apellido: u.WEB_APELLIDOS,
+      usuario: u.WEB_USU,
+      rol: 'WEB', // Etiqueta fija para clientes
       origen: 'WEB'
     }));
 
-    // 4. Combinar ambas listas en un solo array
+    // 4. Combinar ambas listas en un solo array (Simulando un UNION de SQL)
     const listaUnificada = [...usuariosMovil, ...usuariosWeb];
+
+    
 
     return {
       success: true,
@@ -50,7 +52,7 @@ export const obtenerUsuarios = async () => {
     };
 
   } catch (error) {
-    console.error("Error en obtenerUsuarios.js:", error.message);
+    console.error("❌ Error en obtenerUsuarios.js:", error.message);
     return {
       success: false,
       message: "No se pudo unificar la lista de usuarios: " + error.message,

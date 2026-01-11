@@ -2,30 +2,31 @@ import { supabase } from './supabase';
 
 /**
  * Lógica extraída de obtener-tecnicos.php
- * Recupera la lista de usuarios con rol de técnico (mov_rol = 0) para asignación.
+ * Recupera la lista de técnicos (MOV_ROL = 0) usando nombres en MAYÚSCULAS.
  */
 export const obtenerTecnicos = async () => {
   try {
-    // 1. Consulta a Supabase
-    // Filtramos por mov_rol = 0 (Técnicos) y ordenamos por nombre
+    // 1. Consulta a Supabase con nombres exactos de la DB
+    // Filtramos por técnicos (0) y ordenamos alfabéticamente por nombre
     const { data, error } = await supabase
       .from('usersmovil')
-      .select('mov_ced, nom_mov, mov_ape')
-      .eq('mov_rol', 0)
-      .order('nom_mov', { ascending: true });
+      .select('MOV_CED, NOM_MOV, MOV_APE')
+      .eq('MOV_ROL', 0)
+      .order('NOM_MOV', { ascending: true });
 
     if (error) throw error;
 
-    // 2. Mapeo y Concatenación (Equivalente al CONCAT de SQL)
-    // Creamos el campo 'nombre_completo' manualmente para la UI
+    // 2. Mapeo y Concatenación
+    // Postgres devuelve las llaves en MAYÚSCULAS, las mapeamos para la UI
     const tecnicosMapeados = data.map(t => ({
-      MOV_CED: t.mov_ced,
-      NOM_MOV: t.nom_mov,
-      MOV_APE: t.mov_ape,
-      nombre_completo: `${t.nom_mov} ${t.mov_ape}`.trim()
+      MOV_CED: t.MOV_CED,
+      NOM_MOV: t.NOM_MOV,
+      MOV_APE: t.MOV_APE,
+      // Creamos nombre_completo para que el Picker lo muestre fácilmente
+      nombre_completo: `${t.NOM_MOV} ${t.MOV_APE}`.trim()
     }));
 
-    // 3. Respuesta idéntica al formato PHP
+    // 3. Validación de resultados
     if (tecnicosMapeados.length > 0) {
       return {
         success: true,
@@ -34,13 +35,13 @@ export const obtenerTecnicos = async () => {
     } else {
       return {
         success: false,
-        message: "No se encontraron técnicos",
+        message: "No se encontraron técnicos registrados",
         tecnicos: []
       };
     }
 
   } catch (error) {
-    console.error("Error en obtenerTecnicos.js:", error.message);
+    console.error("❌ Error en obtenerTecnicos.js:", error.message);
     return {
       success: false,
       message: "Error al obtener lista de técnicos: " + error.message,

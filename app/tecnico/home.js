@@ -212,7 +212,7 @@ export default function HomeTecnico() {
                 <View style={styles.tareaFooter}>
                   <View style={styles.assignerInfo}>
                     <Ionicons name="person-outline" size={14} color="#666" />
-                    <Text style={styles.assignerName}>Asignado por: {s.SERV_NOM_ENV}</Text>
+                    <Text style={styles.assignerName}>De: {s.SERV_NOM_ENV}</Text>
                   </View>
 
                   <TouchableOpacity

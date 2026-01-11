@@ -2,11 +2,11 @@ import { supabase } from './supabase';
 
 /**
  * Lógica extraída de crear-usuario-movil.php
- * Registra un nuevo usuario en la tabla 'usersmovil'.
+ * Registra un nuevo usuario en la tabla 'usersmovil' usando nombres en MAYÚSCULAS.
  */
 export const crearUsuarioMovil = async (userData) => {
   try {
-    // 1. Captura de datos (Mapeo idéntico al que tenías en el data['...'] del PHP)
+    // 1. Captura de datos
     const { 
       cedula, 
       nombre, 
@@ -17,7 +17,7 @@ export const crearUsuarioMovil = async (userData) => {
       rol 
     } = userData;
 
-    // 2. Validación de campos obligatorios (Igual que en tu PHP)
+    // 2. Validación básica
     if (!cedula || !usuario || !clave) {
       return { 
         success: false, 
@@ -25,28 +25,27 @@ export const crearUsuarioMovil = async (userData) => {
       };
     }
 
-    // 3. Inserción en Supabase
-    // Mapeamos las variables a las columnas reales de la base de datos (en minúsculas)
+    // 3. Inserción en Supabase con nombres de columna en MAYÚSCULAS
     const { data, error } = await supabase
       .from('usersmovil')
       .insert([
         {
-          mov_ced: cedula,
-          nom_mov: nombre,
-          mov_ape: apellido,
-          mov_celu: celular,
-          mov_usu: usuario,
-          mov_clave: clave, // En producción se recomienda usar hash, igual que en tu nota del PHP
-          mov_rol: rol || 0  // 0 por defecto si no se envía
+          "MOV_CED": String(cedula).trim(),
+          "NOM_MOV": nombre,
+          "MOV_APE": apellido,
+          "MOV_CELU": String(celular).trim(),
+          "MOV_USU": usuario,
+          "MOV_CLAVE": clave, 
+          "MOV_ROL": rol || 0 
         }
       ])
       .select()
       .single();
 
     if (error) {
-      // Manejo de error específico (ej: cédula o usuario duplicado)
+      // Error 23505: Violación de unicidad (Cédula o Usuario duplicado)
       if (error.code === '23505') {
-        throw new Error("La cédula o el nombre de usuario ya existen.");
+        throw new Error("La cédula o el nombre de usuario ya existen en el sistema.");
       }
       throw error;
     }
@@ -58,7 +57,7 @@ export const crearUsuarioMovil = async (userData) => {
     };
 
   } catch (error) {
-    console.error("Error en crearUsuarioMovil.js:", error.message);
+    console.error("❌ Error en crearUsuarioMovil.js:", error.message);
     return { 
       success: false, 
       message: error.message 

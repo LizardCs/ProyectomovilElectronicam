@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// --- NUEVAS IMPORTACIONES MODULARES ---
+// --- IMPORTACIONES DE SERVICIOS ---
 import { crearServicio } from "../../services/crearServicio";
 import { editarServicio } from "../../services/editarServicio";
 import { obtenerTecnicos } from "../../services/obtenerTecnicos";
@@ -38,7 +38,7 @@ export default function CrearServicio() {
 
     const [formData, setFormData] = useState({
         SERV_ID: null,
-        SERV_IMG_ENV: null,
+        SERV_IMG_ENV: null, // Guardaremos el Base64 PURO aquí
         SERV_NUM: "",
         SERV_DESCRIPCION: "",
         SERV_CED_ENV: "",
@@ -55,7 +55,6 @@ export default function CrearServicio() {
         checkEditMode();
     }, []);
 
-    // --- CARGA DE DATOS ---
     const loadUser = async () => {
         const userData = await SessionService.getStoredUser();
         if (userData) {
@@ -63,7 +62,7 @@ export default function CrearServicio() {
             if (!params.servicioEditar) {
                 setFormData(prev => ({
                     ...prev,
-                    SERV_CED_ENV: userData.cedula || "Admin",
+                    SERV_CED_ENV: String(userData.cedula || "Admin"),
                     SERV_NOM_ENV: userData.nombre_completo || "Administrador"
                 }));
             }
@@ -88,44 +87,42 @@ export default function CrearServicio() {
                 SERV_CED_REC: servicio.SERV_CED_REC,
                 SERV_NOM_REC: servicio.SERV_NOM_REC,
                 SERV_EST: parseInt(servicio.SERV_EST),
-                SERV_IMG_ENV: servicio.SERV_IMG_ENV ? (servicio.SERV_IMG_ENV.startsWith('data:') ? servicio.SERV_IMG_ENV : `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}`) : null
+                // Mantenemos el base64 que venga de la DB
+                SERV_IMG_ENV: servicio.SERV_IMG_ENV 
             });
         }
     };
 
-    // --- MANEJO DE IMÁGENES ---
     const requestPermissions = async () => {
         const { status: camera } = await ImagePicker.requestCameraPermissionsAsync();
         const { status: library } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (camera !== 'granted' || library !== 'granted') {
-            Alert.alert("Permisos", "Se requiere acceso a cámara y galería.");
+            Alert.alert("Permisos", "Se requiere acceso a cámara y galería para documentar el equipo.");
         }
     };
 
+    // --- PROCESAMIENTO DE IMAGEN (OPTIMIZADO) ---
     const processAndSetImage = async (uri) => {
         try {
+            // Reducimos tamaño y calidad para que pese muy poco (Estilo XAMPP)
             const manipResult = await ImageManipulator.manipulateAsync(
                 uri,
-                [{ resize: { width: 800 } }],
+                [{ resize: { width: 600 } }], 
                 { 
-                    compress: 0.7, 
+                    compress: 0.5, 
                     format: ImageManipulator.SaveFormat.JPEG,
                     base64: true
                 }
             );
             
             if (manipResult.base64) {
-                setFormData({ 
-                    ...formData, 
-                    SERV_IMG_ENV: `data:image/jpeg;base64,${manipResult.base64}` 
-                });
-            } else {
-                throw new Error("No se generó el código Base64");
+                // Guardamos el string BASE64 sin el prefijo "data:image..."
+                // Esto hace que el envío a Supabase sea más limpio
+                setFormData({ ...formData, SERV_IMG_ENV: manipResult.base64 });
             }
-
         } catch (e) {
-            console.error("❌ Error detallado al procesar imagen:", e);
-            Alert.alert("Error", "No se pudo procesar la imagen. Intente de nuevo.");
+            console.error("Error al procesar imagen:", e);
+            Alert.alert("Error", "No se pudo procesar la imagen.");
         }
     };
 
@@ -139,31 +136,25 @@ export default function CrearServicio() {
         if (!result.canceled) processAndSetImage(result.assets[0].uri);
     };
 
-    // --- ACCIÓN PRINCIPAL: GUARDAR ---
+    // --- GUARDAR EN LA NUBE ---
     const handleSubmit = async () => {
-        if (!formData.SERV_IMG_ENV) { Alert.alert("Falta información", "Debe adjuntar una foto del equipo."); return; }
-        if (!formData.SERV_NUM) { Alert.alert("Falta información", "Ingrese el número de asignación."); return; }
-        if (!formData.SERV_CED_REC) { Alert.alert("Falta información", "Debe seleccionar un técnico."); return; }
+        if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto", "Tome una foto del equipo antes de asignar."); return; }
+        if (!formData.SERV_NUM) { Alert.alert("Falta número", "Ingrese el número de comprobante."); return; }
+        if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico", "Seleccione al técnico responsable."); return; }
 
         setIsLoading(true);
-
         try {
-            let res;
-            if (isEditing) {
-                res = await editarServicio(formData);
-            } else {
-                res = await crearServicio(formData);
-            }
+            const res = isEditing ? await editarServicio(formData) : await crearServicio(formData);
 
             if (res.success) {
                 Alert.alert("Éxito", isEditing ? "Servicio actualizado" : "Servicio asignado correctamente", [
                     { text: "OK", onPress: () => router.push("/admin/home") }
                 ]);
             } else {
-                Alert.alert("Error", res.message);
+                Alert.alert("Error", res.message || "No se pudo guardar.");
             }
         } catch (error) {
-            Alert.alert("Error", "Ocurrió un error inesperado en la nube.");
+            Alert.alert("Error", "Error de conexión con Supabase.");
         } finally {
             setIsLoading(false);
         }
@@ -185,6 +176,13 @@ export default function CrearServicio() {
         else router.back();
     };
 
+    // Helper para mostrar la imagen en el preview
+    const getPreviewUri = () => {
+        if (!formData.SERV_IMG_ENV) return null;
+        if (formData.SERV_IMG_ENV.startsWith('data:')) return formData.SERV_IMG_ENV;
+        return `data:image/jpeg;base64,${formData.SERV_IMG_ENV}`;
+    };
+
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <StatusBar style="light" backgroundColor="#001C38" />
@@ -194,23 +192,23 @@ export default function CrearServicio() {
                     <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#FFF" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{isEditing ? "Editar Servicio" : "Nueva Asignación"}</Text>
+                    <Text style={styles.headerTitle}>{isEditing ? "Editar Orden" : "Nueva Asignación"}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.formCard}>
-                        {/* SECCIÓN FOTO */}
+                        {/* FOTO */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="camera" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Comprobante Visual</Text>
+                                <Text style={styles.sectionTitle}>Foto del Equipo</Text>
                             </View>
                             {formData.SERV_IMG_ENV ? (
                                 <View style={styles.imagePreviewContainer}>
-                                    <Image source={{ uri: formData.SERV_IMG_ENV }} style={styles.imagePreview} />
+                                    <Image source={{ uri: getPreviewUri() }} style={styles.imagePreview} />
                                     <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
-                                        <Text style={styles.imageActionText}>Eliminar y cambiar foto</Text>
+                                        <Text style={styles.imageActionText}>Borrar y repetir foto</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
@@ -227,41 +225,41 @@ export default function CrearServicio() {
                             )}
                         </View>
 
-                        {/* SECCIÓN NÚMERO */}
+                        {/* NÚMERO DE ORDEN */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="document-text" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>N° de Servicio / Orden</Text>
+                                <Text style={styles.sectionTitle}>N° de Servicio</Text>
                             </View>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Ingrese número de identificación"
+                                placeholder="Ej: 10542"
                                 value={formData.SERV_NUM}
                                 onChangeText={(text) => handleChange("SERV_NUM", text)}
                                 keyboardType="numeric"
                             />
                         </View>
 
-                        {/* SECCIÓN DESCRIPCIÓN */}
+                        {/* DESCRIPCIÓN */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="clipboard" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Descripción del Problema</Text>
+                                <Text style={styles.sectionTitle}>Detalles del problema</Text>
                             </View>
                             <TextInput
-                                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                                placeholder="Escriba aquí los detalles técnicos..."
+                                style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
+                                placeholder="Describa la falla reportada..."
                                 value={formData.SERV_DESCRIPCION}
                                 onChangeText={(text) => handleChange("SERV_DESCRIPCION", text)}
                                 multiline={true}
                             />
                         </View>
 
-                        {/* SECCIÓN TÉCNICO */}
+                        {/* TÉCNICO */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="people" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Técnico Responsable</Text>
+                                <Text style={styles.sectionTitle}>Asignar a Técnico</Text>
                             </View>
                             <View style={styles.pickerContainer}>
                                 {tecnicos.map((tec) => (
@@ -286,19 +284,18 @@ export default function CrearServicio() {
                             </View>
                         </View>
 
-                        {/* RESUMEN DE ASIGNACIÓN */}
+                        {/* RESUMEN */}
                         <View style={styles.summaryCard}>
-                            <Text style={styles.summaryTitle}>Resumen</Text>
                             <Text style={styles.summaryText}>Asignado por: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_ENV}</Text></Text>
-                            {formData.SERV_NOM_REC ? <Text style={styles.summaryText}>Asignado a: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_REC}</Text></Text> : null}
+                            {formData.SERV_NOM_REC ? <Text style={styles.summaryText}>Hacia: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_REC}</Text></Text> : null}
                         </View>
 
                         <View style={styles.actionButtons}>
                             <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                                <Text style={{ fontWeight: 'bold' }}>Cancelar</Text>
+                                <Text style={{ fontWeight: 'bold', color: '#444' }}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
-                                {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>{isEditing ? "Guardar Cambios" : "Confirmar Asignación"}</Text>}
+                                {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>{isEditing ? "Actualizar" : "Asignar Trabajo"}</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -309,10 +306,10 @@ export default function CrearServicio() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>¿Desea salir?</Text>
-                        <Text>Los cambios no guardados se perderán.</Text>
+                        <Text style={{ textAlign: 'center', color: '#666' }}>Se perderá la información ingresada.</Text>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity onPress={() => setShowCancelModal(false)} style={styles.modalButtonCancel}>
-                                <Text>Continuar editando</Text>
+                                <Text style={{ color: '#007AFF', fontWeight: 'bold' }}>Continuar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => { setShowCancelModal(false); router.back(); }} style={styles.modalButtonConfirm}>
                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Salir</Text>
@@ -333,8 +330,8 @@ const styles = StyleSheet.create({
     scrollContainer: { flex: 1 },
     scrollContent: { padding: 20, paddingBottom: 40 },
     formCard: { backgroundColor: "#FFF", borderRadius: 15, padding: 20, elevation: 2 },
-    section: { marginBottom: 25 },
-    sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+    section: { marginBottom: 20 },
+    sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
     sectionTitle: { fontSize: 15, fontWeight: "bold", marginLeft: 8, color: "#444" },
     input: { backgroundColor: "#F9F9F9", borderWidth: 1, borderColor: "#DDD", borderRadius: 10, padding: 12, fontSize: 16 },
     cameraButtons: { flexDirection: "row", justifyContent: "space-around" },
@@ -349,17 +346,16 @@ const styles = StyleSheet.create({
     tecnicoOptionSelected: { backgroundColor: "#E3F2FD", borderColor: "#007AFF" },
     tecnicoName: { fontSize: 15, color: "#333" },
     tecnicoCedula: { fontSize: 12, color: "#888" },
-    summaryCard: { backgroundColor: "#FFF8E1", borderRadius: 12, padding: 15, marginBottom: 20, borderWidth: 1, borderColor: "#FFECB3" },
-    summaryTitle: { fontSize: 14, fontWeight: "bold", color: "#B8860B", marginBottom: 5 },
-    summaryText: { fontSize: 13, color: "#555" },
+    summaryCard: { backgroundColor: "#F8F9FA", borderRadius: 12, padding: 15, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: "#007AFF" },
+    summaryText: { fontSize: 13, color: "#555", marginBottom: 2 },
     actionButtons: { flexDirection: "row", gap: 10 },
     cancelButton: { flex: 1, padding: 15, backgroundColor: "#E5E5EA", borderRadius: 12, alignItems: "center" },
     submitButton: { flex: 2, padding: 15, backgroundColor: "#007AFF", borderRadius: 12, alignItems: "center" },
-    submitButtonText: { fontWeight: "bold", color: "#FFF" },
+    submitButtonText: { fontWeight: "bold", color: "#FFF", fontSize: 16 },
     modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
     modalContent: { backgroundColor: "white", padding: 25, borderRadius: 15, width: "85%", alignItems: "center" },
     modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
-    modalButtons: { flexDirection: "row", gap: 15, marginTop: 25 },
-    modalButtonCancel: { padding: 12 },
+    modalButtons: { flexDirection: "row", gap: 25, marginTop: 25 },
+    modalButtonCancel: { padding: 10 },
     modalButtonConfirm: { paddingHorizontal: 25, paddingVertical: 12, backgroundColor: "#FF3B30", borderRadius: 10 }
 });

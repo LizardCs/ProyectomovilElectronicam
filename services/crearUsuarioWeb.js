@@ -2,11 +2,11 @@ import { supabase } from './supabase';
 
 /**
  * Lógica extraída de crear-usuario-web.php
- * Registra un nuevo usuario en la tabla 'usersweb'.
+ * Registra un nuevo usuario en la tabla 'usersweb' usando nombres en MAYÚSCULAS.
  */
 export const crearUsuarioWeb = async (userData) => {
   try {
-    // 1. Mapeo de datos (idéntico a lo que recibía tu PHP)
+    // 1. Mapeo de datos (recibidos desde el formulario)
     const { 
       cedula, 
       nombre, 
@@ -24,19 +24,18 @@ export const crearUsuarioWeb = async (userData) => {
       };
     }
 
-    // 3. Inserción en la tabla usersweb
-    // Nota: Usamos nombres en minúsculas para las columnas de Postgres
+    // 3. Inserción en la tabla usersweb con nombres de columna en MAYÚSCULAS
     const { data, error } = await supabase
       .from('usersweb')
       .insert([
         {
-          web_ced: cedula,
-          web_nombres: nombre,
-          web_apellidos: apellido,
-          web_usu: usuario,
-          web_clave: clave,
-          web_celu: celular,
-          web_fec_creado: new Date().toISOString() // Equivalente al NOW() de PHP
+          "WEB_CED": String(cedula).trim(),
+          "WEB_NOMBRES": nombre,
+          "WEB_APELLIDOS": apellido,
+          "WEB_USU": usuario,
+          "WEB_CLAVE": clave,
+          "WEB_CELU": String(celular).trim(),
+          "WEB_FEC_CREADO": new Date().toISOString()
         }
       ])
       .select()
@@ -57,7 +56,7 @@ export const crearUsuarioWeb = async (userData) => {
     };
 
   } catch (error) {
-    console.error("Error en crearUsuarioWeb.js:", error.message);
+    console.error("❌ Error en crearUsuarioWeb.js:", error.message);
     return { 
       success: false, 
       message: error.message 

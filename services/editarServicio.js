@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 /**
  * Lógica extraída de actualizar-servicio.php
  * Actualiza la información de un servicio técnico por su ID.
+ * Cuadrado con nombres en MAYÚSCULAS y almacenamiento TEXT para imágenes.
  */
 export const editarServicio = async (formData) => {
   try {
@@ -12,55 +13,41 @@ export const editarServicio = async (formData) => {
       SERV_DESCRIPCION,
       SERV_CED_REC,
       SERV_NOM_REC,
-      SERV_IMG_ENV // La cadena Base64 (nueva o previa)
+      SERV_IMG_ENV // La cadena Base64 (puede ser nueva o la misma)
     } = formData;
 
-    // Validación de seguridad (Igual que el PHP)
+    // Validación de seguridad
     if (!SERV_ID) {
       return { success: false, message: "Falta el ID del servicio para realizar la actualización." };
     }
 
-    // 1. Procesamiento de la imagen
-    let imagenBytes = null;
-
+    // 1. Procesamiento de la imagen (Limpieza de prefijo)
+    // Si la imagen viene con el encabezado "data:image...", lo limpiamos para guardar solo el Base64 puro
+    let cleanBase64 = null;
     if (SERV_IMG_ENV) {
-      // Limpiamos el encabezado "data:image/jpeg;base64," si existe
-      const pureBase64 = SERV_IMG_ENV.includes(',') 
-        ? SERV_IMG_ENV.split(',')[1] 
-        : SERV_IMG_ENV;
-
-      try {
-        // Convertimos el string Base64 a binario (Uint8Array) para la columna BYTEA
-        const binaryString = atob(pureBase64);
-        imagenBytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          imagenBytes[i] = binaryString.charCodeAt(i);
-        }
-      } catch (e) {
-        // Si el atob falla, probablemente la imagen no cambió y estamos recibiendo 
-        // un formato no procesable, por lo tanto no actualizamos esa columna.
-        console.log("No se detectó una imagen nueva para procesar.");
-      }
+        cleanBase64 = SERV_IMG_ENV.includes(',') 
+            ? SERV_IMG_ENV.split(',')[1] 
+            : SERV_IMG_ENV;
     }
 
-    // 2. Construcción del objeto de actualización (Mapeo a minúsculas de Supabase)
+    // 2. Construcción del objeto de actualización (Usando MAYÚSCULAS de la DB)
     const updateFields = {
-      serv_num: SERV_NUM,
-      serv_descripcion: SERV_DESCRIPCION,
-      serv_ced_rec: SERV_CED_REC,
-      serv_nom_rec: SERV_NOM_REC,
+      "SERV_NUM": String(SERV_NUM),
+      "SERV_DESCRIPCION": SERV_DESCRIPCION,
+      "SERV_CED_REC": String(SERV_CED_REC).trim(),
+      "SERV_NOM_REC": SERV_NOM_REC,
     };
 
-    // Solo añadimos la imagen al objeto si realmente tenemos bytes nuevos
-    if (imagenBytes) {
-      updateFields.serv_img_env = imagenBytes;
+    // Solo actualizamos la columna de la imagen si se envió una imagen válida
+    if (cleanBase64) {
+      updateFields["SERV_IMG_ENV"] = cleanBase64;
     }
 
-    // 3. Ejecución del UPDATE
+    // 3. Ejecución del UPDATE en Supabase
     const { data, error } = await supabase
       .from('serviciostecnicos')
       .update(updateFields)
-      .eq('serv_id', SERV_ID)
+      .eq('SERV_ID', SERV_ID) // Filtro por ID en MAYÚSCULAS
       .select()
       .single();
 
@@ -73,10 +60,10 @@ export const editarServicio = async (formData) => {
     };
 
   } catch (error) {
-    console.error("Error en editarServicio.js:", error.message);
+    console.error("❌ Error en editarServicio.js:", error.message);
     return { 
       success: false, 
-      message: "Error al actualizar: " + error.message 
+      message: "Error al actualizar el servicio: " + error.message 
     };
   }
 };

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 /**
  * Lógica extraída de editar-usuarios.php
  * Actualiza la información de un usuario en 'usersmovil' o 'usersweb' según su origen.
- * Solo actualiza la clave si se proporciona una nueva.
+ * Ajustado para nombres de columna en MAYÚSCULAS.
  */
 export const editarUsuarios = async (userData) => {
   try {
@@ -25,34 +25,34 @@ export const editarUsuarios = async (userData) => {
     let camposAActualizar = {};
     let columnaId = '';
 
-    // 1. Configuración dinámica según el origen (Equivalente al IF del PHP)
+    // 1. Configuración dinámica según el origen
     if (origen === 'MOVIL') {
       tabla = 'usersmovil';
-      columnaId = 'mov_id';
+      columnaId = 'MOV_ID'; // Mayúsculas
       camposAActualizar = {
-        nom_mov: nombre,
-        mov_ape: apellido,
-        mov_celu: celular,
-        mov_usu: usuario
+        "NOM_MOV": nombre,
+        "MOV_APE": apellido,
+        "MOV_CELU": String(celular).trim(),
+        "MOV_USU": usuario
       };
       
-      // Si enviaron clave, la sumamos al objeto (Equivalente al bind_param dinámico)
+      // Solo actualizamos la clave si se proporcionó una nueva
       if (clave && clave.trim() !== '') {
-        camposAActualizar.mov_clave = clave;
+        camposAActualizar["MOV_CLAVE"] = clave;
       }
 
     } else {
       tabla = 'usersweb';
-      columnaId = 'web_id';
+      columnaId = 'WEB_ID'; // Mayúsculas
       camposAActualizar = {
-        web_nombres: nombre,
-        web_apellidos: apellido,
-        web_celu: celular,
-        web_usu: usuario
+        "WEB_NOMBRES": nombre,
+        "WEB_APELLIDOS": apellido,
+        "WEB_CELU": String(celular).trim(),
+        "WEB_USU": usuario
       };
 
       if (clave && clave.trim() !== '') {
-        camposAActualizar.web_clave = clave;
+        camposAActualizar["WEB_CLAVE"] = clave;
       }
     }
 
@@ -73,7 +73,7 @@ export const editarUsuarios = async (userData) => {
     };
 
   } catch (error) {
-    console.error("Error en editarUsuarios.js:", error.message);
+    console.error("❌ Error en editarUsuarios.js:", error.message);
     return { 
       success: false, 
       message: "Error al actualizar usuario: " + error.message 

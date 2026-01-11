@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
 
 /**
- * Lógica extraída de crear-servicio.php
- * Crea un nuevo registro de servicio técnico con imagen binaria.
+ * Crea un nuevo registro de servicio técnico en Supabase.
+ * Cuadrado con los nombres de columna en MAYÚSCULAS de la base de datos.
  */
 export const crearServicio = async (formData) => {
   try {
@@ -11,45 +11,42 @@ export const crearServicio = async (formData) => {
       SERV_DESCRIPCION,
       SERV_CED_ENV,
       SERV_NOM_ENV,
-      SERV_IMG_ENV, // Base64 de la imagen
+      SERV_IMG_ENV, // String Base64 optimizado
       SERV_CED_REC,
       SERV_NOM_REC,
       SERV_EST
     } = formData;
 
-    // Procesar imagen Base64 a Binario
-    const pureBase64 = SERV_IMG_ENV.includes(',') ? SERV_IMG_ENV.split(',')[1] : SERV_IMG_ENV;
-    const binaryString = atob(pureBase64);
-    const imagenBytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      imagenBytes[i] = binaryString.charCodeAt(i);
-    }
-
-    // Insertar en la tabla serviciostecnicos
+    // Insertar en la tabla serviciostecnicos usando nombres exactos
     const { data, error } = await supabase
       .from('serviciostecnicos')
       .insert([
         {
-          serv_num: SERV_NUM,
-          serv_descripcion: SERV_DESCRIPCION,
-          serv_fech_asig: new Date().toISOString(),
-          serv_ced_env: SERV_CED_ENV,
-          serv_nom_env: SERV_NOM_ENV,
-          serv_img_env: imagenBytes,
-          serv_ced_rec: SERV_CED_REC,
-          serv_nom_rec: SERV_NOM_REC,
-          serv_est: SERV_EST || 0
+          "SERV_NUM": String(SERV_NUM),
+          "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
+          "SERV_FECH_ASIG": new Date().toISOString(),
+          "SERV_CED_ENV": String(SERV_CED_ENV).trim(),
+          "SERV_NOM_ENV": SERV_NOM_ENV,
+          "SERV_IMG_ENV": SERV_IMG_ENV, // Se guarda como TEXT (Base64)
+          "SERV_CED_REC": String(SERV_CED_REC).trim(),
+          "SERV_NOM_REC": SERV_NOM_REC,
+          "SERV_EST": SERV_EST || 0
         }
       ])
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
 
-    return { success: true, data: data };
+    return { 
+      success: true, 
+      data: data[0] 
+    };
 
   } catch (error) {
-    console.error("Error en crearServicio.js:", error.message);
-    return { success: false, message: error.message };
+    console.error("❌ Error en crearServicio.js:", error.message);
+    return { 
+      success: false, 
+      message: "No se pudo guardar el servicio: " + error.message 
+    };
   }
 };
