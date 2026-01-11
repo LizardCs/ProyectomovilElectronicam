@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -12,14 +13,40 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { obtenerImagenServicio } from "../../services/obtenerImagenServicio";
+
 export default function DetalleServicioAdmin() {
     const router = useRouter();
     const params = useLocalSearchParams();
 
-    // Recuperamos el objeto servicio pasado por parámetros
+    // Estados para la carga de la foto
+    const [fotoUri, setFotoUri] = useState(null);
+    const [cargandoFoto, setCargandoFoto] = useState(true);
+
+    // Recuperamos los datos básicos del servicio
     const servicio = useMemo(() => {
         return params.servicio ? JSON.parse(params.servicio) : null;
     }, [params.servicio]);
+
+    // EFECTO: Cargar la foto real desde Supabase al entrar
+    useEffect(() => {
+        if (servicio?.SERV_ID) {
+            cargarFoto();
+        }
+    }, [servicio]);
+
+    const cargarFoto = async () => {
+        setCargandoFoto(true);
+        const res = await obtenerImagenServicio(servicio.SERV_ID);
+        if (res.success && res.imagen) {
+            // Verificamos si ya tiene el prefijo de base64
+            const uri = res.imagen.startsWith('data:') 
+                ? res.imagen 
+                : `data:image/jpeg;base64,${res.imagen}`;
+            setFotoUri(uri);
+        }
+        setCargandoFoto(false);
+    };
 
     if (!servicio) {
         return (
@@ -34,22 +61,11 @@ export default function DetalleServicioAdmin() {
 
     const esCompletado = parseInt(servicio.SERV_EST) === 1;
 
-    // Procesamos la imagen: Supabase nos devuelve los bytes. 
-    // Si ya viene como base64 desde el mapeo, lo usamos directamente.
-    const imageUri = useMemo(() => {
-        if (!servicio.SERV_IMG_ENV) return null;
-        // Si ya tiene el prefijo, lo dejamos; si no, se lo ponemos.
-        return servicio.SERV_IMG_ENV.startsWith('data:') 
-            ? servicio.SERV_IMG_ENV 
-            : `data:image/jpeg;base64,${servicio.SERV_IMG_ENV}`;
-    }, [servicio.SERV_IMG_ENV]);
-
     const handleSalir = () => {
         router.back();
     };
 
     const handleEditar = () => {
-        // Navegamos a crear-servicio pasando el objeto para editar
         router.push({
             pathname: "/admin/crear-servicio",
             params: { servicioEditar: JSON.stringify(servicio) }
@@ -62,7 +78,7 @@ export default function DetalleServicioAdmin() {
 
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={handleSalir} accessibilityLabel="Volver">
+                <TouchableOpacity onPress={handleSalir}>
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Detalles del Servicio</Text>
@@ -84,9 +100,14 @@ export default function DetalleServicioAdmin() {
 
                     <Text style={styles.label}>Evidencia / Foto de Recepción:</Text>
                     <View style={styles.imageContainer}>
-                        {imageUri ? (
+                        {cargandoFoto ? (
+                            <View style={styles.loaderContainer}>
+                                <ActivityIndicator size="large" color="#007AFF" />
+                                <Text style={styles.loaderText}>Cargando imagen...</Text>
+                            </View>
+                        ) : fotoUri ? (
                             <Image
-                                source={{ uri: imageUri }}
+                                source={{ uri: fotoUri }}
                                 style={styles.image}
                                 resizeMode="cover"
                             />
@@ -126,7 +147,6 @@ export default function DetalleServicioAdmin() {
 
                     <View style={styles.infoGroup}>
                         <Text style={styles.label}>Fecha de Ingreso:</Text>
-                        {/* Formateamos la fecha si es necesario o mostramos la del sistema */}
                         <Text style={styles.value}>
                             {new Date(servicio.SERV_FECH_ASIG).toLocaleString('es-EC')}
                         </Text>
@@ -143,7 +163,6 @@ export default function DetalleServicioAdmin() {
                 </View>
             </ScrollView>
 
-            {/* Footer de acciones */}
             <View style={styles.footer}>
                 <TouchableOpacity
                     style={[styles.button, styles.btnSalir]}
@@ -182,6 +201,8 @@ const styles = StyleSheet.create({
     imageContainer: { height: 220, width: "100%", borderRadius: 15, overflow: 'hidden', backgroundColor: "#F0F0F0", marginBottom: 20, borderWidth: 1, borderColor: "#E5E5EA" },
     image: { width: "100%", height: "100%" },
     noImage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loaderText: { marginTop: 10, color: '#007AFF', fontSize: 12 },
     infoRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
     badge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
     badgeText: { color: "#FFF", fontWeight: "bold", fontSize: 12 },
