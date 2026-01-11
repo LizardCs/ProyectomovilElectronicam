@@ -77,18 +77,6 @@ export default function Login() {
         }
     };
 
-    const handleTestConnection = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/test.php`);
-            const text = await response.text();
-            Alert.alert("🔍 Test de conexión", "Respuesta del servidor: " + text.substring(0, 50));
-        } catch (error) {
-            Alert.alert("❌ Conexión fallida", "No hay respuesta del servidor local.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -172,10 +160,6 @@ export default function Login() {
 
                                 <TouchableOpacity onPress={() => Alert.alert("Soporte", "Contacte al administrador para restablecer su clave.")}>
                                     <Text style={styles.forgotText}>¿Olvidó sus credenciales?</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity onPress={handleTestConnection} style={{ marginTop: 15 }}>
-                                    <Text style={{ textAlign: 'center', color: '#cbd5e1', fontSize: 10 }}>Acceso de Soporte</Text>
                                 </TouchableOpacity>
                             </View>
 
