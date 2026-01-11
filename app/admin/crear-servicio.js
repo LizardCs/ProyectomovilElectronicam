@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -105,21 +104,28 @@ export default function CrearServicio() {
 
     const processAndSetImage = async (uri) => {
         try {
-            // Optimizar (Redimensionar y comprimir)
             const manipResult = await ImageManipulator.manipulateAsync(
                 uri,
                 [{ resize: { width: 800 } }],
-                { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+                { 
+                    compress: 0.7, 
+                    format: ImageManipulator.SaveFormat.JPEG,
+                    base64: true
+                }
             );
             
-            // Convertir a Base64 para que el servicio pueda procesarlo
-            const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-            
-            setFormData({ ...formData, SERV_IMG_ENV: `data:image/jpeg;base64,${base64}` });
+            if (manipResult.base64) {
+                setFormData({ 
+                    ...formData, 
+                    SERV_IMG_ENV: `data:image/jpeg;base64,${manipResult.base64}` 
+                });
+            } else {
+                throw new Error("No se generó el código Base64");
+            }
+
         } catch (e) {
-            Alert.alert("Error", "No se pudo procesar la imagen.");
+            console.error("❌ Error detallado al procesar imagen:", e);
+            Alert.alert("Error", "No se pudo procesar la imagen. Intente de nuevo.");
         }
     };
 

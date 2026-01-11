@@ -4,7 +4,7 @@ import { supabase } from './supabase';
  * Lógica extraída de eliminar-usuario.php
  * Elimina un registro de forma permanente en 'usersmovil' o 'usersweb'.
  */
-export const eliminarUsuarios = async (id, origen) => {
+export const eliminarUsuario = async (id, origen) => {
   try {
     // 1. Validar que tengamos los datos necesarios
     if (!id || !origen) {
