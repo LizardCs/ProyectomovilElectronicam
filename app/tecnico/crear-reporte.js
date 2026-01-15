@@ -593,7 +593,7 @@ export default function CrearReporte() {
                     <div class="header-top">
                         <div class="logo-section">
                             <h1>ELECTRÓNICA MANTILLA</h1>
-                            <p>Servicio Técnico Especializado • Confianza y Garantía</p>
+                            <p>Reporte del servicio realizado</p>
                         </div>
                         <div class="order-badge">
                             <i class="fas fa-file-invoice"></i> Orden: ${servicio.SERV_NUM}
@@ -633,7 +633,7 @@ export default function CrearReporte() {
                     <div class="section-body">
                         <div class="client-info-grid">
                             <div class="info-card">
-                                <span class="label">Nombre Completo</span>
+                                <span class="label">Nombre</span>
                                 <div class="value">${nombreCliente}</div>
                             </div>
                             <div class="info-card">
@@ -660,7 +660,7 @@ export default function CrearReporte() {
                     <div class="section-body">
                         <div class="equipment-grid">
                             <div class="info-card">
-                                <span class="label">Tipo de Equipo</span>
+                                <span class="label">Equipo</span>
                                 <div class="value">${unidad}</div>
                             </div>
                             <div class="info-card">
@@ -678,9 +678,9 @@ export default function CrearReporte() {
                             <div class="info-card">
                                 <span class="label">Color</span>
                                 <div class="value">${colorEq}</div>
-                            </div>
+                            </div> Diagnóstico Técnico Diagnóstico Técnico
                             <div class="info-card">
-                                <span class="label">Estado General</span>
+                                <span class="label">Estado</span>
                                 <div class="value">
                                     <span class="status-badge ${checks.usado ? 'used' : ''}">
                                         <i class="fas fa-clock"></i> ${checks.usado ? 'Usado' : 'Nuevo'}
@@ -705,7 +705,7 @@ export default function CrearReporte() {
                             <div class="diagnosis-cards">
                                 <div class="diagnosis-card reported">
                                     <div class="card-title">
-                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado por el Cliente
+                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado
                                     </div>
                                     <p>${danioReportado}</p>
                                 </div>
@@ -719,7 +719,7 @@ export default function CrearReporte() {
                                 
                                 <div class="diagnosis-card solution">
                                     <div class="card-title">
-                                        <i class="fas fa-tools"></i> Solución Aplicada
+                                        <i class="fas fa-tools"></i> Recomendaciones dadas al cliente
                                     </div>
                                     <p>${recomendaciones}</p>
                                 </div>
@@ -728,7 +728,7 @@ export default function CrearReporte() {
                                     <div class="card-title">
                                         <i class="fas fa-box-open"></i> Accesorios Recibidos
                                     </div>
-                                    <p>${checks.accesorios ? 'Sí - ' + accesoriosDesc : 'No se recibieron accesorios'}</p>
+                                    <p>${checks.accesorios ? 'Sí:  ' + accesoriosDesc : 'No se recibieron accesorios'}</p>
                                 </div>
                             </div>
                         </div>
@@ -737,7 +737,7 @@ export default function CrearReporte() {
                     <!-- VALIDACIÓN Y VERIFICACIONES -->
                     <section class="section">
                         <div class="section-header">
-                            <i class="fas fa-clipboard-check"></i> Validación y Verificaciones
+                            <i class="fas fa-clipboard-check"></i> Puntos a tomar en cuenta
                         </div>
                         <div class="section-body">
                             <div class="checklist-grid">
@@ -754,16 +754,16 @@ export default function CrearReporte() {
                                     <i class="${renderCheckIcon(checks.completo)}"></i> Caja Completa
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.nivelacion)}">
-                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación OK
+                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.presionAgua)}">
-                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua OK
+                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.modeloSerieCheck)}">
                                     <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo/Serie Verificado
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.conexionesElectricas)}">
-                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica OK
+                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica
                                 </div>
                             </div>
 
@@ -786,9 +786,9 @@ export default function CrearReporte() {
                 <div class="images-section">
                     <div class="section-title-center">
                         <h3>
-                            <i class="fas fa-camera"></i> Evidencia Fotográfica
+                            <i class="fas fa-camera"></i> Imagenes
                         </h3>
-                        <p>Registro visual del equipo antes y después de la reparación.</p>
+                        <p>Registro visual del servicio prestado.</p>
                     </div>
                     
                     <div class="images-container">
@@ -796,7 +796,7 @@ export default function CrearReporte() {
                         <div class="image-card">
                             <img src="${imgModelo}" alt="Modelo y Serie">
                             <div class="image-caption">
-                                <i class="fas fa-barcode"></i> Modelo y Número de Serie
+                                <i class="fas fa-barcode"></i> Modelo / Número de serie
                             </div>
                         </div>
                         ` : ''}
@@ -805,7 +805,7 @@ export default function CrearReporte() {
                         <div class="image-card">
                             <img src="${imgFactura}" alt="Factura">
                             <div class="image-caption">
-                                <i class="fas fa-file-invoice-dollar"></i> Documentación Recibida
+                                <i class="fas fa-file-invoice-dollar"></i> Factura
                             </div>
                         </div>
                         ` : ''}
@@ -814,7 +814,7 @@ export default function CrearReporte() {
                         <div class="image-card">
                             <img src="${imgFinal}" alt="Equipo">
                             <div class="image-caption">
-                                <i class="fas fa-washing-machine"></i> Estado Físico del Equipo
+                                <i class="fas fa-washing-machine"></i> Estado Eléctrico
                             </div>
                         </div>
                         ` : ''}
@@ -833,9 +833,9 @@ export default function CrearReporte() {
             <div class="page-break">
                 <!-- ACEPTACIÓN DEL SERVICIO -->
                 <section class="signature-section">
-                    <h3 style="color: #001C38; margin-bottom: 5mm; font-size: 13pt;">Aceptación del Servicio</h3>
+                    <h3 style="color: #001C38; margin-bottom: 5mm; font-size: 13pt;">Firma del cliente</h3>
                     <p style="color: #64748B; max-width: 160mm; margin: 0 auto 6mm; font-size: 10pt;">
-                        El cliente verifica que el equipo ha sido reparado según los términos acordados y acepta la conformidad del servicio técnico prestado.
+                        El cliente valida y acepta la conformidad del servicio técnico prestado.
                     </p>
                     
                     <div style="margin: 5mm 0;">
@@ -843,8 +843,8 @@ export default function CrearReporte() {
                     </div>
                     
                     <div class="signature-name">${nombreCliente}</div>
-                    <div class="signature-note">Cliente • C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
-                    <div class="signature-note">Fecha de aceptación: ${fechaSimple}</div>
+                    <div class="signature-note">• C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
+                    <div class="signature-note">Fecha: ${fechaSimple}</div>
                 </section>
 
                 <!-- FOOTER SOLO EN ESTA ÚLTIMA PÁGINA -->
@@ -989,7 +989,7 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>6. Verificación Técnica</Text>
                     <View style={styles.row}>
-                        <CheckItem label="Nivelación Ok" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
+                        <CheckItem label="Nivelación" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
                         <CheckItem label="Presión de Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
                     </View>
                     <View style={styles.row}>
@@ -1003,7 +1003,7 @@ export default function CrearReporte() {
                     <Text style={styles.sectionTitle}>7. Registro Fotográfico</Text>
                     <ItemFoto label="Foto Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
                     <ItemFoto label="Foto de la Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
-                    <ItemFoto label="Evidencia de Revisión" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
+                    <ItemFoto label="Foto Est. Eléctrico" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
                 </View>
 
                 {/* 8. CIERRE */}
