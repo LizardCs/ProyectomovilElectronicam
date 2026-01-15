@@ -105,101 +105,712 @@ export default function CrearReporte() {
 
         setLoading(true);
 
-        const renderCheck = (val) => (val ? '☑' : '☐');
+        const fechaActual = new Date().toLocaleDateString('es-ES', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const fechaSimple = new Date().toLocaleDateString('es-ES', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric'
+        });
+
+        const renderCheckIcon = (val) => (val ? 'fas fa-check-circle' : 'far fa-circle');
+        const renderCheckClass = (val) => (val ? 'checked' : 'unchecked');
+
         const imgModelo = fotoModelo ? `data:image/jpeg;base64,${fotoModelo.base64}` : '';
         const imgFactura = fotoFactura ? `data:image/jpeg;base64,${fotoFactura.base64}` : '';
         const imgFinal = fotoElectrico ? `data:image/jpeg;base64,${fotoElectrico.base64}` : '';
 
         const htmlContent = `
-        <html>
-            <head>
-                <style>
-                    body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
-                    .header { text-align: center; border-bottom: 2px solid #001C38; margin-bottom: 20px; }
-                    .section { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-                    .section-title { background: #001C38; color: white; padding: 8px; font-size: 14px; font-weight: bold; }
-                    .content { padding: 10px; font-size: 12px; }
-                    .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                    .field { flex: 1; }
-                    .label { font-weight: bold; }
-                    .check-item { margin-right: 15px; display: inline-block; }
-                    .photo-container { display: flex; justify-content: space-around; margin-top: 10px; }
-                    .photo-box { width: 30%; text-align: center; font-size: 10px; }
-                    .photo-box img { width: 100%; border: 1px solid #ccc; height: 120px; object-fit: contain; }
-                    .firma { text-align: center; margin-top: 30px; }
-                    .firma img { width: 200px; border-bottom: 1px solid #333; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h2>ELECTRÓNICA MANTILLA</h2>
-                    <p>Reporte Técnico Digital - Nº Servicio: ${servicio.SERV_NUM}</p>
-                </div>
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reporte Técnico Digital - Electrónica Mantilla</title>
+            <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <style>
+                :root {
+                    --primary: #001C38;
+                    --secondary: #007BFF;
+                    --accent: #00A86B;
+                    --light-bg: #F8FAFC;
+                    --border: #E2E8F0;
+                    --shadow: rgba(0, 28, 56, 0.08);
+                    --text: #334155;
+                    --text-light: #64748B;
+                    --success: #10B981;
+                    --warning: #F59E0B;
+                    --danger: #EF4444;
+                    --info: #3B82F6;
+                }
 
-                <div class="section">
-                    <div class="section-title">1. DATOS DEL CLIENTE</div>
-                    <div class="content">
-                        <div class="row"><div class="field"><span class="label">Nombre:</span> ${nombreCliente}</div><div class="field"><span class="label">C.I:</span> ${cedulaCliente}</div></div>
-                        <div class="row"><div class="field"><span class="label">Telf:</span> ${telefonoCliente}</div><div class="field"><span class="label">Dir:</span> ${direccionCliente}</div></div>
-                    </div>
-                </div>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
 
-                <div class="section">
-                    <div class="section-title">2. IDENTIFICACIÓN DEL EQUIPO</div>
-                    <div class="content">
-                        <div class="row"><div class="field"><span class="label">Un:</span> ${unidad}</div><div class="field"><span class="label">Marca:</span> ${marca}</div></div>
-                        <div class="row"><div class="field"><span class="label">Modelo:</span> ${modeloEq}</div><div class="field"><span class="label">Serie:</span> ${serieEq}</div></div>
-                        <div><span class="label">Color:</span> ${colorEq}</div>
-                    </div>
-                </div>
+                body {
+                    font-family: 'Inter', 'Segoe UI', sans-serif;
+                    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+                    color: var(--text);
+                    line-height: 1.6;
+                    padding: 20px;
+                    font-size: 15px;
+                }
 
-                <div class="section">
-                    <div class="section-title">3. RECEPCIÓN Y DIAGNÓSTICO</div>
-                    <div class="content">
-                        <div class="check-item">${renderCheck(checks.garantia)} Garantía</div>
-                        <div class="check-item">${renderCheck(checks.papeles)} Papeles</div>
-                        <div class="check-item">${renderCheck(checks.pendiente)} Pendiente</div>
-                        <div class="check-item">${renderCheck(checks.completo)} Completo</div>
-                        <p><span class="label">Daño Reportado:</span> ${danioReportado}</p>
-                    </div>
-                </div>
+                .container {
+                    max-width: 210mm;
+                    min-height: 297mm;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 30px var(--shadow);
+                    overflow: hidden;
+                    position: relative;
+                }
 
-                <div class="section">
-                    <div class="section-title">4. ACCESORIOS Y ESTADO</div>
-                    <div class="content">
-                        <div><span class="label">Accesorios (SI/NO):</span> ${checks.accesorios ? 'SI' : 'NO'} - ${accesoriosDesc}</div>
-                        <div style="margin-top:5px;">
-                            ${renderCheck(checks.nuevo)} Nuevo | ${renderCheck(checks.usado)} Usado | ${renderCheck(checks.excepcion)} Exc. Garantía
+                .container::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 6px;
+                    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+                }
+
+                /* HEADER */
+                .header {
+                    background: var(--primary);
+                    color: white;
+                    padding: 30px 40px 25px;
+                    border-bottom: 5px solid var(--secondary);
+                }
+
+                .header-top {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 20px;
+                }
+
+                .logo-section h1 {
+                    font-size: 28px;
+                    font-weight: 700;
+                    letter-spacing: -0.5px;
+                    margin-bottom: 5px;
+                }
+
+                .logo-section p {
+                    font-size: 15px;
+                    opacity: 0.9;
+                    font-weight: 300;
+                }
+
+                .order-badge {
+                    background: var(--accent);
+                    color: white;
+                    padding: 8px 20px;
+                    border-radius: 50px;
+                    font-weight: 600;
+                    font-size: 16px;
+                    display: inline-flex;
+                    align-items: center;
+                    box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);
+                }
+
+                .order-badge i {
+                    margin-right: 8px;
+                }
+
+                .header-info {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 30px;
+                    background: rgba(255, 255, 255, 0.1);
+                    padding: 20px;
+                    border-radius: 10px;
+                    margin-top: 15px;
+                }
+
+                .info-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .info-item i {
+                    color: var(--secondary);
+                    font-size: 18px;
+                }
+
+                /* MAIN CONTENT */
+                .main-content {
+                    padding: 40px;
+                }
+
+                .content-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 30px;
+                    margin-bottom: 40px;
+                }
+
+                /* SECTIONS */
+                .section {
+                    background: var(--light-bg);
+                    border-radius: 12px;
+                    border: 1px solid var(--border);
+                    overflow: hidden;
+                    transition: transform 0.3s, box-shadow 0.3s;
+                }
+
+                .section:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 20px var(--shadow);
+                }
+
+                .section-header {
+                    background: linear-gradient(90deg, var(--primary), #00305C);
+                    color: white;
+                    padding: 18px 25px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-weight: 600;
+                    font-size: 16px;
+                }
+
+                .section-header i {
+                    font-size: 18px;
+                }
+
+                .section-body {
+                    padding: 25px;
+                }
+
+                /* CLIENT INFO */
+                .client-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 20px;
+                }
+
+                .info-card {
+                    background: white;
+                    border-radius: 10px;
+                    padding: 18px;
+                    border-left: 4px solid var(--secondary);
+                    box-shadow: 0 2px 8px var(--shadow);
+                }
+
+                .info-card .label {
+                    font-size: 13px;
+                    color: var(--text-light);
+                    text-transform: uppercase;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    display: block;
+                    margin-bottom: 5px;
+                }
+
+                .info-card .value {
+                    font-size: 17px;
+                    font-weight: 600;
+                    color: var(--primary);
+                }
+
+                /* DIAGNOSIS CARDS */
+                .diagnosis-cards {
+                    display: grid;
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+
+                .diagnosis-card {
+                    background: white;
+                    border-radius: 10px;
+                    padding: 20px;
+                    border-top: 4px solid;
+                    box-shadow: 0 3px 10px var(--shadow);
+                }
+
+                .diagnosis-card.reported {
+                    border-top-color: var(--danger);
+                }
+
+                .diagnosis-card.observed {
+                    border-top-color: var(--warning);
+                }
+
+                .diagnosis-card.solution {
+                    border-top-color: var(--success);
+                }
+
+                .diagnosis-card.accessories {
+                    border-top-color: var(--info);
+                }
+
+                .card-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-weight: 600;
+                    margin-bottom: 12px;
+                    color: var(--primary);
+                }
+
+                .card-title i {
+                    font-size: 18px;
+                }
+
+                /* CHECKLIST */
+                .checklist-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                    gap: 15px;
+                    margin-top: 15px;
+                }
+
+                .check-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 12px;
+                    background: white;
+                    border-radius: 8px;
+                    border: 1px solid var(--border);
+                    transition: all 0.2s;
+                }
+
+                .check-item.checked {
+                    background: rgba(16, 185, 129, 0.08);
+                    border-color: var(--success);
+                    color: var(--success);
+                }
+
+                .check-item.unchecked {
+                    opacity: 0.6;
+                }
+
+                .check-item i {
+                    font-size: 16px;
+                }
+
+                /* STATUS BADGES */
+                .status-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 6px 14px;
+                    border-radius: 50px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    margin-right: 10px;
+                    margin-bottom: 10px;
+                }
+
+                .status-badge.warranty {
+                    background: rgba(16, 185, 129, 0.15);
+                    color: var(--success);
+                }
+
+                .status-badge.used {
+                    background: rgba(245, 158, 11, 0.15);
+                    color: var(--warning);
+                }
+
+                .status-badge.complete {
+                    background: rgba(59, 130, 246, 0.15);
+                    color: var(--info);
+                }
+
+                /* VALIDATION & SIGNATURE */
+                .validation-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 30px;
+                }
+
+                .signature-section {
+                    text-align: center;
+                    padding: 30px;
+                    background: white;
+                    border-radius: 12px;
+                    border: 2px dashed var(--border);
+                    margin-top: 30px;
+                }
+
+                .signature-img {
+                    max-width: 250px;
+                    height: auto;
+                    margin: 20px 0;
+                    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+                }
+
+                .signature-name {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: var(--primary);
+                    margin-top: 10px;
+                }
+
+                .signature-note {
+                    font-size: 13px;
+                    color: var(--text-light);
+                    margin-top: 8px;
+                    font-style: italic;
+                }
+
+                /* IMAGES SECTION */
+                .images-section {
+                    margin-top: 50px;
+                    padding-top: 30px;
+                    border-top: 1px solid var(--border);
+                }
+
+                .images-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    gap: 25px;
+                    margin-top: 25px;
+                }
+
+                .image-card {
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 5px 15px var(--shadow);
+                    border: 1px solid var(--border);
+                }
+
+                .image-card img {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    display: block;
+                }
+
+                .image-caption {
+                    padding: 15px;
+                    background: white;
+                    font-weight: 600;
+                    color: var(--primary);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                /* FOOTER */
+                .footer {
+                    padding: 25px 40px;
+                    background: var(--light-bg);
+                    border-top: 1px solid var(--border);
+                    text-align: center;
+                    color: var(--text-light);
+                    font-size: 14px;
+                }
+
+                .footer-links {
+                    display: flex;
+                    justify-content: center;
+                    gap: 30px;
+                    margin-top: 15px;
+                }
+
+                /* RESPONSIVE */
+                @media (max-width: 1100px) {
+                    .content-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
+
+                @media print {
+                    body {
+                        background: none;
+                        padding: 0;
+                    }
+                    
+                    .container {
+                        box-shadow: none;
+                        border-radius: 0;
+                        max-width: 100%;
+                    }
+                    
+                    .section:hover {
+                        transform: none;
+                        box-shadow: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <!-- HEADER -->
+                <header class="header">
+                    <div class="header-top">
+                        <div class="logo-section">
+                            <h1>ELECTRÓNICA MANTILLA</h1>
+                            <p>Servicio Técnico Especializado • Confianza y Garantía</p>
                         </div>
-                        <p><span class="label">Detalles físicos:</span> ${inspeccionEstadoDesc}</p>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">5. PUNTOS TÉCNICOS Y EVIDENCIA</div>
-                    <div class="content">
-                        <div class="row">
-                            <div class="field">${renderCheck(checks.nivelacion)} Nivelación</div>
-                            <div class="field">${renderCheck(checks.presionAgua)} Presión Agua</div>
-                        </div>
-                        <div class="row">
-                            <div class="field">${renderCheck(checks.modeloSerieCheck)} Modelo/Serie</div>
-                            <div class="field">${renderCheck(checks.conexionesElectricas)} Conex. Eléctricas</div>
-                        </div>
-                        <div class="photo-container">
-                            <div class="photo-box"><img src="${imgModelo}"/><p>Modelo/Serie</p></div>
-                            <div class="photo-box"><img src="${imgFactura}"/><p>Factura</p></div>
-                            <div class="photo-box"><img src="${imgFinal}"/><p>Final</p></div>
+                        <div class="order-badge">
+                            <i class="fas fa-file-invoice"></i> Orden: ${servicio.SERV_NUM}
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="header-info">
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <div class="label">Fecha de Emisión</div>
+                                <div class="value">${fechaSimple}</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-user-tie"></i>
+                            <div>
+                                <div class="label">Técnico Responsable</div>
+                                <div class="value">Carlos Mantilla</div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-star"></i>
+                            <div>
+                                <div class="label">Estado del Reporte</div>
+                                <div class="value">Completado</div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-                <div class="firma">
-                    <p><span class="label">Recomendaciones:</span> ${recomendaciones}</p>
-                    <img src="${firma}"/>
-                    <p>Firma del Cliente: ${nombreCliente}</p>
-                </div>
-            </body>
+                <!-- MAIN CONTENT -->
+                <main class="main-content">
+                    <div class="content-grid">
+                        <!-- CLIENT SECTION -->
+                        <section class="section">
+                            <div class="section-header">
+                                <i class="fas fa-user-circle"></i> Información del Cliente
+                            </div>
+                            <div class="section-body">
+                                <div class="client-info-grid">
+                                    <div class="info-card">
+                                        <span class="label">Nombre Completo</span>
+                                        <div class="value">${nombreCliente}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Cédula de Identidad</span>
+                                        <div class="value">${cedulaCliente || servicio.SERV_CED_REC}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Teléfono</span>
+                                        <div class="value">${telefonoCliente}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Dirección</span>
+                                        <div class="value">${direccionCliente}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- EQUIPMENT SECTION -->
+                        <section class="section">
+                            <div class="section-header">
+                                <i class="fas fa-box"></i> Equipo Revisado
+                            </div>
+                            <div class="section-body">
+                                <div class="client-info-grid">
+                                    <div class="info-card">
+                                        <span class="label">Tipo de Equipo</span>
+                                        <div class="value">${unidad}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Marca</span>
+                                        <div class="value">${marca}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Modelo</span>
+                                        <div class="value">${modeloEq}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Número de Serie</span>
+                                        <div class="value">${serieEq}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Color</span>
+                                        <div class="value">${colorEq}</div>
+                                    </div>
+                                    <div class="info-card">
+                                        <span class="label">Estado General</span>
+                                        <div class="value">
+                                            <span class="status-badge ${checks.usado ? 'used' : ''}">
+                                                <i class="fas fa-clock"></i> ${checks.usado ? 'Usado' : 'Nuevo'}
+                                            </span>
+                                            ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- DIAGNOSIS & SOLUTION SECTION -->
+                    <section class="section">
+                        <div class="section-header">
+                            <i class="fas fa-stethoscope"></i> Diagnóstico Técnico
+                        </div>
+                        <div class="section-body">
+                            <div class="diagnosis-cards">
+                                <div class="diagnosis-card reported">
+                                    <div class="card-title">
+                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado por el Cliente
+                                    </div>
+                                    <p>${danioReportado}</p>
+                                </div>
+                                
+                                <div class="diagnosis-card observed">
+                                    <div class="card-title">
+                                        <i class="fas fa-search"></i> Observaciones del Técnico
+                                    </div>
+                                    <p>${inspeccionEstadoDesc}</p>
+                                </div>
+                                
+                                <div class="diagnosis-card solution">
+                                    <div class="card-title">
+                                        <i class="fas fa-tools"></i> Solución Aplicada
+                                    </div>
+                                    <p>${recomendaciones}</p>
+                                </div>
+                                
+                                <div class="diagnosis-card accessories">
+                                    <div class="card-title">
+                                        <i class="fas fa-box-open"></i> Accesorios Recibidos
+                                    </div>
+                                    <p>${checks.accesorios ? 'Sí - ' + accesoriosDesc : 'No se recibieron accesorios'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VALIDATION & CHECKS -->
+                    <section class="section">
+                        <div class="section-header">
+                            <i class="fas fa-clipboard-check"></i> Validación y Verificaciones
+                        </div>
+                        <div class="section-body">
+                            <div class="checklist-grid">
+                                <div class="check-item ${renderCheckClass(checks.garantia)}">
+                                    <i class="${renderCheckIcon(checks.garantia)}"></i> En Garantía
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.papeles)}">
+                                    <i class="${renderCheckIcon(checks.papeles)}"></i> Con Papeles
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.pendiente)}">
+                                    <i class="${renderCheckIcon(checks.pendiente)}"></i> Pendiente
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.completo)}">
+                                    <i class="${renderCheckIcon(checks.completo)}"></i> Caja Completa
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.nivelacion)}">
+                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación OK
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.presionAgua)}">
+                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua OK
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.modeloSerieCheck)}">
+                                    <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo/Serie Verificado
+                                </div>
+                                <div class="check-item ${renderCheckClass(checks.conexionesElectricas)}">
+                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica OK
+                                </div>
+                            </div>
+
+                            <div class="status-indicators" style="margin-top: 25px;">
+                                ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
+                                <span class="status-badge complete">
+                                    <i class="fas fa-check-double"></i> Reparación Completada
+                                </span>
+                                <span class="status-badge ${checks.usado ? 'used' : ''}">
+                                    <i class="fas fa-history"></i> ${checks.usado ? 'Equipo Usado' : 'Equipo Nuevo'}
+                                </span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- SIGNATURE -->
+                    <div class="signature-section">
+                        <h3 style="color: var(--primary); margin-bottom: 20px;">Aceptación del Servicio</h3>
+                        <p style="color: var(--text-light); max-width: 600px; margin: 0 auto 25px;">
+                            El cliente verifica que el equipo ha sido reparado según los términos acordados y acepta la conformidad del servicio técnico prestado.
+                        </p>
+                        
+                        <div style="margin: 30px 0;">
+                            <img src="${firma}" alt="Firma del Cliente" class="signature-img">
+                        </div>
+                        
+                        <div class="signature-name">${nombreCliente}</div>
+                        <div class="signature-note">Cliente • C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
+                        <div class="signature-note">Fecha de aceptación: ${fechaSimple}</div>
+                    </div>
+
+                    <!-- IMAGES SECTION -->
+                    <div class="images-section">
+                        <h3 style="color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-camera"></i> Evidencia Fotográfica
+                        </h3>
+                        <p style="color: var(--text-light); margin-top: 10px;">Registro visual del equipo antes y después de la reparación.</p>
+                        
+                        <div class="images-grid">
+                            <div class="image-card">
+                                <img src="${imgModelo}" alt="Modelo y Serie">
+                                <div class="image-caption">
+                                    <i class="fas fa-barcode"></i> Modelo y Número de Serie
+                                </div>
+                            </div>
+                            
+                            <div class="image-card">
+                                <img src="${imgFactura}" alt="Factura">
+                                <div class="image-caption">
+                                    <i class="fas fa-file-invoice-dollar"></i> Documentación Recibida
+                                </div>
+                            </div>
+                            
+                            <div class="image-card">
+                                <img src="${imgFinal}" alt="Equipo">
+                                <div class="image-caption">
+                                    <i class="fas fa-washing-machine"></i> Estado Físico del Equipo
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- FOOTER -->
+                <footer class="footer">
+                    <p style="margin-bottom: 5px;">
+                        <strong>LOCAL Nº 1:</strong> Quis Quis 15-203 y Av. Atahualpa • Telfs: (03) 2416124 - (03) 2848891
+                    </p>
+                    <p style="margin-bottom: 10px;">
+                        <strong>LOCAL Nº 2:</strong> Montalvo 07-20 y Juan Benigno Vela • Telf: (03) 2828365
+                    </p>
+                    <div class="footer-links">
+                        <span><i class="fab fa-whatsapp"></i> 0984139099 / 0986632992</span>
+                        <span><i class="fas fa-envelope"></i> emantillacentro@yahoo.es</span>
+                        <span><i class="fas fa-map-marker-alt"></i> Ambato - Ecuador</span>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
+                        Reporte generado el ${fechaActual} • ID: ${servicio.SERV_NUM}
+                    </p>
+                </footer>
+            </div>
+        </body>
         </html>`;
 
         try {
