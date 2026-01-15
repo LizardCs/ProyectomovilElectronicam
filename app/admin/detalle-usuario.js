@@ -15,16 +15,12 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// --- NUEVAS IMPORTACIONES MODULARES ---
 import { editarUsuarios } from "../../services/editarUsuarios";
 import { eliminarUsuario } from "../../services/eliminarUsuario";
 
 export default function DetalleUsuario() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    
-    // Obtenemos el objeto usuario pasado por parámetros
     const u = params.user ? JSON.parse(params.user) : {};
 
     const [loading, setLoading] = useState(false);
@@ -36,7 +32,6 @@ export default function DetalleUsuario() {
     const [cambiarClave, setCambiarClave] = useState(false);
     const [clave, setClave] = useState("");
 
-    // --- MANEJO DE ACTUALIZACIÓN ---
     const handleActualizar = async () => {
         if (!nombre || !apellido || !usuario) {
             Alert.alert("Error", "Campos obligatorios vacíos.");
@@ -50,7 +45,6 @@ export default function DetalleUsuario() {
 
         setLoading(true);
         try {
-            // LLAMADA AL SERVICIO editarUsuarios.js
             const res = await editarUsuarios({
                 id: u.id,
                 origen: u.origen,
@@ -75,7 +69,6 @@ export default function DetalleUsuario() {
         }
     };
 
-    // --- MANEJO DE ELIMINACIÓN ---
     const handleEliminar = () => {
         Alert.alert("Eliminar Usuario", `¿Estás seguro de eliminar a ${nombre}? Esta acción es permanente.`, [
             { text: "Cancelar", style: "cancel" },
@@ -86,7 +79,6 @@ export default function DetalleUsuario() {
     const confirmEliminar = async () => {
         setLoading(true);
         try {
-            // LLAMADA AL SERVICIO eliminarUsuario.js
             const res = await eliminarUsuario(u.id, u.origen);
             
             if (res.success) {

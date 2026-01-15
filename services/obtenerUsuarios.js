@@ -1,26 +1,19 @@
 import { supabase } from './supabase';
 
-/**
- * Lógica extraída de obtener-usuarios.php
- * Recupera y unifica los usuarios de 'usersmovil' y 'usersweb' usando MAYÚSCULAS.
- */
 export const obtenerUsuarios = async () => {
   try {
-    // 1. Obtener datos de la tabla Móvil (Personal Técnico/Admin)
     const { data: dataMovil, error: errorMovil } = await supabase
       .from('usersmovil')
       .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL');
 
     if (errorMovil) throw errorMovil;
 
-    // 2. Obtener datos de la tabla Web (Clientes)
     const { data: dataWeb, error: errorWeb } = await supabase
       .from('usersweb')
       .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU');
 
     if (errorWeb) throw errorWeb;
 
-    // 3. Mapeo y Unificación (Convertimos de la DB a lo que espera la UI)
     const usuariosMovil = dataMovil.map(u => ({
       id: u.MOV_ID,
       cedula: u.MOV_CED,
@@ -37,11 +30,10 @@ export const obtenerUsuarios = async () => {
       nombre: u.WEB_NOMBRES,
       apellido: u.WEB_APELLIDOS,
       usuario: u.WEB_USU,
-      rol: 'WEB', // Etiqueta fija para clientes
+      rol: 'WEB',
       origen: 'WEB'
     }));
 
-    // 4. Combinar ambas listas en un solo array (Simulando un UNION de SQL)
     const listaUnificada = [...usuariosMovil, ...usuariosWeb];
 
     

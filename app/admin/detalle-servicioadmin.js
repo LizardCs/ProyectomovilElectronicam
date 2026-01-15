@@ -18,17 +18,13 @@ import { obtenerImagenServicio } from "../../services/obtenerImagenServicio";
 export default function DetalleServicioAdmin() {
     const router = useRouter();
     const params = useLocalSearchParams();
-
-    // Estados para la carga de la foto
     const [fotoUri, setFotoUri] = useState(null);
     const [cargandoFoto, setCargandoFoto] = useState(true);
 
-    // Recuperamos los datos básicos del servicio
     const servicio = useMemo(() => {
         return params.servicio ? JSON.parse(params.servicio) : null;
     }, [params.servicio]);
 
-    // EFECTO: Cargar la foto real desde Supabase al entrar
     useEffect(() => {
         if (servicio?.SERV_ID) {
             cargarFoto();
@@ -39,7 +35,6 @@ export default function DetalleServicioAdmin() {
         setCargandoFoto(true);
         const res = await obtenerImagenServicio(servicio.SERV_ID);
         if (res.success && res.imagen) {
-            // Verificamos si ya tiene el prefijo de base64
             const uri = res.imagen.startsWith('data:') 
                 ? res.imagen 
                 : `data:image/jpeg;base64,${res.imagen}`;

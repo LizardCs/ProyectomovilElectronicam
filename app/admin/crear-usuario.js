@@ -7,14 +7,12 @@ import {
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// --- NUEVAS IMPORTACIONES MODULARES ---
 import { crearUsuarioMovil } from "../../services/crearUsuarioMovil";
 import { crearUsuarioWeb } from "../../services/crearUsuarioWeb";
 
 export default function CrearUsuario() {
   const router = useRouter();
-  const [tipo, setTipo] = useState(null); // 'movil' o 'web'
+  const [tipo, setTipo] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -24,11 +22,10 @@ export default function CrearUsuario() {
     celular: "",
     usuario: "", 
     clave: "", 
-    rol: "0" // rol solo para movil
+    rol: "0"
   });
 
   const handleGuardar = async () => {
-    // Validaciones básicas (Igual que en tu PHP)
     if (!form.cedula || !form.usuario || !form.clave) {
       Alert.alert("Error", "La cédula, usuario y clave son obligatorios.");
       return;
@@ -38,8 +35,6 @@ export default function CrearUsuario() {
 
     try {
       let response;
-
-      // LLAMADA AL SERVICIO CORRESPONDIENTE SEGÚN EL TIPO
       if (tipo === 'movil') {
         response = await crearUsuarioMovil(form);
       } else {
@@ -163,7 +158,6 @@ export default function CrearUsuario() {
   );
 }
 
-// Estilos (Se mantienen iguales)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
   header: { backgroundColor: "#001C38", paddingTop: 10, paddingBottom: 20, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomLeftRadius: 15, borderBottomRightRadius: 15 },

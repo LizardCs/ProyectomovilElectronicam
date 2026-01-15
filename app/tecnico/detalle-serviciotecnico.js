@@ -15,8 +15,6 @@ import {
 } from "react-native";
 import ImageZoom from 'react-native-image-pan-zoom';
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// --- IMPORTACIÓN DEL NUEVO SERVICIO ---
 import { obtenerImagenServicio } from "../../services/obtenerImagenServicio";
 
 const { width, height } = Dimensions.get("window");
@@ -24,18 +22,14 @@ const { width, height } = Dimensions.get("window");
 export default function DetalleServicioTecnico() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    
-    // Estados para la imagen y carga
     const [isImageVisible, setIsImageVisible] = useState(false);
     const [fotoUri, setFotoUri] = useState(null);
     const [cargandoFoto, setCargandoFoto] = useState(true);
 
-    // Parseo de datos básicos (Vienen sin la foto desde la lista)
     const servicio = useMemo(() => {
         return params.servicio ? JSON.parse(params.servicio) : null;
     }, [params.servicio]);
 
-    // EFECTO PARA CARGAR LA FOTO AL ENTRAR
     useEffect(() => {
         if (servicio?.SERV_ID) {
             cargarFotoReal();
@@ -47,7 +41,6 @@ export default function DetalleServicioTecnico() {
         const res = await obtenerImagenServicio(servicio.SERV_ID);
         
         if (res.success && res.imagen) {
-            // Validamos si ya tiene el prefijo Base64, si no, se lo ponemos
             const uri = res.imagen.startsWith('data:') 
                 ? res.imagen 
                 : `data:image/jpeg;base64,${res.imagen}`;

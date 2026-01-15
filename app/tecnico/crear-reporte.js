@@ -11,8 +11,6 @@ import {
     Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
-
-// --- NUEVA IMPORTACIÓN DEL SERVICIO ---
 import { crearReporte } from "../../services/crearReporte";
 
 export default function CrearReporte() {
@@ -20,23 +18,17 @@ export default function CrearReporte() {
     const navigation = useNavigation();
     const params = useLocalSearchParams();
     const servicio = JSON.parse(params.servicio);
-
     const [loading, setLoading] = useState(false);
-
-    // 1. DATOS DEL CLIENTE
     const [nombreCliente, setNombreCliente] = useState("");
     const [cedulaCliente, setCedulaCliente] = useState("");
     const [telefonoCliente, setTelefonoCliente] = useState("");
     const [direccionCliente, setDireccionCliente] = useState("");
-
-    // 2. IDENTIFICACIÓN DEL EQUIPO
     const [unidad, setUnidad] = useState("");
     const [marca, setMarca] = useState("");
     const [modeloEq, setModeloEq] = useState("");
     const [serieEq, setSerieEq] = useState("");
     const [colorEq, setColorEq] = useState("");
 
-    // 3. ESTADOS Y CHECKS TÉCNICOS
     const [checks, setChecks] = useState({
         garantia: false, papeles: false, pendiente: false, completo: false,
         nuevo: false, usado: true, excepcion: false,
@@ -51,8 +43,6 @@ export default function CrearReporte() {
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
-
-    // 4. FOTOS
     const [fotoModelo, setFotoModelo] = useState(null);
     const [descModelo, setDescModelo] = useState("");
     const [fotoFactura, setFotoFactura] = useState(null);
@@ -869,10 +859,7 @@ export default function CrearReporte() {
         </html>`;
 
         try {
-            // Generar el archivo PDF
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
-
-            // LLAMADA AL SERVICIO crearReporte.js
             const res = await crearReporte({
                 cedula: servicio.SERV_CED_REC,
                 nombre: servicio.SERV_NOM_REC,
@@ -884,7 +871,7 @@ export default function CrearReporte() {
 
             if (res.success) {
                 Alert.alert("Éxito", "Reporte guardado y servicio finalizado.");
-                await Sharing.shareAsync(uri); // Compartir el PDF
+                await Sharing.shareAsync(uri);
                 router.push("/tecnico/home");
             } else {
                 Alert.alert("Error", res.message || "Error al subir el reporte");
@@ -1029,7 +1016,6 @@ export default function CrearReporte() {
     );
 }
 
-// ... (Componentes auxiliares y estilos se mantienen igual)
 const CheckItem = ({ label, value, onToggle }) => (
     <TouchableOpacity style={styles.checkItem} onPress={onToggle}>
         <Ionicons name={value ? "checkbox" : "square-outline"} size={22} color={value ? "#001C38" : "#666"} />

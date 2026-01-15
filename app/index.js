@@ -19,8 +19,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from 'react-native-svg';
-
-// --- NUEVAS IMPORTACIONES ---
 import { login } from "../services/login";
 import { SessionService } from "../services/session";
 
@@ -38,13 +36,12 @@ export default function Login() {
 
     const checkExistingSession = async () => {
         try {
-            // Usamos el nuevo servicio de sesión
             const user = await SessionService.getStoredUser();
             if (user) {
                 user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
             }
         } catch (error) {
-            console.log('Sin sesión previa');
+            //console.log('Sin sesión previa');
         }
     };
 
@@ -58,14 +55,10 @@ export default function Login() {
         Keyboard.dismiss();
 
         try {
-            // LLAMADA AL NUEVO SERVICIO LOGIN.JS
             const response = await login(usuario.trim(), clave.trim());
             
             if (response.success && response.user) {
-                // Guardamos la sesión localmente
                 await SessionService.saveUser(response.user);
-                
-                // Redirigimos según lo que devuelva el servicio
                 router.replace(response.redirect_to);
             } else {
                 Alert.alert("Acceso Denegado", response.message || "Usuario o contraseña incorrectos.");
@@ -178,7 +171,6 @@ export default function Login() {
     );
 }
 
-// ... (Los estilos se mantienen iguales)
 const styles = StyleSheet.create({
     container: { flex: 1 },
     innerContainer: { flex: 1, paddingHorizontal: 30, justifyContent: "center" },

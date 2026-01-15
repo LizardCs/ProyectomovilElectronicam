@@ -1,12 +1,7 @@
 import { supabase } from './supabase';
 
-/**
- * Lógica extraída de crear-usuario-movil.php
- * Registra un nuevo usuario en la tabla 'usersmovil' usando nombres en MAYÚSCULAS.
- */
 export const crearUsuarioMovil = async (userData) => {
   try {
-    // 1. Captura de datos
     const { 
       cedula, 
       nombre, 
@@ -17,7 +12,6 @@ export const crearUsuarioMovil = async (userData) => {
       rol 
     } = userData;
 
-    // 2. Validación básica
     if (!cedula || !usuario || !clave) {
       return { 
         success: false, 
@@ -25,7 +19,6 @@ export const crearUsuarioMovil = async (userData) => {
       };
     }
 
-    // 3. Inserción en Supabase con nombres de columna en MAYÚSCULAS
     const { data, error } = await supabase
       .from('usersmovil')
       .insert([
@@ -43,7 +36,6 @@ export const crearUsuarioMovil = async (userData) => {
       .single();
 
     if (error) {
-      // Error 23505: Violación de unicidad (Cédula o Usuario duplicado)
       if (error.code === '23505') {
         throw new Error("La cédula o el nombre de usuario ya existen en el sistema.");
       }

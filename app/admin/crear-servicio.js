@@ -19,8 +19,6 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// --- IMPORTACIONES DE SERVICIOS ---
 import { crearServicio } from "../../services/crearServicio";
 import { editarServicio } from "../../services/editarServicio";
 import { obtenerTecnicos } from "../../services/obtenerTecnicos";
@@ -38,7 +36,7 @@ export default function CrearServicio() {
 
     const [formData, setFormData] = useState({
         SERV_ID: null,
-        SERV_IMG_ENV: null, // Guardaremos el Base64 PURO aquí
+        SERV_IMG_ENV: null,
         SERV_NUM: "",
         SERV_DESCRIPCION: "",
         SERV_CED_ENV: "",
@@ -87,7 +85,6 @@ export default function CrearServicio() {
                 SERV_CED_REC: servicio.SERV_CED_REC,
                 SERV_NOM_REC: servicio.SERV_NOM_REC,
                 SERV_EST: parseInt(servicio.SERV_EST),
-                // Mantenemos el base64 que venga de la DB
                 SERV_IMG_ENV: servicio.SERV_IMG_ENV 
             });
         }
@@ -101,10 +98,8 @@ export default function CrearServicio() {
         }
     };
 
-    // --- PROCESAMIENTO DE IMAGEN (OPTIMIZADO) ---
     const processAndSetImage = async (uri) => {
         try {
-            // Reducimos tamaño y calidad para que pese muy poco (Estilo XAMPP)
             const manipResult = await ImageManipulator.manipulateAsync(
                 uri,
                 [{ resize: { width: 600 } }], 
@@ -116,8 +111,6 @@ export default function CrearServicio() {
             );
             
             if (manipResult.base64) {
-                // Guardamos el string BASE64 sin el prefijo "data:image..."
-                // Esto hace que el envío a Supabase sea más limpio
                 setFormData({ ...formData, SERV_IMG_ENV: manipResult.base64 });
             }
         } catch (e) {
@@ -136,7 +129,6 @@ export default function CrearServicio() {
         if (!result.canceled) processAndSetImage(result.assets[0].uri);
     };
 
-    // --- GUARDAR EN LA NUBE ---
     const handleSubmit = async () => {
         if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto", "Tome una foto del equipo antes de asignar."); return; }
         if (!formData.SERV_NUM) { Alert.alert("Falta número", "Ingrese el número de comprobante."); return; }
@@ -176,7 +168,6 @@ export default function CrearServicio() {
         else router.back();
     };
 
-    // Helper para mostrar la imagen en el preview
     const getPreviewUri = () => {
         if (!formData.SERV_IMG_ENV) return null;
         if (formData.SERV_IMG_ENV.startsWith('data:')) return formData.SERV_IMG_ENV;

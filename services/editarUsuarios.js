@@ -25,10 +25,9 @@ export const editarUsuarios = async (userData) => {
     let camposAActualizar = {};
     let columnaId = '';
 
-    // 1. Configuración dinámica según el origen
     if (origen === 'MOVIL') {
       tabla = 'usersmovil';
-      columnaId = 'MOV_ID'; // Mayúsculas
+      columnaId = 'MOV_ID'; 
       camposAActualizar = {
         "NOM_MOV": nombre,
         "MOV_APE": apellido,
@@ -36,14 +35,13 @@ export const editarUsuarios = async (userData) => {
         "MOV_USU": usuario
       };
       
-      // Solo actualizamos la clave si se proporcionó una nueva
       if (clave && clave.trim() !== '') {
         camposAActualizar["MOV_CLAVE"] = clave;
       }
 
     } else {
       tabla = 'usersweb';
-      columnaId = 'WEB_ID'; // Mayúsculas
+      columnaId = 'WEB_ID';
       camposAActualizar = {
         "WEB_NOMBRES": nombre,
         "WEB_APELLIDOS": apellido,
@@ -56,7 +54,6 @@ export const editarUsuarios = async (userData) => {
       }
     }
 
-    // 2. Ejecución de la actualización en Supabase
     const { data, error } = await supabase
       .from(tabla)
       .update(camposAActualizar)

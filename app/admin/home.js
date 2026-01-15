@@ -14,8 +14,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-
-// --- NUEVAS IMPORTACIONES MODULARES ---
 import { obtenerServicios } from "../../services/obtenerServicios";
 import { obtenerUsuarios } from "../../services/obtenerUsuarios";
 import { SessionService } from "../../services/session";
@@ -27,12 +25,8 @@ export default function HomeAdmin() {
   const [servicios, setServicios] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  // --- ESTADOS PARA FILTROS Y BÚSQUEDA ---
   const [filtroActivo, setFiltroActivo] = useState("total");
   const [busqueda, setBusqueda] = useState("");
-
-  // Animaciones de entrada
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -41,7 +35,6 @@ export default function HomeAdmin() {
     startAnimations();
   }, []);
 
-  // Recargar datos cada vez que la pantalla gane el foco o cambie el tab
   useFocusEffect(
     useCallback(() => {
       fetchData();
@@ -84,7 +77,6 @@ export default function HomeAdmin() {
     }
   };
 
-  // --- LLAMADA AL SERVICIO obtenerServicios.js ---
   const fetchServicios = async () => {
     try {
       const res = await obtenerServicios();
@@ -94,7 +86,6 @@ export default function HomeAdmin() {
     }
   };
 
-  // --- LLAMADA AL SERVICIO obtenerUsuarios.js ---
   const fetchUsuarios = async () => {
     try {
       const res = await obtenerUsuarios();
@@ -123,7 +114,6 @@ export default function HomeAdmin() {
     ]);
   };
 
-  // --- LÓGICA DE FILTRADO DINÁMICO (Sin cambios, compatible con Supabase) ---
   const obtenerDatosFiltrados = () => {
     const query = busqueda.toLowerCase().trim();
 

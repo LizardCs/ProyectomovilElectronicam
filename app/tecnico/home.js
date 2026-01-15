@@ -14,8 +14,6 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// --- NUEVAS IMPORTACIONES MODULARES ---
 import { obtenerServiciosTecnico } from "../../services/obtenerServiciosTecnico";
 import { SessionService } from "../../services/session";
 
@@ -35,7 +33,6 @@ export default function HomeTecnico() {
     Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
   }, []);
 
-  // Recarga automática cuando la pantalla vuelve a tener el foco
   useFocusEffect(
     useCallback(() => {
       if (user) {
@@ -59,7 +56,6 @@ export default function HomeTecnico() {
     }
   };
 
-  // --- LLAMADA AL SERVICIO obtenerServiciosTecnico.js ---
   const fetchServicios = async (cedulaTecnico) => {
     const ced = cedulaTecnico || user?.cedula;
     if (!ced) return;
