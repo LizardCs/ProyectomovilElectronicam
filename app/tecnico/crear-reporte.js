@@ -43,7 +43,7 @@ export default function CrearReporte() {
         nivelacion: false, presionAgua: false,
         modeloSerieCheck: false, conexionesElectricas: false,
         conexionesAgua: false, equipoInstalado: false,
-        accesorios: false, 
+        accesorios: false,
         aceptaCondiciones: false
     });
 
@@ -105,17 +105,17 @@ export default function CrearReporte() {
 
         setLoading(true);
 
-        const fechaActual = new Date().toLocaleDateString('es-ES', { 
-            year: 'numeric', 
-            month: 'long', 
+        const fechaActual = new Date().toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
 
-        const fechaSimple = new Date().toLocaleDateString('es-ES', { 
-            year: 'numeric', 
-            month: 'long', 
+        const fechaSimple = new Date().toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
             day: 'numeric'
         });
 
@@ -270,12 +270,6 @@ export default function CrearReporte() {
                     border-radius: 12px;
                     border: 1px solid var(--border);
                     overflow: hidden;
-                    transition: transform 0.3s, box-shadow 0.3s;
-                }
-
-                .section:hover {
-                    transform: translateY(-3px);
-                    box-shadow: 0 8px 20px var(--shadow);
                 }
 
                 .section-header {
@@ -388,7 +382,6 @@ export default function CrearReporte() {
                     background: white;
                     border-radius: 8px;
                     border: 1px solid var(--border);
-                    transition: all 0.2s;
                 }
 
                 .check-item.checked {
@@ -432,14 +425,7 @@ export default function CrearReporte() {
                     color: var(--info);
                 }
 
-                /* VALIDATION & SIGNATURE */
-                .validation-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 20px;
-                    margin-bottom: 30px;
-                }
-
+                /* SIGNATURE */
                 .signature-section {
                     text-align: center;
                     padding: 30px;
@@ -453,7 +439,6 @@ export default function CrearReporte() {
                     max-width: 250px;
                     height: auto;
                     margin: 20px 0;
-                    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
                 }
 
                 .signature-name {
@@ -470,42 +455,57 @@ export default function CrearReporte() {
                     font-style: italic;
                 }
 
-                /* IMAGES SECTION */
+                /* IMAGES SECTION - MODIFICADA */
                 .images-section {
                     margin-top: 50px;
                     padding-top: 30px;
                     border-top: 1px solid var(--border);
                 }
-
-                .images-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    gap: 25px;
+                
+                .images-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 35px; /* Más espacio entre imágenes */
                     margin-top: 25px;
+                    width: 100%;
                 }
-
+                
                 .image-card {
+                    width: 90%; /* Más ancho */
+                    max-width: 500px; /* Ancho máximo más grande */
                     border-radius: 12px;
                     overflow: hidden;
-                    box-shadow: 0 5px 15px var(--shadow);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
                     border: 1px solid var(--border);
+                    background: white;
                 }
-
+                
                 .image-card img {
                     width: 100%;
-                    height: 200px;
-                    object-fit: cover;
+                    height: 280px; /* Más alta */
+                    object-fit: contain; /* Para mantener proporción */
+                    background: #f8f9fa; /* Fondo gris claro para imágenes transparentes */
+                    padding: 10px; /* Espacio alrededor de la imagen */
                     display: block;
                 }
-
+                
                 .image-caption {
-                    padding: 15px;
+                    padding: 18px 20px;
                     background: white;
-                    font-weight: 600;
+                    font-weight: 700; /* Más negrita */
                     color: var(--primary);
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    justify-content: center; /* Centrado */
+                    gap: 12px;
+                    font-size: 16px; /* Texto más grande */
+                    border-top: 1px solid var(--border);
+                    text-align: center;
+                }
+                
+                .image-caption i {
+                    font-size: 18px; /* Iconos más grandes */
                 }
 
                 /* FOOTER */
@@ -531,6 +531,16 @@ export default function CrearReporte() {
                         grid-template-columns: 1fr;
                     }
                 }
+                
+                @media (max-width: 768px) {
+                    .image-card {
+                        width: 95%; /* Más ancho en móviles */
+                    }
+                    
+                    .image-card img {
+                        height: 250px; /* Un poco menos alta en móviles */
+                    }
+                }
 
                 @media print {
                     body {
@@ -543,11 +553,6 @@ export default function CrearReporte() {
                         border-radius: 0;
                         max-width: 100%;
                     }
-                    
-                    .section:hover {
-                        transform: none;
-                        box-shadow: none;
-                    }
                 }
             </style>
         </head>
@@ -558,7 +563,7 @@ export default function CrearReporte() {
                     <div class="header-top">
                         <div class="logo-section">
                             <h1>ELECTRÓNICA MANTILLA</h1>
-                            <p>Servicio Técnico Especializado • Confianza y Garantía</p>
+                            <p>Servicio Técnico Especializado</p>
                         </div>
                         <div class="order-badge">
                             <i class="fas fa-file-invoice"></i> Orden: ${servicio.SERV_NUM}
@@ -601,11 +606,11 @@ export default function CrearReporte() {
                             <div class="section-body">
                                 <div class="client-info-grid">
                                     <div class="info-card">
-                                        <span class="label">Nombre Completo</span>
+                                        <span class="label">Nombre</span>
                                         <div class="value">${nombreCliente}</div>
                                     </div>
                                     <div class="info-card">
-                                        <span class="label">Cédula de Identidad</span>
+                                        <span class="label">Cédula</span>
                                         <div class="value">${cedulaCliente || servicio.SERV_CED_REC}</div>
                                     </div>
                                     <div class="info-card">
@@ -648,12 +653,12 @@ export default function CrearReporte() {
                                         <div class="value">${colorEq}</div>
                                     </div>
                                     <div class="info-card">
-                                        <span class="label">Estado General</span>
+                                        <span class="label">Estado</span>
                                         <div class="value">
                                             <span class="status-badge ${checks.usado ? 'used' : ''}">
                                                 <i class="fas fa-clock"></i> ${checks.usado ? 'Usado' : 'Nuevo'}
                                             </span>
-                                            ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
+                                            ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i>  En Garantía</span>' : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -670,7 +675,7 @@ export default function CrearReporte() {
                             <div class="diagnosis-cards">
                                 <div class="diagnosis-card reported">
                                     <div class="card-title">
-                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado por el Cliente
+                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado
                                     </div>
                                     <p>${danioReportado}</p>
                                 </div>
@@ -684,7 +689,7 @@ export default function CrearReporte() {
                                 
                                 <div class="diagnosis-card solution">
                                     <div class="card-title">
-                                        <i class="fas fa-tools"></i> Solución Aplicada
+                                        <i class="fas fa-tools"></i> Recomendaciones al cliente
                                     </div>
                                     <p>${recomendaciones}</p>
                                 </div>
@@ -702,7 +707,7 @@ export default function CrearReporte() {
                     <!-- VALIDATION & CHECKS -->
                     <section class="section">
                         <div class="section-header">
-                            <i class="fas fa-clipboard-check"></i> Validación y Verificaciones
+                            <i class="fas fa-clipboard-check"></i> Puntos a tomar en cuenta
                         </div>
                         <div class="section-body">
                             <div class="checklist-grid">
@@ -719,26 +724,26 @@ export default function CrearReporte() {
                                     <i class="${renderCheckIcon(checks.completo)}"></i> Caja Completa
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.nivelacion)}">
-                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación OK
+                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.presionAgua)}">
-                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua OK
+                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.modeloSerieCheck)}">
-                                    <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo/Serie Verificado
+                                    <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo / Serie Verificado
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.conexionesElectricas)}">
-                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica OK
+                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica
                                 </div>
                             </div>
 
                             <div class="status-indicators" style="margin-top: 25px;">
                                 ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
                                 <span class="status-badge complete">
-                                    <i class="fas fa-check-double"></i> Reparación Completada
+                                    <i class="fas fa-check-double"></i>  Reporte realizado
                                 </span>
                                 <span class="status-badge ${checks.usado ? 'used' : ''}">
-                                    <i class="fas fa-history"></i> ${checks.usado ? 'Equipo Usado' : 'Equipo Nuevo'}
+                                    <i class="fas fa-history"></i> ${checks.usado ? ' Equipo Usado' : ' Equipo Nuevo'}
                                 </span>
                             </div>
                         </div>
@@ -746,9 +751,9 @@ export default function CrearReporte() {
 
                     <!-- SIGNATURE -->
                     <div class="signature-section">
-                        <h3 style="color: var(--primary); margin-bottom: 20px;">Aceptación del Servicio</h3>
+                        <h3 style="color: var(--primary); margin-bottom: 20px;">Firma del cliente</h3>
                         <p style="color: var(--text-light); max-width: 600px; margin: 0 auto 25px;">
-                            El cliente verifica que el equipo ha sido reparado según los términos acordados y acepta la conformidad del servicio técnico prestado.
+                            El cliente verifica que acepta la conformidad del servicio técnico prestado.
                         </p>
                         
                         <div style="margin: 30px 0;">
@@ -756,38 +761,53 @@ export default function CrearReporte() {
                         </div>
                         
                         <div class="signature-name">${nombreCliente}</div>
-                        <div class="signature-note">Cliente • C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
-                        <div class="signature-note">Fecha de aceptación: ${fechaSimple}</div>
+                        <div class="signature-note">• C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
+                        <div class="signature-note">Fecha: ${fechaSimple}</div>
                     </div>
 
-                    <!-- IMAGES SECTION -->
+                    <!-- IMAGES SECTION MODIFICADA -->
                     <div class="images-section">
-                        <h3 style="color: var(--primary); display: flex; align-items: center; gap: 10px;">
+                        <h3 style="color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
                             <i class="fas fa-camera"></i> Evidencia Fotográfica
                         </h3>
-                        <p style="color: var(--text-light); margin-top: 10px;">Registro visual del equipo antes y después de la reparación.</p>
+                        <p style="color: var(--text-light); margin-top: 10px; text-align: center;">
+                            Registro visual del equipo antes y después de la reparación.
+                        </p>
                         
-                        <div class="images-grid">
+                        <div class="images-container">
+                            ${imgModelo ? `
                             <div class="image-card">
                                 <img src="${imgModelo}" alt="Modelo y Serie">
                                 <div class="image-caption">
                                     <i class="fas fa-barcode"></i> Modelo y Número de Serie
                                 </div>
                             </div>
+                            ` : ''}
                             
+                            ${imgFactura ? `
                             <div class="image-card">
                                 <img src="${imgFactura}" alt="Factura">
                                 <div class="image-caption">
                                     <i class="fas fa-file-invoice-dollar"></i> Documentación Recibida
                                 </div>
                             </div>
+                            ` : ''}
                             
+                            ${imgFinal ? `
                             <div class="image-card">
                                 <img src="${imgFinal}" alt="Equipo">
                                 <div class="image-caption">
                                     <i class="fas fa-washing-machine"></i> Estado Físico del Equipo
                                 </div>
                             </div>
+                            ` : ''}
+                            
+                            ${!imgModelo && !imgFactura && !imgFinal ? `
+                            <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                                <i class="fas fa-image" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+                                <p>No se adjuntaron fotografías en este reporte</p>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                 </main>
@@ -844,12 +864,12 @@ export default function CrearReporte() {
     if (showSig) {
         return (
             <View style={StyleSheet.absoluteFill}>
-                <SignatureScreen 
-                    onOK={(sig) => { setFirma(sig); setShowSig(false); }} 
-                    onEmpty={() => setShowSig(false)} 
-                    descriptionText="Firma del Cliente" 
-                    confirmText="Guardar" 
-                    clearText="Limpiar" 
+                <SignatureScreen
+                    onOK={(sig) => { setFirma(sig); setShowSig(false); }}
+                    onEmpty={() => setShowSig(false)}
+                    descriptionText="Firma del Cliente"
+                    confirmText="Guardar"
+                    clearText="Limpiar"
                 />
             </View>
         );
@@ -867,7 +887,7 @@ export default function CrearReporte() {
             </View>
 
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-                
+
                 {/* 1. DATOS CLIENTE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
