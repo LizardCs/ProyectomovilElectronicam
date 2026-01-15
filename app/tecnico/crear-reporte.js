@@ -678,7 +678,7 @@ export default function CrearReporte() {
                             <div class="info-card">
                                 <span class="label">Color</span>
                                 <div class="value">${colorEq}</div>
-                            </div> Diagnóstico Técnico Diagnóstico Técnico
+                            </div>
                             <div class="info-card">
                                 <span class="label">Estado</span>
                                 <div class="value">
@@ -770,7 +770,7 @@ export default function CrearReporte() {
                             <div class="status-indicators" style="margin-top: 6mm;">
                                 ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
                                 <span class="status-badge complete">
-                                    <i class="fas fa-check-double"></i> Reparación Completada
+                                    <i class="fas fa-check-double"></i> Reporte Completo
                                 </span>
                                 <span class="status-badge ${checks.usado ? 'used' : ''}">
                                     <i class="fas fa-history"></i> ${checks.usado ? 'Equipo Usado' : 'Equipo Nuevo'}
