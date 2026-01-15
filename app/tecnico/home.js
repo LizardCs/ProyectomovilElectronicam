@@ -109,12 +109,21 @@ export default function HomeTecnico() {
     return servicios.filter(s => {
       const cumpleFiltro =
         filtroActivo === "total" ? true :
-        filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
-        filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
+          filtroActivo === "pendientes" ? parseInt(s.SERV_EST) === 0 :
+            filtroActivo === "listos" ? parseInt(s.SERV_EST) === 1 : true;
 
       const cumpleBusqueda = s.SERV_NUM?.toString().toLowerCase().includes(busqueda.toLowerCase());
       return cumpleFiltro && cumpleBusqueda;
     });
+  };
+
+  const formatearNombreCorto = (nombreCompleto) => {
+    if (!nombreCompleto) return "Sin nombre";
+    const partes = nombreCompleto.trim().split(/\s+/);
+    if (partes.length >= 3) {
+      return `${partes[0]} ${partes[2]}`;
+    }
+    return partes.join(" ");
   };
 
   return (
@@ -126,7 +135,7 @@ export default function HomeTecnico() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.welcome}>Panel Técnico</Text>
-            <Text style={styles.userInfo}> 
+            <Text style={styles.userInfo}>
               Hola, {(user?.nombre_completo || "Técnico").trim().split(" ")[0]}
             </Text>
           </View>
@@ -212,7 +221,7 @@ export default function HomeTecnico() {
                 <View style={styles.tareaFooter}>
                   <View style={styles.assignerInfo}>
                     <Ionicons name="person-outline" size={14} color="#666" />
-                    <Text style={styles.assignerName}>De: {s.SERV_NOM_ENV}</Text>
+                    <Text style={styles.assignerName}>Asignado por: {formatearNombreCorto(s.SERV_NOM_ENV)}</Text>
                   </View>
 
                   <TouchableOpacity
