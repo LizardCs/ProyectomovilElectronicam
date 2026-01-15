@@ -136,21 +136,11 @@ export default function CrearReporte() {
             <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <style>
-                :root {
-                    --primary: #001C38;
-                    --secondary: #007BFF;
-                    --accent: #00A86B;
-                    --light-bg: #F8FAFC;
-                    --border: #E2E8F0;
-                    --shadow: rgba(0, 28, 56, 0.08);
-                    --text: #334155;
-                    --text-light: #64748B;
-                    --success: #10B981;
-                    --warning: #F59E0B;
-                    --danger: #EF4444;
-                    --info: #3B82F6;
+                @page {
+                    size: A4;
+                    margin: 20mm 15mm 25mm 15mm;
                 }
-
+                
                 * {
                     margin: 0;
                     padding: 0;
@@ -159,40 +149,22 @@ export default function CrearReporte() {
 
                 body {
                     font-family: 'Inter', 'Segoe UI', sans-serif;
-                    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-                    color: var(--text);
-                    line-height: 1.6;
-                    padding: 20px;
-                    font-size: 15px;
-                }
-
-                .container {
-                    max-width: 210mm;
-                    min-height: 297mm;
+                    color: #334155;
+                    line-height: 1.5;
+                    font-size: 11pt;
+                    width: 210mm;
                     margin: 0 auto;
                     background: white;
-                    border-radius: 16px;
-                    box-shadow: 0 10px 30px var(--shadow);
-                    overflow: hidden;
-                    position: relative;
                 }
 
-                .container::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    height: 6px;
-                    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-                }
-
-                /* HEADER */
+                /* HEADER CON COLOR COMO ANTES */
                 .header {
-                    background: var(--primary);
+                    background: #001C38;
                     color: white;
                     padding: 30px 40px 25px;
-                    border-bottom: 5px solid var(--secondary);
+                    border-bottom: 5px solid #007BFF;
+                    border-radius: 10px 10px 0 0;
+                    margin-bottom: 10mm;
                 }
 
                 .header-top {
@@ -207,16 +179,18 @@ export default function CrearReporte() {
                     font-weight: 700;
                     letter-spacing: -0.5px;
                     margin-bottom: 5px;
+                    color: white;
                 }
 
                 .logo-section p {
                     font-size: 15px;
                     opacity: 0.9;
                     font-weight: 300;
+                    color: rgba(255, 255, 255, 0.8);
                 }
 
                 .order-badge {
-                    background: var(--accent);
+                    background: #00A86B;
                     color: white;
                     padding: 8px 20px;
                     border-radius: 50px;
@@ -248,67 +222,13 @@ export default function CrearReporte() {
                 }
 
                 .info-item i {
-                    color: var(--secondary);
+                    color: #007BFF;
                     font-size: 18px;
                 }
 
-                /* MAIN CONTENT */
-                .main-content {
-                    padding: 40px;
-                }
-
-                .content-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 30px;
-                    margin-bottom: 40px;
-                }
-
-                /* SECTIONS */
-                .section {
-                    background: var(--light-bg);
-                    border-radius: 12px;
-                    border: 1px solid var(--border);
-                    overflow: hidden;
-                }
-
-                .section-header {
-                    background: linear-gradient(90deg, var(--primary), #00305C);
-                    color: white;
-                    padding: 18px 25px;
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    font-weight: 600;
-                    font-size: 16px;
-                }
-
-                .section-header i {
-                    font-size: 18px;
-                }
-
-                .section-body {
-                    padding: 25px;
-                }
-
-                /* CLIENT INFO */
-                .client-info-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 20px;
-                }
-
-                .info-card {
-                    background: white;
-                    border-radius: 10px;
-                    padding: 18px;
-                    border-left: 4px solid var(--secondary);
-                    box-shadow: 0 2px 8px var(--shadow);
-                }
-
-                .info-card .label {
+                .info-item .label {
                     font-size: 13px;
-                    color: var(--text-light);
+                    color: rgba(255, 255, 255, 0.8);
                     text-transform: uppercase;
                     font-weight: 600;
                     letter-spacing: 0.5px;
@@ -316,78 +236,147 @@ export default function CrearReporte() {
                     margin-bottom: 5px;
                 }
 
-                .info-card .value {
+                .info-item .value {
                     font-size: 17px;
                     font-weight: 600;
-                    color: var(--primary);
+                    color: white;
+                }
+
+                /* SECCIONES */
+                .section {
+                    margin-bottom: 10mm;
+                    break-inside: avoid;
+                }
+
+                .section-header {
+                    background: linear-gradient(90deg, #001C38, #00305C);
+                    color: white;
+                    padding: 4mm 6mm;
+                    border-radius: 3mm 3mm 0 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 3mm;
+                    font-weight: 600;
+                    font-size: 11pt;
+                }
+
+                .section-header i {
+                    font-size: 12pt;
+                }
+
+                .section-body {
+                    padding: 6mm;
+                    background: #F8FAFC;
+                    border: 1px solid #E2E8F0;
+                    border-top: none;
+                    border-radius: 0 0 3mm 3mm;
+                }
+
+                /* INFORMACIÓN DEL CLIENTE - 2 FILAS DE 2 */
+                .client-info-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 6mm;
+                }
+
+                /* EQUIPO REVISADO - 2 FILAS DE 3 (COMO ANTES) */
+                .equipment-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 6mm;
+                    margin-bottom: 6mm;
+                }
+
+                .info-card {
+                    background: white;
+                    border-radius: 3mm;
+                    padding: 4mm;
+                    border-left: 3mm solid #007BFF;
+                    box-shadow: 0 1mm 3mm rgba(0, 28, 56, 0.05);
+                }
+
+                .info-card .label {
+                    font-size: 9pt;
+                    color: #64748B;
+                    text-transform: uppercase;
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                    display: block;
+                    margin-bottom: 1mm;
+                }
+
+                .info-card .value {
+                    font-size: 11pt;
+                    font-weight: 600;
+                    color: #001C38;
                 }
 
                 /* DIAGNOSIS CARDS */
                 .diagnosis-cards {
                     display: grid;
-                    gap: 20px;
-                    margin-top: 20px;
+                    gap: 4mm;
                 }
 
                 .diagnosis-card {
                     background: white;
-                    border-radius: 10px;
-                    padding: 20px;
-                    border-top: 4px solid;
-                    box-shadow: 0 3px 10px var(--shadow);
+                    border-radius: 3mm;
+                    padding: 5mm;
+                    border-top: 3mm solid;
+                    box-shadow: 0 1.5mm 4mm rgba(0, 28, 56, 0.08);
                 }
 
                 .diagnosis-card.reported {
-                    border-top-color: var(--danger);
+                    border-top-color: #EF4444;
                 }
 
                 .diagnosis-card.observed {
-                    border-top-color: var(--warning);
+                    border-top-color: #F59E0B;
                 }
 
                 .diagnosis-card.solution {
-                    border-top-color: var(--success);
+                    border-top-color: #10B981;
                 }
 
                 .diagnosis-card.accessories {
-                    border-top-color: var(--info);
+                    border-top-color: #3B82F6;
                 }
 
                 .card-title {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 3mm;
                     font-weight: 600;
-                    margin-bottom: 12px;
-                    color: var(--primary);
+                    margin-bottom: 3mm;
+                    color: #001C38;
+                    font-size: 11pt;
                 }
 
                 .card-title i {
-                    font-size: 18px;
+                    font-size: 12pt;
                 }
 
                 /* CHECKLIST */
                 .checklist-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                    gap: 15px;
-                    margin-top: 15px;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 3mm;
                 }
 
                 .check-item {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding: 12px;
+                    gap: 3mm;
+                    padding: 3mm;
                     background: white;
-                    border-radius: 8px;
-                    border: 1px solid var(--border);
+                    border-radius: 2mm;
+                    border: 1px solid #E2E8F0;
+                    font-size: 10pt;
                 }
 
                 .check-item.checked {
                     background: rgba(16, 185, 129, 0.08);
-                    border-color: var(--success);
-                    color: var(--success);
+                    border-color: #10B981;
+                    color: #10B981;
                 }
 
                 .check-item.unchecked {
@@ -395,175 +384,216 @@ export default function CrearReporte() {
                 }
 
                 .check-item i {
-                    font-size: 16px;
+                    font-size: 10pt;
                 }
 
                 /* STATUS BADGES */
                 .status-badge {
                     display: inline-flex;
                     align-items: center;
-                    padding: 6px 14px;
-                    border-radius: 50px;
-                    font-size: 13px;
+                    padding: 2mm 4mm;
+                    border-radius: 25mm;
+                    font-size: 9pt;
                     font-weight: 600;
-                    margin-right: 10px;
-                    margin-bottom: 10px;
+                    margin-right: 3mm;
+                    margin-bottom: 2mm;
                 }
 
                 .status-badge.warranty {
                     background: rgba(16, 185, 129, 0.15);
-                    color: var(--success);
+                    color: #10B981;
                 }
 
                 .status-badge.used {
                     background: rgba(245, 158, 11, 0.15);
-                    color: var(--warning);
+                    color: #F59E0B;
                 }
 
                 .status-badge.complete {
                     background: rgba(59, 130, 246, 0.15);
-                    color: var(--info);
+                    color: #3B82F6;
                 }
 
-                /* SIGNATURE */
+                /* SIGNATURE - AHORA AL FINAL */
                 .signature-section {
                     text-align: center;
-                    padding: 30px;
+                    padding: 10mm;
                     background: white;
-                    border-radius: 12px;
-                    border: 2px dashed var(--border);
-                    margin-top: 30px;
+                    border-radius: 4mm;
+                    border: 1mm dashed #E2E8F0;
+                    margin-bottom: 15mm;
+                    break-before: page;
                 }
 
                 .signature-img {
-                    max-width: 250px;
-                    height: auto;
-                    margin: 20px 0;
+                    max-width: 180mm;
+                    height: 30mm;
+                    margin: 5mm 0;
+                    object-fit: contain;
                 }
 
                 .signature-name {
-                    font-size: 18px;
+                    font-size: 12pt;
                     font-weight: 700;
-                    color: var(--primary);
-                    margin-top: 10px;
+                    color: #001C38;
+                    margin-top: 3mm;
                 }
 
                 .signature-note {
-                    font-size: 13px;
-                    color: var(--text-light);
-                    margin-top: 8px;
+                    font-size: 9pt;
+                    color: #64748B;
+                    margin-top: 2mm;
                     font-style: italic;
                 }
 
-                /* IMAGES SECTION - MODIFICADA */
+                /* IMAGES SECTION */
                 .images-section {
-                    margin-top: 50px;
-                    padding-top: 30px;
-                    border-top: 1px solid var(--border);
+                    break-before: page;
+                    padding-bottom: 10mm;
+                }
+                
+                .section-title-center {
+                    text-align: center;
+                    margin-bottom: 10mm;
+                }
+                
+                .section-title-center h3 {
+                    color: #001C38;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 3mm;
+                    font-size: 13pt;
+                    margin-bottom: 2mm;
+                }
+                
+                .section-title-center p {
+                    color: #64748B;
+                    font-size: 10pt;
                 }
                 
                 .images-container {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 35px; /* Más espacio entre imágenes */
-                    margin-top: 25px;
-                    width: 100%;
                 }
                 
                 .image-card {
-                    width: 90%; /* Más ancho */
-                    max-width: 500px; /* Ancho máximo más grande */
-                    border-radius: 12px;
+                    width: 160mm;
+                    border-radius: 4mm;
                     overflow: hidden;
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
-                    border: 1px solid var(--border);
+                    box-shadow: 0 2mm 6mm rgba(0, 0, 0, 0.1);
+                    border: 1px solid #E2E8F0;
                     background: white;
+                    margin-bottom: 8mm;
+                }
+                
+                /* Segunda imagen con más espacio arriba */
+                .image-card:nth-child(2) {
+                    margin-top: 20mm;
+                }
+                
+                /* Tercera imagen con más espacio arriba */
+                .image-card:nth-child(3) {
+                    margin-top: 20mm;
                 }
                 
                 .image-card img {
                     width: 100%;
-                    height: 280px; /* Más alta */
-                    object-fit: contain; /* Para mantener proporción */
-                    background: #f8f9fa; /* Fondo gris claro para imágenes transparentes */
-                    padding: 10px; /* Espacio alrededor de la imagen */
+                    height: 80mm;
+                    object-fit: contain;
+                    background: #f8f9fa;
+                    padding: 5mm;
                     display: block;
                 }
                 
                 .image-caption {
-                    padding: 18px 20px;
+                    padding: 4mm;
                     background: white;
-                    font-weight: 700; /* Más negrita */
-                    color: var(--primary);
+                    font-weight: 700;
+                    color: #001C38;
                     display: flex;
                     align-items: center;
-                    justify-content: center; /* Centrado */
-                    gap: 12px;
-                    font-size: 16px; /* Texto más grande */
-                    border-top: 1px solid var(--border);
+                    justify-content: center;
+                    gap: 3mm;
+                    font-size: 11pt;
+                    border-top: 1px solid #E2E8F0;
                     text-align: center;
                 }
                 
                 .image-caption i {
-                    font-size: 18px; /* Iconos más grandes */
+                    font-size: 12pt;
                 }
 
-                /* FOOTER */
+                /* FOOTER SOLO EN LA ÚLTIMA PÁGINA */
                 .footer {
-                    padding: 25px 40px;
-                    background: var(--light-bg);
-                    border-top: 1px solid var(--border);
                     text-align: center;
-                    color: var(--text-light);
-                    font-size: 14px;
+                    color: #64748B;
+                    font-size: 9pt;
+                    padding: 5mm 0;
+                    border-top: 1px solid #E2E8F0;
+                    margin-top: 10mm;
                 }
-
+                
                 .footer-links {
                     display: flex;
                     justify-content: center;
-                    gap: 30px;
-                    margin-top: 15px;
-                }
-
-                /* RESPONSIVE */
-                @media (max-width: 1100px) {
-                    .content-grid {
-                        grid-template-columns: 1fr;
-                    }
+                    gap: 10mm;
+                    margin: 3mm 0;
                 }
                 
-                @media (max-width: 768px) {
-                    .image-card {
-                        width: 95%; /* Más ancho en móviles */
-                    }
-                    
-                    .image-card img {
-                        height: 250px; /* Un poco menos alta en móviles */
-                    }
+                /* CONTROLES DE SALTO DE PÁGINA */
+                .page-break {
+                    break-before: page;
+                }
+                
+                .keep-together {
+                    break-inside: avoid;
+                }
+                
+                /* Para diagnóstico y validaciones en misma página */
+                .diagnosis-validation-group {
+                    break-inside: avoid;
+                }
+                
+                /* Contenedor para el contenido principal */
+                .main-content {
+                    position: relative;
                 }
 
                 @media print {
                     body {
-                        background: none;
+                        margin: 0;
                         padding: 0;
                     }
                     
-                    .container {
-                        box-shadow: none;
+                    .header {
                         border-radius: 0;
-                        max-width: 100%;
+                    }
+                    
+                    .signature-section,
+                    .images-section {
+                        break-before: page;
+                    }
+                    
+                    .footer {
+                        position: relative;
+                        bottom: auto;
+                        left: auto;
+                        right: auto;
+                        width: 100%;
                     }
                 }
             </style>
         </head>
         <body>
-            <div class="container">
-                <!-- HEADER -->
+            <!-- PÁGINA 1: HEADER, CLIENTE Y EQUIPO -->
+            <div class="main-content">
                 <header class="header">
                     <div class="header-top">
                         <div class="logo-section">
                             <h1>ELECTRÓNICA MANTILLA</h1>
-                            <p>Servicio Técnico Especializado</p>
+                            <p>Servicio Técnico Especializado • Confianza y Garantía</p>
                         </div>
                         <div class="order-badge">
                             <i class="fas fa-file-invoice"></i> Orden: ${servicio.SERV_NUM}
@@ -595,78 +625,78 @@ export default function CrearReporte() {
                     </div>
                 </header>
 
-                <!-- MAIN CONTENT -->
-                <main class="main-content">
-                    <div class="content-grid">
-                        <!-- CLIENT SECTION -->
-                        <section class="section">
-                            <div class="section-header">
-                                <i class="fas fa-user-circle"></i> Información del Cliente
-                            </div>
-                            <div class="section-body">
-                                <div class="client-info-grid">
-                                    <div class="info-card">
-                                        <span class="label">Nombre</span>
-                                        <div class="value">${nombreCliente}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Cédula</span>
-                                        <div class="value">${cedulaCliente || servicio.SERV_CED_REC}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Teléfono</span>
-                                        <div class="value">${telefonoCliente}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Dirección</span>
-                                        <div class="value">${direccionCliente}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- EQUIPMENT SECTION -->
-                        <section class="section">
-                            <div class="section-header">
-                                <i class="fas fa-box"></i> Equipo Revisado
-                            </div>
-                            <div class="section-body">
-                                <div class="client-info-grid">
-                                    <div class="info-card">
-                                        <span class="label">Tipo de Equipo</span>
-                                        <div class="value">${unidad}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Marca</span>
-                                        <div class="value">${marca}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Modelo</span>
-                                        <div class="value">${modeloEq}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Número de Serie</span>
-                                        <div class="value">${serieEq}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Color</span>
-                                        <div class="value">${colorEq}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <span class="label">Estado</span>
-                                        <div class="value">
-                                            <span class="status-badge ${checks.usado ? 'used' : ''}">
-                                                <i class="fas fa-clock"></i> ${checks.usado ? 'Usado' : 'Nuevo'}
-                                            </span>
-                                            ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i>  En Garantía</span>' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                <!-- INFORMACIÓN DEL CLIENTE - 2 FILAS DE 2 -->
+                <section class="section">
+                    <div class="section-header">
+                        <i class="fas fa-user-circle"></i> Información del Cliente
                     </div>
+                    <div class="section-body">
+                        <div class="client-info-grid">
+                            <div class="info-card">
+                                <span class="label">Nombre Completo</span>
+                                <div class="value">${nombreCliente}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Cédula de Identidad</span>
+                                <div class="value">${cedulaCliente || servicio.SERV_CED_REC}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Teléfono</span>
+                                <div class="value">${telefonoCliente}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Dirección</span>
+                                <div class="value">${direccionCliente}</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-                    <!-- DIAGNOSIS & SOLUTION SECTION -->
+                <!-- EQUIPO REVISADO - 2 FILAS DE 3 -->
+                <section class="section">
+                    <div class="section-header">
+                        <i class="fas fa-box"></i> Equipo Revisado
+                    </div>
+                    <div class="section-body">
+                        <div class="equipment-grid">
+                            <div class="info-card">
+                                <span class="label">Tipo de Equipo</span>
+                                <div class="value">${unidad}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Marca</span>
+                                <div class="value">${marca}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Modelo</span>
+                                <div class="value">${modeloEq}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Número de Serie</span>
+                                <div class="value">${serieEq}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Color</span>
+                                <div class="value">${colorEq}</div>
+                            </div>
+                            <div class="info-card">
+                                <span class="label">Estado General</span>
+                                <div class="value">
+                                    <span class="status-badge ${checks.usado ? 'used' : ''}">
+                                        <i class="fas fa-clock"></i> ${checks.usado ? 'Usado' : 'Nuevo'}
+                                    </span>
+                                    ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PÁGINA 2: DIAGNÓSTICO Y VALIDACIONES -->
+            <div class="page-break">
+                <div class="diagnosis-validation-group">
+                    <!-- DIAGNÓSTICO TÉCNICO -->
                     <section class="section">
                         <div class="section-header">
                             <i class="fas fa-stethoscope"></i> Diagnóstico Técnico
@@ -675,7 +705,7 @@ export default function CrearReporte() {
                             <div class="diagnosis-cards">
                                 <div class="diagnosis-card reported">
                                     <div class="card-title">
-                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado
+                                        <i class="fas fa-exclamation-triangle"></i> Daño Reportado por el Cliente
                                     </div>
                                     <p>${danioReportado}</p>
                                 </div>
@@ -689,7 +719,7 @@ export default function CrearReporte() {
                                 
                                 <div class="diagnosis-card solution">
                                     <div class="card-title">
-                                        <i class="fas fa-tools"></i> Recomendaciones al cliente
+                                        <i class="fas fa-tools"></i> Solución Aplicada
                                     </div>
                                     <p>${recomendaciones}</p>
                                 </div>
@@ -704,10 +734,10 @@ export default function CrearReporte() {
                         </div>
                     </section>
 
-                    <!-- VALIDATION & CHECKS -->
+                    <!-- VALIDACIÓN Y VERIFICACIONES -->
                     <section class="section">
                         <div class="section-header">
-                            <i class="fas fa-clipboard-check"></i> Puntos a tomar en cuenta
+                            <i class="fas fa-clipboard-check"></i> Validación y Verificaciones
                         </div>
                         <div class="section-body">
                             <div class="checklist-grid">
@@ -724,100 +754,105 @@ export default function CrearReporte() {
                                     <i class="${renderCheckIcon(checks.completo)}"></i> Caja Completa
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.nivelacion)}">
-                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación
+                                    <i class="${renderCheckIcon(checks.nivelacion)}"></i> Nivelación OK
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.presionAgua)}">
-                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua
+                                    <i class="${renderCheckIcon(checks.presionAgua)}"></i> Presión de Agua OK
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.modeloSerieCheck)}">
-                                    <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo / Serie Verificado
+                                    <i class="${renderCheckIcon(checks.modeloSerieCheck)}"></i> Modelo/Serie Verificado
                                 </div>
                                 <div class="check-item ${renderCheckClass(checks.conexionesElectricas)}">
-                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica
+                                    <i class="${renderCheckIcon(checks.conexionesElectricas)}"></i> Instalación Eléctrica OK
                                 </div>
                             </div>
 
-                            <div class="status-indicators" style="margin-top: 25px;">
+                            <div class="status-indicators" style="margin-top: 6mm;">
                                 ${checks.garantia ? '<span class="status-badge warranty"><i class="fas fa-shield-alt"></i> En Garantía</span>' : ''}
                                 <span class="status-badge complete">
-                                    <i class="fas fa-check-double"></i>  Reporte realizado
+                                    <i class="fas fa-check-double"></i> Reparación Completada
                                 </span>
                                 <span class="status-badge ${checks.usado ? 'used' : ''}">
-                                    <i class="fas fa-history"></i> ${checks.usado ? ' Equipo Usado' : ' Equipo Nuevo'}
+                                    <i class="fas fa-history"></i> ${checks.usado ? 'Equipo Usado' : 'Equipo Nuevo'}
                                 </span>
                             </div>
                         </div>
                     </section>
+                </div>
+            </div>
 
-                    <!-- SIGNATURE -->
-                    <div class="signature-section">
-                        <h3 style="color: var(--primary); margin-bottom: 20px;">Firma del cliente</h3>
-                        <p style="color: var(--text-light); max-width: 600px; margin: 0 auto 25px;">
-                            El cliente verifica que acepta la conformidad del servicio técnico prestado.
-                        </p>
-                        
-                        <div style="margin: 30px 0;">
-                            <img src="${firma}" alt="Firma del Cliente" class="signature-img">
-                        </div>
-                        
-                        <div class="signature-name">${nombreCliente}</div>
-                        <div class="signature-note">• C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
-                        <div class="signature-note">Fecha: ${fechaSimple}</div>
-                    </div>
-
-                    <!-- IMAGES SECTION MODIFICADA -->
-                    <div class="images-section">
-                        <h3 style="color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <!-- PÁGINA 3: EVIDENCIA FOTOGRÁFICA -->
+            <div class="page-break">
+                <div class="images-section">
+                    <div class="section-title-center">
+                        <h3>
                             <i class="fas fa-camera"></i> Evidencia Fotográfica
                         </h3>
-                        <p style="color: var(--text-light); margin-top: 10px; text-align: center;">
-                            Registro visual del equipo antes y después de la reparación.
-                        </p>
-                        
-                        <div class="images-container">
-                            ${imgModelo ? `
-                            <div class="image-card">
-                                <img src="${imgModelo}" alt="Modelo y Serie">
-                                <div class="image-caption">
-                                    <i class="fas fa-barcode"></i> Modelo y Número de Serie
-                                </div>
-                            </div>
-                            ` : ''}
-                            
-                            ${imgFactura ? `
-                            <div class="image-card">
-                                <img src="${imgFactura}" alt="Factura">
-                                <div class="image-caption">
-                                    <i class="fas fa-file-invoice-dollar"></i> Documentación Recibida
-                                </div>
-                            </div>
-                            ` : ''}
-                            
-                            ${imgFinal ? `
-                            <div class="image-card">
-                                <img src="${imgFinal}" alt="Equipo">
-                                <div class="image-caption">
-                                    <i class="fas fa-washing-machine"></i> Estado Físico del Equipo
-                                </div>
-                            </div>
-                            ` : ''}
-                            
-                            ${!imgModelo && !imgFactura && !imgFinal ? `
-                            <div style="text-align: center; padding: 40px; color: var(--text-light);">
-                                <i class="fas fa-image" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                                <p>No se adjuntaron fotografías en este reporte</p>
-                            </div>
-                            ` : ''}
-                        </div>
+                        <p>Registro visual del equipo antes y después de la reparación.</p>
                     </div>
-                </main>
+                    
+                    <div class="images-container">
+                        ${imgModelo ? `
+                        <div class="image-card">
+                            <img src="${imgModelo}" alt="Modelo y Serie">
+                            <div class="image-caption">
+                                <i class="fas fa-barcode"></i> Modelo y Número de Serie
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${imgFactura ? `
+                        <div class="image-card">
+                            <img src="${imgFactura}" alt="Factura">
+                            <div class="image-caption">
+                                <i class="fas fa-file-invoice-dollar"></i> Documentación Recibida
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${imgFinal ? `
+                        <div class="image-card">
+                            <img src="${imgFinal}" alt="Equipo">
+                            <div class="image-caption">
+                                <i class="fas fa-washing-machine"></i> Estado Físico del Equipo
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${!imgModelo && !imgFactura && !imgFinal ? `
+                        <div style="text-align: center; padding: 20mm; color: #64748B;">
+                            <i class="fas fa-image" style="font-size: 24pt; margin-bottom: 5mm; opacity: 0.5;"></i>
+                            <p style="font-size: 11pt;">No se adjuntaron fotografías en este reporte</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
 
-                <!-- FOOTER -->
+            <!-- PÁGINA 4: ACEPTACIÓN Y FOOTER -->
+            <div class="page-break">
+                <!-- ACEPTACIÓN DEL SERVICIO -->
+                <section class="signature-section">
+                    <h3 style="color: #001C38; margin-bottom: 5mm; font-size: 13pt;">Aceptación del Servicio</h3>
+                    <p style="color: #64748B; max-width: 160mm; margin: 0 auto 6mm; font-size: 10pt;">
+                        El cliente verifica que el equipo ha sido reparado según los términos acordados y acepta la conformidad del servicio técnico prestado.
+                    </p>
+                    
+                    <div style="margin: 5mm 0;">
+                        <img src="${firma}" alt="Firma del Cliente" class="signature-img">
+                    </div>
+                    
+                    <div class="signature-name">${nombreCliente}</div>
+                    <div class="signature-note">Cliente • C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
+                    <div class="signature-note">Fecha de aceptación: ${fechaSimple}</div>
+                </section>
+
+                <!-- FOOTER SOLO EN ESTA ÚLTIMA PÁGINA -->
                 <footer class="footer">
-                    <p style="margin-bottom: 5px;">
+                    <p style="margin-bottom: 2mm;">
                         <strong>LOCAL Nº 1:</strong> Quis Quis 15-203 y Av. Atahualpa • Telfs: (03) 2416124 - (03) 2848891
                     </p>
-                    <p style="margin-bottom: 10px;">
+                    <p style="margin-bottom: 3mm;">
                         <strong>LOCAL Nº 2:</strong> Montalvo 07-20 y Juan Benigno Vela • Telf: (03) 2828365
                     </p>
                     <div class="footer-links">
@@ -825,7 +860,7 @@ export default function CrearReporte() {
                         <span><i class="fas fa-envelope"></i> emantillacentro@yahoo.es</span>
                         <span><i class="fas fa-map-marker-alt"></i> Ambato - Ecuador</span>
                     </div>
-                    <p style="margin-top: 15px; font-size: 12px; border-top: 1px solid var(--border); padding-top: 10px;">
+                    <p style="margin-top: 3mm; font-size: 8pt; border-top: 1px solid #E2E8F0; padding-top: 2mm;">
                         Reporte generado el ${fechaActual} • ID: ${servicio.SERV_NUM}
                     </p>
                 </footer>
