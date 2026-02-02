@@ -25,9 +25,24 @@ export default function CrearUsuario() {
     rol: "0"
   });
 
+  const handleChangeNumeros = (campo, valor) => {
+    const soloNumeros = valor.replace(/[^0-9]/g, '');
+    setForm({ ...form, [campo]: soloNumeros });
+  };
+
   const handleGuardar = async () => {
     if (!form.cedula || !form.usuario || !form.clave) {
       Alert.alert("Error", "La cédula, usuario y clave son obligatorios.");
+      return;
+    }
+
+    if (!validarDocumentoEcuador(form.cedula)) {
+      Alert.alert("Documento Inválido", "La Cédula o RUC ingresado no es válido en Ecuador.");
+      return;
+    }
+
+    if (form.celular && !validarCelularEcuador(form.celular)) {
+      Alert.alert("Celular Inválido", "El celular debe empezar con 09 y tener 10 dígitos.");
       return;
     }
 
@@ -102,7 +117,7 @@ export default function CrearUsuario() {
           {tipo && (
             <View style={styles.formCard}>
               <Text style={styles.label}>Cédula de Identidad</Text>
-              <TextInput style={styles.input} keyboardType="numeric" value={form.cedula} onChangeText={(t)=>setForm({...form, cedula:t})} />
+              <TextInput style={styles.input} keyboardType="numeric" maxLength={13} value={form.cedula} onChangeText={(t) => handleChangeNumeros('cedula', t)} />
 
               <View style={{flexDirection:'row', gap:10}}>
                 <View style={{flex:1}}>
@@ -116,7 +131,7 @@ export default function CrearUsuario() {
               </View>
 
               <Text style={styles.label}>Teléfono Celular</Text>
-              <TextInput style={styles.input} keyboardType="phone-pad" value={form.celular} onChangeText={(t)=>setForm({...form, celular:t})} />
+              <TextInput style={styles.input} keyboardType="phone-pad" maxLength={10} value={form.celular} onChangeText={(t) => handleChangeNumeros('celular', t)} />
 
               <View style={styles.divider} />
 
@@ -131,18 +146,18 @@ export default function CrearUsuario() {
                 <>
                   <Text style={styles.label}>Asignar Rol</Text>
                   <View style={styles.tipoContainer}>
-                     <TouchableOpacity 
+                      <TouchableOpacity 
                       style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
                       onPress={() => setForm({...form, rol: "0"})}
-                     >
-                       <Text style={form.rol === "0" ? {color: '#FFF', fontWeight:'bold'} : {}}>Técnico</Text>
-                     </TouchableOpacity>
-                     <TouchableOpacity 
+                      >
+                        <Text style={form.rol === "0" ? {color: '#FFF', fontWeight:'bold'} : {}}>Técnico</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
                       style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
                       onPress={() => setForm({...form, rol: "1"})}
-                     >
-                       <Text style={form.rol === "1" ? {color: '#FFF', fontWeight:'bold'} : {}}>Administrador</Text>
-                     </TouchableOpacity>
+                      >
+                        <Text style={form.rol === "1" ? {color: '#FFF', fontWeight:'bold'} : {}}>Administrador</Text>
+                      </TouchableOpacity>
                   </View>
                 </>
               )}
@@ -157,6 +172,42 @@ export default function CrearUsuario() {
     </SafeAreaView>
   );
 }
+
+const validarDocumentoEcuador = (documento) => {
+    if (!documento) return false;
+    const limits = [10, 13]; 
+    if (!limits.includes(documento.length)) return false;
+    if (documento.length === 13 && documento.slice(10, 13) !== '001') return false;
+  
+    const cedula = documento.substring(0, 10);
+    const digitoRegion = parseInt(cedula.substring(0, 2));
+    
+    if (digitoRegion < 1 || digitoRegion > 24) return false;
+  
+    const ultimoDigito = parseInt(cedula.substring(9, 10));
+    let pares = 0, impares = 0, suma = 0;
+  
+    for (let i = 0; i < 9; i++) {
+      let val = parseInt(cedula.charAt(i));
+      if (i % 2 === 0) { 
+          val = val * 2;
+          if (val > 9) val -= 9;
+          impares += val;
+      } else {
+          pares += val;
+      }
+    }
+  
+    suma = pares + impares;
+    let verificador = 10 - (suma % 10);
+    if (verificador === 10) verificador = 0;
+  
+    return verificador === ultimoDigito;
+  };
+  
+  const validarCelularEcuador = (celular) => {
+    return /^09\d{8}$/.test(celular);
+  };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
