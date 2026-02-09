@@ -217,26 +217,33 @@ export const generarHtmlReporte = (data) => {
             </div>
 
             <div class="signature-area">
-                <div style="font-size: 8pt; color: #64748b; padding-left: 10px;">
-                    <strong>NOTA:</strong> 
-                    Términos y Condiciones de Servicio Técnico
-                    1. Garantía de Servicio: El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. 
-                    Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo. 
+                <div style="font-size: 8pt; color: #64748b; padding-left: 10px; line-height: 1.3; text-align: justify;">
+                    <strong>Términos y Condiciones de Servicio Técnico</strong><br><br>
+                    
+                    <strong>1. Garantía de Servicio:</strong>
+                    El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento.
+                    Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo.
                     No se cubrirán daños distintos a los aquí descritos ni fallas derivadas de componentes que no fueron intervenidos en la reparación original.
-                    2. Almacenaje y Abandono: Transcurridos 90 días desde la notificación de finalización del servicio, se cobrará una tasa de bodegaje de ley. 
+                    <br>                    
+                    <strong>2. Almacenaje y Abandono:</strong>
+                    Transcurridos 90 días desde la notificación de finalización del servicio, se cobrará una tasa de bodegaje de ley.
                     Conforme al Art. 44 de la LODC, los equipos no retirados en un plazo de 6 meses se considerarán legalmente abandonados, permitiendo al establecimiento disponer de los mismos para recuperar costos de reparación y almacenamiento.
-                    3. Exclusiones de Garantía: La garantía quedará sin efecto si el equipo presenta sellos de seguridad rotos, evidencia de humedad, golpes, fluctuaciones eléctricas externas, o si ha sido manipulado por personal ajeno a este taller.
+                    <br>                    
+                    <strong>3. Exclusiones de Garantía:</strong>
+                    La garantía quedará sin efecto si el equipo presenta sellos de seguridad rotos, evidencia de humedad, golpes, fluctuaciones eléctricas externas, o si ha sido manipulado por personal ajeno a este taller. 
                     El valor de chequeo y transporte se define con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado.
-                    4. Protección de Datos (LOPDP): El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos.
-                    El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador 
-                    Declaración de Aceptación.
-                    Certifico que los datos en este documento son reales y acepto las condiciones arriba indicadas, incluyendo el límite de 90 días de garantía sobre el daño reportado.
-                    ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO
                     <br>
-                    Garantía válida sobre la reparación efectuada.
+                    <strong>4. Protección de Datos (LOPDP):</strong>
+                    El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos. 
+                    El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador.
+                    <br>                    
+                    <strong>Declaración de Aceptación:</strong>
+                    <br>
+                    - Certifico que los datos en este documento son reales y acepto las condiciones arriba indicadas, incluyendo el límite de 90 días de garantía sobre el daño reportado.<br>
+                    <strong>NOTA:</strong> ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.<br><br>
                 </div>
                 <div style="text-align: center; flex: 1;">
-                     ${firma ? `<img src="${firma}" style="height: 35px; object-fit:contain; margin-bottom:5px;">` : '<div style="height:35px;"></div>'}
+                    ${firma ? `<img src="${firma}" style="height: 35px; object-fit:contain; margin-bottom:5px;">` : '<div style="height:35px;"></div>'}
                     <div class="sig-line">${nombreCliente}</div>
                     <div style="font-size: 7.5pt; color: #64748B;">C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
                 </div>
