@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import * as Sharing from 'expo-sharing';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator, Alert, Image, KeyboardAvoidingView,
     Platform, ScrollView, StyleSheet,
@@ -20,10 +20,16 @@ export default function CrearReporte() {
     const params = useLocalSearchParams();
     const servicio = JSON.parse(params.servicio);
     const [loading, setLoading] = useState(false);
+    const sigRef = useRef(null);
+
+    // Datos Cliente
     const [nombreCliente, setNombreCliente] = useState("");
     const [cedulaCliente, setCedulaCliente] = useState("");
     const [telefonoCliente, setTelefonoCliente] = useState("");
     const [direccionCliente, setDireccionCliente] = useState("");
+    const [correoCliente, setCorreoCliente] = useState("");
+
+    // Datos Equipo
     const [unidad, setUnidad] = useState("");
     const [marca, setMarca] = useState("");
     const [modeloEq, setModeloEq] = useState("");
@@ -44,28 +50,34 @@ export default function CrearReporte() {
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
-    const [fotoModelo, setFotoModelo] = useState(null);
-    const [descModelo, setDescModelo] = useState("");
-    const [fotoFactura, setFotoFactura] = useState(null);
-    const [descFactura, setDescFactura] = useState("");
-    const [fotoElectrico, setFotoElectrico] = useState(null);
-    const [descElectrico, setDescElectrico] = useState("");
+
+    // ESTADOS PARA 5 FOTOS
+    const [foto1, setFoto1] = useState(null);
+    const [desc1, setDesc1] = useState("");
+    const [foto2, setFoto2] = useState(null);
+    const [desc2, setDesc2] = useState("");
+    const [foto3, setFoto3] = useState(null);
+    const [desc3, setDesc3] = useState("");
+    const [foto4, setFoto4] = useState(null);
+    const [desc4, setDesc4] = useState("");
+    const [foto5, setFoto5] = useState(null);
+    const [desc5, setDesc5] = useState("");
 
     const [firma, setFirma] = useState(null);
     const [showSig, setShowSig] = useState(false);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-            const hayProgreso = nombreCliente || unidad || danioReportado || fotoModelo || firma;
+            const hayProgreso = nombreCliente || unidad || danioReportado || foto1 || firma;
             if (!hayProgreso || loading) return;
             e.preventDefault();
-            Alert.alert("¿Descartar reporte?", "Se perderán todos los datos y fotos de este reporte técnico.", [
-                { text: "Continuar editando", style: "cancel" },
-                { text: "Salir y borrar", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
+            Alert.alert("¿Descartar reporte?", "Se perderán todos los datos y fotos.", [
+                { text: "Continuar", style: "cancel" },
+                { text: "Salir", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
             ]);
         });
         return unsubscribe;
-    }, [navigation, nombreCliente, unidad, danioReportado, fotoModelo, firma, loading]);
+    }, [navigation, nombreCliente, unidad, danioReportado, foto1, firma, loading]);
 
     const toggleCheck = (key) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -80,17 +92,20 @@ export default function CrearReporte() {
     const abrirMedia = async (key, origen) => {
         const opciones = { allowsEditing: true, aspect: [4, 3], quality: 0.5, base64: true };
         let result = origen === 'camera' ? await ImagePicker.launchCameraAsync(opciones) : await ImagePicker.launchImageLibraryAsync(opciones);
+
         if (!result.canceled) {
             const asset = result.assets[0];
-            if (key === 'modelo') setFotoModelo(asset);
-            else if (key === 'factura') setFotoFactura(asset);
-            else setFotoElectrico(asset);
+            if (key === 1) setFoto1(asset);
+            else if (key === 2) setFoto2(asset);
+            else if (key === 3) setFoto3(asset);
+            else if (key === 4) setFoto4(asset);
+            else if (key === 5) setFoto5(asset);
         }
     };
 
     const generarReporte = async () => {
         if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
-            Alert.alert("Atención", "Campos obligatorios: Cliente, Equipo, Daño, Firma y Aceptar Condiciones.");
+            Alert.alert("Atención", "Complete los campos obligatorios y acepte las condiciones.");
             return;
         }
 
@@ -100,53 +115,27 @@ export default function CrearReporte() {
             const fechaActual = new Date().toLocaleDateString('es-ES', {
                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
-
             const fechaSimple = new Date().toLocaleDateString('es-ES', {
                 year: 'numeric', month: 'long', day: 'numeric'
             });
 
-            const imgModelo = fotoModelo ? `data:image/jpeg;base64,${fotoModelo.base64}` : '';
-            const imgFactura = fotoFactura ? `data:image/jpeg;base64,${fotoFactura.base64}` : '';
-            const imgFinal = fotoElectrico ? `data:image/jpeg;base64,${fotoElectrico.base64}` : '';
+            const convertToBase64 = (foto) => foto ? `data:image/jpeg;base64,${foto.base64}` : '';
 
             const datosReporte = {
-                servicio,
-                fechaSimple,
-                fechaActual,
-                nombreCliente,
-                cedulaCliente,
-                telefonoCliente,
-                direccionCliente,
-                unidad,
-                marca,
-                modeloEq,
-                serieEq,
-                colorEq,
-                checks,
-                danioReportado,
-                inspeccionEstadoDesc,
-                recomendaciones,
-                accesoriosDesc,
-                imgModelo,
-                imgFactura,
-                imgFinal,
+                servicio, fechaSimple, fechaActual,
+                nombreCliente, cedulaCliente, telefonoCliente, direccionCliente, correoCliente,
+                unidad, marca, modeloEq, serieEq, colorEq,
+                checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
+                img1: convertToBase64(foto1), desc1,
+                img2: convertToBase64(foto2), desc2,
+                img3: convertToBase64(foto3), desc3,
+                img4: convertToBase64(foto4), desc4,
+                img5: convertToBase64(foto5), desc5,
                 firma
             };
 
             const htmlContent = generarHtmlReporte(datosReporte);
-
-            if (!htmlContent || htmlContent.length < 100) {
-                throw new Error("HTML no se generó correctamente");
-            }
-
-            const { base64, uri } = await Print.printToFileAsync({
-                html: htmlContent,
-                base64: true
-            });
-
-            if (!base64) {
-                throw new Error("No se pudo generar el PDF");
-            }
+            const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
 
             const res = await crearReporte({
                 cedula: servicio.SERV_CED_REC,
@@ -158,18 +147,14 @@ export default function CrearReporte() {
             });
 
             if (res.success) {
-                Alert.alert("Éxito", "Reporte guardado y servicio finalizado.");
-                if (await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(uri);
-                } else {
-                    Alert.alert("Éxito", "Reporte guardado. Comparte manualmente el archivo.");
-                }
+                Alert.alert("Éxito", "Reporte finalizado.");
+                if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
                 router.push("/tecnico/home");
             } else {
-                Alert.alert("Error", res.message || "Error al subir el reporte");
+                Alert.alert("Error", res.message || "Error al subir");
             }
         } catch (e) {
-            Alert.alert("Error", "Problema al generar el reporte: " + e.message);
+            Alert.alert("Error", "Error: " + e.message);
         } finally {
             setLoading(false);
         }
@@ -177,14 +162,49 @@ export default function CrearReporte() {
 
     if (showSig) {
         return (
-            <View style={StyleSheet.absoluteFill}>
-                <SignatureScreen
-                    onOK={(sig) => { setFirma(sig); setShowSig(false); }}
-                    onEmpty={() => setShowSig(false)}
-                    descriptionText="Firma del Cliente"
-                    confirmText="Guardar"
-                    clearText="Limpiar"
-                />
+            <View style={styles.signatureOverlay}>
+                <View style={styles.signatureContainer}>
+                    <View style={styles.signatureHeader}>
+                        <Text style={styles.signatureTitle}>Firma del Cliente</Text>
+                        <TouchableOpacity onPress={() => setShowSig(false)}>
+                            <Ionicons name="close-circle" size={30} color="#FF3B30" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <SignatureScreen
+                        ref={sigRef}
+                        onOK={(sig) => { setFirma(sig); setShowSig(false); }}
+                        onEmpty={() => Alert.alert("Atención", "El cliente debe firmar antes de continuar.")}
+                        descriptionText="Firma Digital - Electrónica Mantilla"
+                        webStyle={`.m-signature-pad--footer { display: none; margin: 0; }`}
+                        autoClear={true}
+                    />
+
+                    <View style={styles.signatureFooter}>
+                        <TouchableOpacity
+                            style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]}
+                            onPress={() => {
+                                // El nombre correcto suele ser clearCanvas
+                                if (sigRef.current) {
+                                    sigRef.current.clearSignature();
+                                }
+                            }}
+                        >
+                            <Text style={styles.sigBtnText}>LIMPIAR</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.sigBtn, { backgroundColor: '#007AFF' }]}
+                            onPress={() => {
+                                if (sigRef.current) {
+                                    sigRef.current.readSignature();
+                                }
+                            }}
+                        >
+                            <Text style={styles.sigBtnText}>LISTO</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </View>
         );
     }
@@ -202,20 +222,19 @@ export default function CrearReporte() {
 
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-                {/* 1. DATOS CLIENTE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
                     <TextInput style={styles.input} placeholder="Nombre del cliente" value={nombreCliente} onChangeText={setNombreCliente} />
                     <TextInput style={styles.input} placeholder="Número de cédula o RUC" keyboardType="numeric" maxLength={13} value={cedulaCliente} onChangeText={(text) => setCedulaCliente(text.replace(/[^0-9]/g, ''))} />
-                    <TextInput style={styles.input} placeholder="Teléfono de contacto" keyboardType="phone-pad" maxLength={10} value={telefonoCliente} onChangeText={(text) => setTelefonoCliente(text.replace(/[^0-9]/g, ''))} />
-                    <TextInput style={styles.input} placeholder="Dirección del domicilio" value={direccionCliente} onChangeText={setDireccionCliente} />
+                    <TextInput style={styles.input} placeholder="Teléfono" keyboardType="phone-pad" maxLength={10} value={telefonoCliente} onChangeText={(text) => setTelefonoCliente(text.replace(/[^0-9]/g, ''))} />
+                    <TextInput style={styles.input} placeholder="Dirección" value={direccionCliente} onChangeText={setDireccionCliente} />
+                    <TextInput style={styles.input} placeholder="Correo electrónico" keyboardType="email-address" autoCapitalize="none" value={correoCliente} onChangeText={setCorreoCliente} />
                 </View>
 
-                {/* 2. IDENTIFICACION EQUIPO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Unidad (Ej. Lavadora)" value={unidad} onChangeText={setUnidad} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora " value={unidad} onChangeText={setUnidad} />
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} />
@@ -223,7 +242,6 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} />
                 </View>
 
-                {/* 3. RECEPCIÓN Y DIAGNÓSTICO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>3. Recepción y Diagnóstico</Text>
                     <View style={styles.row}>
@@ -237,7 +255,6 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
-                {/* 4. ACCESORIOS */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
@@ -250,21 +267,19 @@ export default function CrearReporte() {
                             <Text style={styles.radioLabel}>NO</Text>
                         </TouchableOpacity>
                     </View>
-                    <TextInput style={styles.inputAcc} placeholder="Especifique accesorios recibidos..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                    <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                 </View>
 
-                {/* 5. INSPECCIÓN ESTADO */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>5. Inspección de Estado</Text>
+                    <Text style={styles.sectionTitle}>5. Estado del equipo</Text>
                     <View style={styles.row}>
                         <CheckItem label="Estado Nuevo" value={checks.nuevo} onToggle={() => toggleCheck('nuevo')} />
                         <CheckItem label="Estado Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
                     </View>
                     <CheckItem label="Fuera de Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
-                    <TextInput style={styles.inputArea} multiline placeholder="Observaciones físicas (rayones, golpes)..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Observaciones físicas..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
                 </View>
 
-                {/* 6. PUNTOS TÉCNICOS */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>6. Verificación Técnica</Text>
                     <View style={styles.row}>
@@ -277,20 +292,20 @@ export default function CrearReporte() {
                     </View>
                 </View>
 
-                {/* 7. EVIDENCIA FOTOGRÁFICA */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>7. Registro Fotográfico</Text>
-                    <ItemFoto label="Foto Modelo/Serie" icon="barcode-outline" color="#007AFF" foto={fotoModelo} desc={descModelo} onFoto={() => seleccionarImagen('modelo')} onDesc={setDescModelo} />
-                    <ItemFoto label="Foto de la Factura" icon="receipt-outline" color="#34C759" foto={fotoFactura} desc={descFactura} onFoto={() => seleccionarImagen('factura')} onDesc={setDescFactura} />
-                    <ItemFoto label="Foto Est. Eléctrico" icon="flash-outline" color="#FF9500" foto={fotoElectrico} desc={descElectrico} onFoto={() => seleccionarImagen('electrico')} onDesc={setDescElectrico} />
+                    <Text style={styles.sectionTitle}>7. Informe Gráfico</Text>
+                    <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} />
+                    <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} />
+                    <ItemFoto label="3. Factura" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} />
+                    <ItemFoto label="4. Verificación Eléctrica" icon="flash-outline" color="#FF3B30" foto={foto4} desc={desc4} onFoto={() => seleccionarImagen(4)} onDesc={setDesc4} />
+                    <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} />
                 </View>
 
-                {/* 8. CIERRE */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>8. Firma y Cierre</Text>
-                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones para el cliente..." value={recomendaciones} onChangeText={setRecomendaciones} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones..." value={recomendaciones} onChangeText={setRecomendaciones} />
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>Certifico que el trabajo ha sido realizado y acepto los términos de conformidad.</Text>
+                        <Text style={styles.termsText}>Acepto los términos de conformidad.</Text>
                         <Switch value={checks.aceptaCondiciones} onValueChange={() => toggleCheck('aceptaCondiciones')} />
                     </View>
                     <Text style={styles.label}>Firma Digital del Cliente</Text>
@@ -350,5 +365,12 @@ const styles = StyleSheet.create({
     termsText: { flex: 1, fontSize: 11, color: '#856404', marginRight: 10 },
     signBox: { width: '100%', height: 130, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', borderRadius: 12, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
     btnSubmit: { backgroundColor: '#34C759', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 40, elevation: 5 },
-    btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
+    btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+    signatureOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+    signatureContainer: { width: '100%', height: 450, backgroundColor: '#FFF', borderRadius: 20, overflow: 'hidden', padding: 10 },
+    signatureHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+    signatureTitle: { fontSize: 16, fontWeight: 'bold', color: '#001C38' },
+    signatureFooter: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 15, backgroundColor: '#FFF' },
+    sigBtn: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, elevation: 2 },
+    sigBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 }
 });
