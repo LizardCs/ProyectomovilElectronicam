@@ -6,6 +6,7 @@ import * as Sharing from 'expo-sharing';
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator, Alert, Image, KeyboardAvoidingView,
+    Modal,
     Platform, ScrollView, StyleSheet,
     Switch,
     Text, TextInput, TouchableOpacity, View
@@ -21,7 +22,10 @@ export default function CrearReporte() {
     const servicio = JSON.parse(params.servicio);
     const [loading, setLoading] = useState(false);
     const sigRef = useRef(null);
+
+    // Estados de control de ventanas
     const [showTerms, setShowTerms] = useState(false);
+    const [showSig, setShowSig] = useState(false);
 
     // Datos Cliente
     const [nombreCliente, setNombreCliente] = useState("");
@@ -52,7 +56,7 @@ export default function CrearReporte() {
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
 
-    // ESTADOS PARA 5 FOTOS
+    // Fotos
     const [foto1, setFoto1] = useState(null);
     const [desc1, setDesc1] = useState("");
     const [foto2, setFoto2] = useState(null);
@@ -65,7 +69,6 @@ export default function CrearReporte() {
     const [desc5, setDesc5] = useState("");
 
     const [firma, setFirma] = useState(null);
-    const [showSig, setShowSig] = useState(false);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -184,23 +187,14 @@ export default function CrearReporte() {
                     <View style={styles.signatureFooter}>
                         <TouchableOpacity
                             style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]}
-                            onPress={() => {
-                                // El nombre correcto suele ser clearCanvas
-                                if (sigRef.current) {
-                                    sigRef.current.clearSignature();
-                                }
-                            }}
+                            onPress={() => sigRef.current?.clearSignature()}
                         >
                             <Text style={styles.sigBtnText}>LIMPIAR</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[styles.sigBtn, { backgroundColor: '#007AFF' }]}
-                            onPress={() => {
-                                if (sigRef.current) {
-                                    sigRef.current.readSignature();
-                                }
-                            }}
+                            onPress={() => sigRef.current?.readSignature()}
                         >
                             <Text style={styles.sigBtnText}>LISTO</Text>
                         </TouchableOpacity>
@@ -256,92 +250,33 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
+                {/* SECCIÓN 4: ACCESORIOS (CON LÓGICA CONDICIONAL) */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
-                        <TouchableOpacity
-                            style={styles.radioItem}
-                            onPress={() => setChecks({ ...checks, accesorios: true })}
-                        >
-                            <Ionicons
-                                name={checks.accesorios ? "radio-button-on" : "radio-button-off"}
-                                size={22}
-                                color={checks.accesorios ? "#001C38" : "#666"}
-                            />
+                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
+                            <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
                             <Text style={styles.radioLabel}>SÍ</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.radioItem}
-                            onPress={() => {
-                                setChecks({ ...checks, accesorios: false });
-                                setAccesoriosDesc(""); // Opcional: Limpia el texto si eligen "NO"
-                            }}
-                        >
-                            <Ionicons
-                                name={!checks.accesorios ? "radio-button-on" : "radio-button-off"}
-                                size={22}
-                                color={!checks.accesorios ? "#001C38" : "#666"}
-                            />
+                        <TouchableOpacity style={styles.radioItem} onPress={() => { setChecks({ ...checks, accesorios: false }); setAccesoriosDesc(""); }}>
+                            <Ionicons name={!checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={!checks.accesorios ? "#001C38" : "#666"} />
                             <Text style={styles.radioLabel}>NO</Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Renderizado condicional */}
                     {checks.accesorios && (
-                        <TextInput
-                            style={styles.inputAcc}
-                            placeholder="Especifique..."
-                            value={accesoriosDesc}
-                            onChangeText={setAccesoriosDesc}
-                        />
+                        <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                     )}
                 </View>
 
+                {/* SECCIÓN 5: ESTADO (CON EXCLUSIÓN MUTUA) */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>5. Estado del equipo</Text>
                     <View style={styles.row}>
-                        {/* Si marcas Nuevo, forzamos usado a false */}
-                        <CheckItem
-                            label="Estado Nuevo"
-                            value={checks.nuevo}
-                            onToggle={() => {
-                                setChecks({
-                                    ...checks,
-                                    nuevo: !checks.nuevo,
-                                    usado: false // Al activar/desactivar nuevo, usado siempre muere
-                                });
-                            }}
-                        />
-
-                        {/* Si marcas Usado, forzamos nuevo a false */}
-                        <CheckItem
-                            label="Estado Usado"
-                            value={checks.usado}
-                            onToggle={() => {
-                                setChecks({
-                                    ...checks,
-                                    usado: !checks.usado,
-                                    nuevo: false // Al activar/desactivar usado, nuevo siempre muere
-                                });
-                            }}
-                        />
+                        <CheckItem label="Estado Nuevo" value={checks.nuevo} onToggle={() => setChecks({ ...checks, nuevo: !checks.nuevo, usado: false })} />
+                        <CheckItem label="Estado Usado" value={checks.usado} onToggle={() => setChecks({ ...checks, usado: !checks.usado, nuevo: false })} />
                     </View>
-
-                    {/* Este se mantiene independiente como estaba */}
-                    <CheckItem
-                        label="Fuera de Garantía"
-                        value={checks.excepcion}
-                        onToggle={() => toggleCheck('excepcion')}
-                    />
-
-                    <TextInput
-                        style={styles.inputArea}
-                        multiline
-                        placeholder="Observaciones físicas..."
-                        value={inspeccionEstadoDesc}
-                        onChangeText={setInspeccionEstadoDesc}
-                    />
+                    <CheckItem label="Fuera de Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Observaciones físicas..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
                 </View>
 
                 <View style={styles.card}>
@@ -367,15 +302,46 @@ export default function CrearReporte() {
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>8. Firma y Cierre</Text>
-                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones que se dan al cliente ..." value={recomendaciones} onChangeText={setRecomendaciones} />
+                    <TextInput
+                        style={styles.inputArea}
+                        multiline
+                        placeholder="Recomendaciones que se dan al cliente ..."
+                        value={recomendaciones}
+                        onChangeText={setRecomendaciones}
+                    />
+
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>El cliente acepta los términos de conformidad.</Text>
-                        <Switch value={checks.aceptaCondiciones} onValueChange={() => toggleCheck('aceptaCondiciones')} />
+                        <Text style={styles.termsText}>Aceptación de los términos de conformidad por parte del cliente.</Text>
+                        <Switch
+                            value={checks.aceptaCondiciones}
+                            onValueChange={() => setShowTerms(true)}
+                        />
                     </View>
-                    <Text style={styles.label}>Firma Digital del Cliente</Text>
-                    <TouchableOpacity style={styles.signBox} onPress={() => setShowSig(true)}>
-                        {firma ? <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" /> : <View style={{ alignItems: 'center' }}><Ionicons name="pencil-outline" size={24} color="#999" /><Text style={{ color: '#999', marginTop: 5 }}>Presione aquí para firmar</Text></View>}
-                    </TouchableOpacity>
+
+                    {/* Renderizado condicional de la firma */}
+                    {checks.aceptaCondiciones ? (
+                        <View>
+                            <Text style={styles.label}>Firma Digital del Cliente</Text>
+                            <TouchableOpacity style={styles.signBox} onPress={() => setShowSig(true)}>
+                                {firma ? (
+                                    <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" />
+                                ) : (
+                                    <View style={{ alignItems: 'center' }}>
+                                        <Ionicons name="pencil-outline" size={24} color="#999" />
+                                        <Text style={{ color: '#999', marginTop: 5 }}>Presione aquí para firmar</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.lockedSignature}>
+                            <Ionicons name="lock-closed-outline" size={20} color="#999" />
+                            <Text style={styles.lockedText}>
+                                El cliente debe aceptar los términos para poder la firmar.
+
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 <TouchableOpacity style={styles.btnSubmit} onPress={generarReporte} disabled={loading}>
@@ -383,6 +349,42 @@ export default function CrearReporte() {
                 </TouchableOpacity>
                 <View style={{ height: 50 }} />
             </ScrollView>
+
+            {/* MODAL DE TÉRMINOS Y CONDICIONES */}
+            <Modal visible={showTerms} animationType="slide" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Términos y Condiciones</Text>
+                        <ScrollView style={styles.termsScroll}>
+                            <Text style={styles.legalText}>
+                                <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text>  El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
+                                Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo. {"\n"}
+                                No se cubrirán daños distintos a los aquí descritos ni fallas derivadas de componentes que no fueron intervenidos en la reparación original. {"\n\n"}
+
+                                <Text style={{ fontWeight: 'bold' }}>2. Almacenaje y Abandono:</Text> Transcurridos 90 días desde la notificación de finalización del servicio, se cobrará una tasa de bodegaje de ley.  {"\n"}
+                                Conforme al Art. 44 de la LODC, los equipos no retirados en un plazo de 6 meses se considerarán legalmente abandonados, permitiendo al establecimiento disponer de los mismos para recuperar costos de reparación y almacenamiento. {"\n\n"}
+
+                                <Text style={{ fontWeight: 'bold' }}>3. Exclusiones de Garantía:</Text> La garantía quedará sin efecto si el equipo presenta sellos de seguridad rotos, evidencia de humedad, golpes, fluctuaciones eléctricas externas, o si ha sido manipulado por personal ajeno a este taller. {"\n"}
+                                El valor de chequeo y transporte es acordao previamente con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado. {"\n\n"}
+
+                                <Text style={{ fontWeight: 'bold' }}>4. Protección de Datos (LOPDP):</Text> El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos.{"\n"}
+                                El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador {"\n\n"}
+                                <Text style={{ fontWeight: 'italic', fontWeight: '600' }}>Nota: ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.</Text>{"\n\n"}
+                                <Text style={{ fontStyle: 'italic', fontWeight: '600' }}>Declaración de Aceptación: {"\n\n"} Como cliente certifico que los datos en este documento son reales y acepto las condiciones indicadas.</Text>{"\n\n"}
+
+                            </Text>
+                        </ScrollView>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#EEE' }]} onPress={() => { setShowTerms(false); setChecks({ ...checks, aceptaCondiciones: false }); }}>
+                                <Text style={{ color: '#333' }}>No acepta</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#001C38' }]} onPress={() => { setShowTerms(false); setChecks({ ...checks, aceptaCondiciones: true }); }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Si, acepta</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -416,7 +418,7 @@ const styles = StyleSheet.create({
     label: { fontSize: 13, fontWeight: 'bold', color: '#444', marginTop: 10, marginBottom: 5 },
     input: { backgroundColor: '#F9F9F9', borderBottomWidth: 1, borderBottomColor: '#DDD', padding: 8, marginBottom: 10, fontSize: 15 },
     inputArea: { backgroundColor: '#F9F9F9', borderRadius: 8, padding: 10, minHeight: 60, textAlignVertical: 'top' },
-    inputAcc: { borderBottomWidth: 1, borderBottomColor: '#EEE', fontSize: 14, marginTop: 5 },
+    inputAcc: { borderBottomWidth: 1, borderBottomColor: '#EEE', fontSize: 14, marginTop: 5, paddingVertical: 5 },
     inputSmall: { fontSize: 12, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingVertical: 5, color: '#666' },
     row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
     checkItem: { flexDirection: 'row', alignItems: 'center', width: '48%' },
@@ -430,11 +432,21 @@ const styles = StyleSheet.create({
     signBox: { width: '100%', height: 130, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', borderRadius: 12, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
     btnSubmit: { backgroundColor: '#34C759', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 40, elevation: 5 },
     btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+
+    // ESTILOS DE FIRMA Y MODAL
     signatureOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
     signatureContainer: { width: '100%', height: 450, backgroundColor: '#FFF', borderRadius: 20, overflow: 'hidden', padding: 10 },
     signatureHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EEE' },
     signatureTitle: { fontSize: 16, fontWeight: 'bold', color: '#001C38' },
     signatureFooter: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 15, backgroundColor: '#FFF' },
     sigBtn: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, elevation: 2 },
-    sigBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 }
+    sigBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { width: '90%', height: '75%', backgroundColor: '#FFF', borderRadius: 20, padding: 20, elevation: 10 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#001C38', marginBottom: 15, textAlign: 'center' },
+    termsScroll: { flex: 1, marginBottom: 20 },
+    legalText: { fontSize: 13, lineHeight: 20, color: '#444', textAlign: 'justify' },
+    modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
+    modalBtn: { width: '48%', padding: 15, borderRadius: 10, alignItems: 'center' }
 });
