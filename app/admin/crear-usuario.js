@@ -14,6 +14,7 @@ export default function CrearUsuario() {
   const router = useRouter();
   const [tipo, setTipo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     cedula: "", 
@@ -117,53 +118,107 @@ export default function CrearUsuario() {
           {tipo && (
             <View style={styles.formCard}>
               <Text style={styles.label}>Cédula de Identidad</Text>
-              <TextInput style={styles.input} keyboardType="numeric" maxLength={13} value={form.cedula} onChangeText={(t) => handleChangeNumeros('cedula', t)} />
+              <TextInput 
+                style={styles.input} 
+                keyboardType="numeric" 
+                maxLength={13} 
+                value={form.cedula} 
+                onChangeText={(t) => handleChangeNumeros('cedula', t)}
+              />
 
               <View style={{flexDirection:'row', gap:10}}>
                 <View style={{flex:1}}>
                   <Text style={styles.label}>Nombres</Text>
-                  <TextInput style={styles.input} value={form.nombre} onChangeText={(t)=>setForm({...form, nombre:t})} />
+                  <TextInput 
+                    style={styles.input} 
+                    maxLength={25} 
+                    value={form.nombre} 
+                    onChangeText={(t)=>setForm({...form, nombre:t})} 
+                  />
                 </View>
                 <View style={{flex:1}}>
                   <Text style={styles.label}>Apellidos</Text>
-                  <TextInput style={styles.input} value={form.apellido} onChangeText={(t)=>setForm({...form, apellido:t})} />
+                  <TextInput 
+                    style={styles.input} 
+                    maxLength={25} 
+                    value={form.apellido} 
+                    onChangeText={(t)=>setForm({...form, apellido:t})} 
+                  />
                 </View>
               </View>
 
               <Text style={styles.label}>Teléfono Celular</Text>
-              <TextInput style={styles.input} keyboardType="phone-pad" maxLength={10} value={form.celular} onChangeText={(t) => handleChangeNumeros('celular', t)} />
+              <TextInput 
+                style={styles.input} 
+                keyboardType="phone-pad" 
+                maxLength={10} 
+                value={form.celular} 
+                onChangeText={(t) => handleChangeNumeros('celular', t)} 
+                placeholder="09..."
+              />
 
               <View style={styles.divider} />
 
               <Text style={styles.label}>Nombre de Usuario</Text>
-              <TextInput style={styles.input} autoCapitalize="none" value={form.usuario} onChangeText={(t)=>setForm({...form, usuario:t})} />
+              <TextInput 
+                style={styles.input} 
+                autoCapitalize="none" 
+                maxLength={40} 
+                value={form.usuario} 
+                onChangeText={(t)=>setForm({...form, usuario:t})} 
+              />
 
               <Text style={styles.label}>Contraseña de Acceso</Text>
-              <TextInput style={styles.input} secureTextEntry value={form.clave} onChangeText={(t)=>setForm({...form, clave:t})} />
+              <View style={styles.passwordContainer}>
+                <TextInput 
+                  style={styles.inputPassword} 
+                  secureTextEntry={!showPassword} 
+                  maxLength={40} 
+                  value={form.clave} 
+                  onChangeText={(t)=>setForm({...form, clave:t})}
+                />
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                    size={22} 
+                    color="#007AFF" 
+                  />
+                </TouchableOpacity>
+              </View>
 
-              {/* Solo si es móvil, mostrar el ROL */}
               {tipo === 'movil' && (
                 <>
                   <Text style={styles.label}>Asignar Rol</Text>
                   <View style={styles.tipoContainer}>
                       <TouchableOpacity 
-                      style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
-                      onPress={() => setForm({...form, rol: "0"})}
+                        style={[styles.rolBtn, form.rol === "0" && styles.rolBtnActive]} 
+                        onPress={() => setForm({...form, rol: "0"})}
                       >
-                        <Text style={form.rol === "0" ? {color: '#FFF', fontWeight:'bold'} : {}}>Técnico</Text>
+                        <Text style={form.rol === "0" ? {color: '#FFF', fontWeight:'bold'} : {color: '#666'}}>Técnico</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
-                      style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
-                      onPress={() => setForm({...form, rol: "1"})}
+                        style={[styles.rolBtn, form.rol === "1" && styles.rolBtnActive]} 
+                        onPress={() => setForm({...form, rol: "1"})}
                       >
-                        <Text style={form.rol === "1" ? {color: '#FFF', fontWeight:'bold'} : {}}>Administrador</Text>
+                        <Text style={form.rol === "1" ? {color: '#FFF', fontWeight:'bold'} : {color: '#666'}}>Administrador</Text>
                       </TouchableOpacity>
                   </View>
                 </>
               )}
 
-              <TouchableOpacity style={styles.submitButton} onPress={handleGuardar} disabled={loading}>
-                {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>Confirmar Registro {tipo.toUpperCase()}</Text>}
+              <TouchableOpacity 
+                style={styles.submitButton} 
+                onPress={handleGuardar} 
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Confirmar Registro {tipo.toUpperCase()}</Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
@@ -174,40 +229,39 @@ export default function CrearUsuario() {
 }
 
 const validarDocumentoEcuador = (documento) => {
-    if (!documento) return false;
-    const limits = [10, 13]; 
-    if (!limits.includes(documento.length)) return false;
-    if (documento.length === 13 && documento.slice(10, 13) !== '001') return false;
-  
-    const cedula = documento.substring(0, 10);
-    const digitoRegion = parseInt(cedula.substring(0, 2));
-    
-    if (digitoRegion < 1 || digitoRegion > 24) return false;
-  
-    const ultimoDigito = parseInt(cedula.substring(9, 10));
-    let pares = 0, impares = 0, suma = 0;
-  
-    for (let i = 0; i < 9; i++) {
-      let val = parseInt(cedula.charAt(i));
-      if (i % 2 === 0) { 
-          val = val * 2;
-          if (val > 9) val -= 9;
-          impares += val;
-      } else {
-          pares += val;
-      }
+  if (!documento) return false;
+  const limits = [10, 13]; 
+  if (!limits.includes(documento.length)) return false;
+  if (documento.length === 13 && documento.slice(10, 13) !== '001') return false;
+
+  const cedula = documento.substring(0, 10);
+  const digitoRegion = parseInt(cedula.substring(0, 2));
+  if (digitoRegion < 1 || digitoRegion > 24) return false;
+
+  const ultimoDigito = parseInt(cedula.substring(9, 10));
+  let pares = 0, impares = 0, suma = 0;
+
+  for (let i = 0; i < 9; i++) {
+    let val = parseInt(cedula.charAt(i));
+    if (i % 2 === 0) { 
+        val = val * 2;
+        if (val > 9) val -= 9;
+        impares += val;
+    } else {
+        pares += val;
     }
-  
-    suma = pares + impares;
-    let verificador = 10 - (suma % 10);
-    if (verificador === 10) verificador = 0;
-  
-    return verificador === ultimoDigito;
-  };
-  
-  const validarCelularEcuador = (celular) => {
-    return /^09\d{8}$/.test(celular);
-  };
+  }
+
+  suma = pares + impares;
+  let verificador = 10 - (suma % 10);
+  if (verificador === 10) verificador = 0;
+
+  return verificador === ultimoDigito;
+};
+
+const validarCelularEcuador = (celular) => {
+  return /^09\d{8}$/.test(celular);
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
@@ -223,6 +277,17 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 15, shadowColor: "#000", shadowOpacity: 0.1, elevation: 3 },
   label: { fontSize: 14, color: '#666', marginBottom: 5, fontWeight: '600' },
   input: { backgroundColor: "#F9F9F9", borderWidth: 1, borderColor: "#DDD", borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 15 },
+  passwordContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: "#F9F9F9", 
+    borderWidth: 1, 
+    borderColor: "#DDD", 
+    borderRadius: 10, 
+    marginBottom: 15 
+  },
+  inputPassword: { flex: 1, padding: 12, fontSize: 16 },
+  eyeIcon: { paddingHorizontal: 12 },
   divider: { height: 1, backgroundColor: '#EEE', marginVertical: 10 },
   rolBtn: { flex: 1, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#DDD', alignItems: 'center' },
   rolBtnActive: { backgroundColor: '#34C759', borderColor: '#34C759' },

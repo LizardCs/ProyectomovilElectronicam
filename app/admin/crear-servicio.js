@@ -225,6 +225,7 @@ export default function CrearServicio() {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Ej: 10542"
+                                maxLength={15}
                                 value={formData.SERV_NUM}
                                 onChangeText={(text) => handleChange("SERV_NUM", text)}
                                 keyboardType="numeric"

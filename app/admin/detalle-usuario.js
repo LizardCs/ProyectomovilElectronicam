@@ -31,6 +31,7 @@ export default function DetalleUsuario() {
 
     const [cambiarClave, setCambiarClave] = useState(false);
     const [clave, setClave] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleActualizar = async () => {
         if (!nombre || !apellido || !usuario) {
@@ -61,11 +62,11 @@ export default function DetalleUsuario() {
             } else {
                 Alert.alert("Error", res.message || "No se pudo actualizar el usuario.");
             }
-        } catch (e) { 
+        } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Ocurrió un error al conectar con la base de datos."); 
-        } finally { 
-            setLoading(false); 
+            Alert.alert("Error", "Ocurrió un error al conectar con la base de datos.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -80,16 +81,15 @@ export default function DetalleUsuario() {
         setLoading(true);
         try {
             const res = await eliminarUsuario(u.id, u.origen);
-            
             if (res.success) {
                 Alert.alert("Eliminado", "El usuario ha sido borrado del sistema.");
                 router.back();
             } else {
                 Alert.alert("Error", res.message || "No se pudo eliminar el usuario.");
             }
-        } catch (e) { 
+        } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Fallo de conexión al intentar eliminar."); 
+            Alert.alert("Error", "Fallo de conexión al intentar eliminar.");
         } finally {
             setLoading(false);
         }
@@ -98,9 +98,9 @@ export default function DetalleUsuario() {
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <StatusBar style="light" backgroundColor="#001C38" />
-            
-            <KeyboardAvoidingView 
-                style={{ flex: 1 }} 
+
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
                 {/* Header */}
@@ -112,22 +112,19 @@ export default function DetalleUsuario() {
                     <View style={{ width: 40 }} />
                 </View>
 
-                <ScrollView 
-                    style={styles.scrollView} 
+                <ScrollView
+                    style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    
                     {/* INFO BLOQUEADA */}
                     <View style={styles.infoCard}>
                         <View style={styles.lockedHeader}>
                             <Ionicons name="lock-closed" size={18} color="#999" />
                             <Text style={styles.lockedTitle}>Información Protegida</Text>
                         </View>
-                        
                         <Text style={styles.label}>Cédula de Identidad</Text>
                         <Text style={styles.readOnlyText}>{u.cedula}</Text>
-
                         <Text style={styles.label}>Tipo de Acceso / Rol</Text>
                         <Text style={styles.readOnlyText}>
                             {u.origen === 'WEB' ? 'SISTEMA WEB' : (parseInt(u.rol) === 1 ? 'ADMINISTRADOR MÓVIL' : 'TÉCNICO MÓVIL')}
@@ -142,16 +139,16 @@ export default function DetalleUsuario() {
                         </View>
 
                         <Text style={styles.label}>Nombres</Text>
-                        <TextInput style={styles.input} value={nombre} onChangeText={setNombre} />
+                        <TextInput style={styles.input} value={nombre} maxLength={40} onChangeText={setNombre} />
 
                         <Text style={styles.label}>Apellidos</Text>
-                        <TextInput style={styles.input} value={apellido} onChangeText={setApellido} />
+                        <TextInput style={styles.input} value={apellido} maxLength={40} onChangeText={setApellido} />
 
                         <Text style={styles.label}>Teléfono Celular</Text>
-                        <TextInput style={styles.input} value={celular} onChangeText={setCelular} keyboardType="phone-pad" />
+                        <TextInput style={styles.input} value={celular} maxLength={10} onChangeText={setCelular} keyboardType="phone-pad" />
 
                         <Text style={styles.label}>Nombre de Usuario</Text>
-                        <TextInput style={styles.input} value={usuario} onChangeText={setUsuario} autoCapitalize="none" />
+                        <TextInput style={styles.input} value={usuario} maxLength={40} onChangeText={setUsuario} autoCapitalize="none" />
 
                         <View style={styles.divider} />
 
@@ -160,7 +157,7 @@ export default function DetalleUsuario() {
                             <View style={styles.checkContainer}>
                                 <TouchableOpacity
                                     style={[styles.checkBtn, !cambiarClave && styles.checkBtnActiveNo]}
-                                    onPress={() => { setCambiarClave(false); setClave(""); }}
+                                    onPress={() => { setCambiarClave(false); setClave(""); setShowPassword(false); }}
                                 >
                                     <Text style={!cambiarClave ? { color: '#FFF', fontWeight: 'bold' } : { color: '#666' }}>No</Text>
                                 </TouchableOpacity>
@@ -176,13 +173,26 @@ export default function DetalleUsuario() {
                         {cambiarClave && (
                             <View style={styles.inputClaveAnim}>
                                 <Text style={styles.label}>Nueva Contraseña</Text>
-                                <TextInput
-                                    style={[styles.input, { borderColor: '#007AFF', backgroundColor: '#F0F7FF' }]}
-                                    secureTextEntry
-                                    value={clave}
-                                    onChangeText={setClave}
-                                    placeholder="Escriba la nueva clave..."
-                                />
+                                <View style={styles.passwordInputContainer}>
+                                    <TextInput
+                                        style={styles.inputClave}
+                                        secureTextEntry={!showPassword}
+                                        maxLength={40}
+                                        value={clave}
+                                        onChangeText={setClave}
+                                        placeholder="Escriba la nueva clave..."
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        style={styles.eyeIcon}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                            size={22}
+                                            color="#007AFF"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         )}
 
@@ -205,22 +215,22 @@ export default function DetalleUsuario() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F2F2F7" },
-    header: { 
-        backgroundColor: "#001C38", 
-        paddingTop: 10, 
-        paddingBottom: 20, 
-        paddingHorizontal: 20, 
-        flexDirection: "row", 
-        alignItems: "center", 
+    header: {
+        backgroundColor: "#001C38",
+        paddingTop: 10,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+        flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
     },
     headerTitle: { fontSize: 20, fontWeight: "bold", color: "#FFF" },
     scrollView: { flex: 1 },
-    scrollContent: { 
-        padding: 20, 
-        paddingBottom: 60 
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 60
     },
     infoCard: { backgroundColor: '#FFF', padding: 20, borderRadius: 15, elevation: 3, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
     lockedHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingBottom: 10 },
@@ -239,5 +249,8 @@ const styles = StyleSheet.create({
     checkBtn: { paddingHorizontal: 15, paddingVertical: 6, borderRadius: 6 },
     checkBtnActiveNo: { backgroundColor: '#8E8E93' },
     checkBtnActiveSi: { backgroundColor: '#007AFF' },
-    inputClaveAnim: { borderLeftWidth: 3, borderLeftColor: '#007AFF', paddingLeft: 10, marginBottom: 10, marginTop: 5 }
+    inputClaveAnim: { borderLeftWidth: 3, borderLeftColor: '#007AFF', paddingLeft: 10, marginBottom: 10, marginTop: 5 },
+    passwordInputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F7FF', borderWidth: 1, borderColor: '#007AFF', borderRadius: 10, marginBottom: 15 },
+    inputClave: { flex: 1, padding: 12, fontSize: 16, color: '#333' },
+    eyeIcon: { paddingHorizontal: 12 }
 });
