@@ -29,6 +29,7 @@ export default function Login() {
     const [usuario, setUsuario] = useState("");
     const [clave, setClave] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         checkExistingSession();
@@ -131,11 +132,18 @@ export default function Login() {
                                     <TextInput
                                         placeholder="Contraseña"
                                         placeholderTextColor="#94a3b8"
-                                        secureTextEntry
+                                        secureTextEntry={!showPassword}
                                         value={clave}
                                         onChangeText={setClave}
                                         style={styles.input}
                                     />
+                                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                        <Ionicons 
+                                            name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                                            size={20} 
+                                            color="#94a3b8" 
+                                        />
+                                    </TouchableOpacity>
                                 </View>
 
                                 <TouchableOpacity 

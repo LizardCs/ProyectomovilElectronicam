@@ -391,5 +391,5 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 14, color: "#007AFF", marginRight: 4, fontWeight: "bold" },
   emptyContainer: { alignItems: 'center', marginTop: 40 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 10, fontSize: 16 },
-  floatingButton: { position: "absolute", bottom: 30, right: 25, backgroundColor: "#007AFF", width: 65, height: 65, borderRadius: 33, justifyContent: "center", alignItems: "center", elevation: 8, shadowColor: "#007AFF", shadowOpacity: 0.4, shadowRadius: 10 }
+  floatingButton: { position: "absolute", bottom: 90, right: 25, backgroundColor: "#007AFF", width: 65, height: 65, borderRadius: 33, justifyContent: "center", alignItems: "center", elevation: 8, shadowColor: "#007AFF", shadowOpacity: 0.4, shadowRadius: 10 }
 });
