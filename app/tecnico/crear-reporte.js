@@ -21,6 +21,7 @@ export default function CrearReporte() {
     const servicio = JSON.parse(params.servicio);
     const [loading, setLoading] = useState(false);
     const sigRef = useRef(null);
+    const [showTerms, setShowTerms] = useState(false);
 
     // Datos Cliente
     const [nombreCliente, setNombreCliente] = useState("");
@@ -237,9 +238,9 @@ export default function CrearReporte() {
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora " value={unidad} onChangeText={setUnidad} />
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
-                    <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} />
-                    <TextInput style={styles.input} placeholder="N° Serie" value={serieEq} onChangeText={setSerieEq} />
-                    <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} />
+                    <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
+                    <TextInput style={styles.input} placeholder="N° Serie" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
+                    <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} maxLength={20} />
                 </View>
 
                 <View style={styles.card}>
@@ -258,26 +259,89 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
-                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
-                            <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
+                        <TouchableOpacity
+                            style={styles.radioItem}
+                            onPress={() => setChecks({ ...checks, accesorios: true })}
+                        >
+                            <Ionicons
+                                name={checks.accesorios ? "radio-button-on" : "radio-button-off"}
+                                size={22}
+                                color={checks.accesorios ? "#001C38" : "#666"}
+                            />
                             <Text style={styles.radioLabel}>SÍ</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: false })}>
-                            <Ionicons name={!checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={!checks.accesorios ? "#001C38" : "#666"} />
+
+                        <TouchableOpacity
+                            style={styles.radioItem}
+                            onPress={() => {
+                                setChecks({ ...checks, accesorios: false });
+                                setAccesoriosDesc(""); // Opcional: Limpia el texto si eligen "NO"
+                            }}
+                        >
+                            <Ionicons
+                                name={!checks.accesorios ? "radio-button-on" : "radio-button-off"}
+                                size={22}
+                                color={!checks.accesorios ? "#001C38" : "#666"}
+                            />
                             <Text style={styles.radioLabel}>NO</Text>
                         </TouchableOpacity>
                     </View>
-                    <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+
+                    {/* Renderizado condicional */}
+                    {checks.accesorios && (
+                        <TextInput
+                            style={styles.inputAcc}
+                            placeholder="Especifique..."
+                            value={accesoriosDesc}
+                            onChangeText={setAccesoriosDesc}
+                        />
+                    )}
                 </View>
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>5. Estado del equipo</Text>
                     <View style={styles.row}>
-                        <CheckItem label="Estado Nuevo" value={checks.nuevo} onToggle={() => toggleCheck('nuevo')} />
-                        <CheckItem label="Estado Usado" value={checks.usado} onToggle={() => toggleCheck('usado')} />
+                        {/* Si marcas Nuevo, forzamos usado a false */}
+                        <CheckItem
+                            label="Estado Nuevo"
+                            value={checks.nuevo}
+                            onToggle={() => {
+                                setChecks({
+                                    ...checks,
+                                    nuevo: !checks.nuevo,
+                                    usado: false // Al activar/desactivar nuevo, usado siempre muere
+                                });
+                            }}
+                        />
+
+                        {/* Si marcas Usado, forzamos nuevo a false */}
+                        <CheckItem
+                            label="Estado Usado"
+                            value={checks.usado}
+                            onToggle={() => {
+                                setChecks({
+                                    ...checks,
+                                    usado: !checks.usado,
+                                    nuevo: false // Al activar/desactivar usado, nuevo siempre muere
+                                });
+                            }}
+                        />
                     </View>
-                    <CheckItem label="Fuera de Garantía" value={checks.excepcion} onToggle={() => toggleCheck('excepcion')} />
-                    <TextInput style={styles.inputArea} multiline placeholder="Observaciones físicas..." value={inspeccionEstadoDesc} onChangeText={setInspeccionEstadoDesc} />
+
+                    {/* Este se mantiene independiente como estaba */}
+                    <CheckItem
+                        label="Fuera de Garantía"
+                        value={checks.excepcion}
+                        onToggle={() => toggleCheck('excepcion')}
+                    />
+
+                    <TextInput
+                        style={styles.inputArea}
+                        multiline
+                        placeholder="Observaciones físicas..."
+                        value={inspeccionEstadoDesc}
+                        onChangeText={setInspeccionEstadoDesc}
+                    />
                 </View>
 
                 <View style={styles.card}>
@@ -287,7 +351,7 @@ export default function CrearReporte() {
                         <CheckItem label="Presión de Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
                     </View>
                     <View style={styles.row}>
-                        <CheckItem label="Verif. Modelo" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
+                        <CheckItem label="Modelo/S Verificado" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
                         <CheckItem label="Inst. Eléctrica" value={checks.conexionesElectricas} onToggle={() => toggleCheck('conexionesElectricas')} />
                     </View>
                 </View>
@@ -303,9 +367,9 @@ export default function CrearReporte() {
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>8. Firma y Cierre</Text>
-                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones..." value={recomendaciones} onChangeText={setRecomendaciones} />
+                    <TextInput style={styles.inputArea} multiline placeholder="Recomendaciones que se dan al cliente ..." value={recomendaciones} onChangeText={setRecomendaciones} />
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>Acepto los términos de conformidad.</Text>
+                        <Text style={styles.termsText}>El cliente acepta los términos de conformidad.</Text>
                         <Switch value={checks.aceptaCondiciones} onValueChange={() => toggleCheck('aceptaCondiciones')} />
                     </View>
                     <Text style={styles.label}>Firma Digital del Cliente</Text>
@@ -315,7 +379,7 @@ export default function CrearReporte() {
                 </View>
 
                 <TouchableOpacity style={styles.btnSubmit} onPress={generarReporte} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>GUARDAR Y FINALIZAR TRABAJO</Text>}
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>GUARDAR Y ENVIAR REPORTE</Text>}
                 </TouchableOpacity>
                 <View style={{ height: 50 }} />
             </ScrollView>
