@@ -93,8 +93,8 @@ export const generarHtmlReporte = (data) => {
                 .mini-caption { font-size: 7.5pt; font-weight: 700; color: #001C38; margin-top: 4px; border-top: 1px solid #E2E8F0; padding-top: 2px; }
 
                 /* FIRMA */
-                .signature-area { margin-top: 3mm; border: 1px dashed #CBD5E1; background: #F8FAFC; border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; }
-                .sig-line { border-top: 1px solid #001C38; width: 70%; margin: 0 auto; padding-top: 2px; font-weight: 700; color: #001C38; }
+                .signature-area { margin-top: 3mm; border: 1px dashed #CBD5E1; background: #F8FAFC; border-radius: 6px; padding: 10px;}
+                .sig-line { border-top: 1px solid #001C38; width: 200px; margin: 0 auto; padding-top: 2px; font-weight: 700; color: #001C38;}
 
                 /* HOJA 2 */
                 .page-break { break-before: page; }
@@ -217,8 +217,8 @@ export const generarHtmlReporte = (data) => {
             </div>
 
             <div class="signature-area">
-                <div style="font-size: 8pt; color: #64748b; padding-left: 10px; line-height: 1.3; text-align: justify;">
-                    <strong>Términos y Condiciones de Servicio Técnico</strong><br><br>
+                <div style="font-size: 8pt; color: #64748b; line-height: 1.3; text-align: justify; margin-bottom: 15px;">
+                    <strong>Términos y Condiciones de Servicio Técnico.</strong><br><br>
                     
                     <strong>1. Garantía de Servicio:</strong>
                     El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento.
@@ -240,12 +240,13 @@ export const generarHtmlReporte = (data) => {
                     <strong>Declaración de Aceptación:</strong>
                     <br>
                     - Certifico que los datos en este documento son reales y acepto las condiciones arriba indicadas, incluyendo el límite de 90 días de garantía sobre el daño reportado.<br>
-                    <strong>NOTA:</strong> ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.<br><br>
+                    <strong>NOTA:</strong> ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.
                 </div>
-                <div style="text-align: center; flex: 1;">
-                    ${firma ? `<img src="${firma}" style="height: 35px; object-fit:contain; margin-bottom:5px;">` : '<div style="height:35px;"></div>'}
-                    <div class="sig-line">${nombreCliente}</div>
-                    <div style="font-size: 7.5pt; color: #64748B;">C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    ${firma ? `<img src="${firma}" style="height: 45px; object-fit:contain; margin-bottom:5px;">` : '<div style="height:45px;"></div>'}
+                    <div class="sig-line"> Cliente: ${nombreCliente}</div>
+                    <div style="font-size: 7.5pt; color: #64748B; margin-top: 2px;">C.I. ${cedulaCliente || servicio.SERV_CED_REC}</div>
                 </div>
             </div>
 
