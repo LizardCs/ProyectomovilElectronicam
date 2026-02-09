@@ -27,7 +27,7 @@ import { SessionService } from "../../services/session";
 export default function CrearServicio() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    
+
     const [isLoading, setIsLoading] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [user, setUser] = useState(null);
@@ -85,7 +85,7 @@ export default function CrearServicio() {
                 SERV_CED_REC: servicio.SERV_CED_REC,
                 SERV_NOM_REC: servicio.SERV_NOM_REC,
                 SERV_EST: parseInt(servicio.SERV_EST),
-                SERV_IMG_ENV: servicio.SERV_IMG_ENV 
+                SERV_IMG_ENV: servicio.SERV_IMG_ENV
             });
         }
     };
@@ -102,14 +102,14 @@ export default function CrearServicio() {
         try {
             const manipResult = await ImageManipulator.manipulateAsync(
                 uri,
-                [{ resize: { width: 600 } }], 
-                { 
-                    compress: 0.5, 
+                [{ resize: { width: 600 } }],
+                {
+                    compress: 0.5,
                     format: ImageManipulator.SaveFormat.JPEG,
                     base64: true
                 }
             );
-            
+
             if (manipResult.base64) {
                 setFormData({ ...formData, SERV_IMG_ENV: manipResult.base64 });
             }
@@ -260,10 +260,10 @@ export default function CrearServicio() {
                                         style={[styles.tecnicoOption, formData.SERV_CED_REC === tec.MOV_CED && styles.tecnicoOptionSelected]}
                                         onPress={() => handleChange("SERV_CED_REC", tec.MOV_CED)}
                                     >
-                                        <Ionicons 
-                                            name={formData.SERV_CED_REC === tec.MOV_CED ? "checkmark-circle" : "ellipse-outline"} 
-                                            size={20} 
-                                            color={formData.SERV_CED_REC === tec.MOV_CED ? "#007AFF" : "#999"} 
+                                        <Ionicons
+                                            name={formData.SERV_CED_REC === tec.MOV_CED ? "checkmark-circle" : "ellipse-outline"}
+                                            size={20}
+                                            color={formData.SERV_CED_REC === tec.MOV_CED ? "#007AFF" : "#999"}
                                         />
                                         <View style={{ marginLeft: 10 }}>
                                             <Text style={[styles.tecnicoName, formData.SERV_CED_REC === tec.MOV_CED && { fontWeight: 'bold' }]}>

@@ -7,14 +7,14 @@ import { supabase } from './supabase';
  */
 export const editarUsuarios = async (userData) => {
   try {
-    const { 
-      id, 
-      origen, 
-      nombre, 
-      apellido, 
-      celular, 
-      usuario, 
-      clave 
+    const {
+      id,
+      origen,
+      nombre,
+      apellido,
+      celular,
+      usuario,
+      clave
     } = userData;
 
     if (!id || !origen) {
@@ -27,14 +27,14 @@ export const editarUsuarios = async (userData) => {
 
     if (origen === 'MOVIL') {
       tabla = 'usersmovil';
-      columnaId = 'MOV_ID'; 
+      columnaId = 'MOV_ID';
       camposAActualizar = {
         "NOM_MOV": nombre,
         "MOV_APE": apellido,
         "MOV_CELU": String(celular).trim(),
         "MOV_USU": usuario
       };
-      
+
       if (clave && clave.trim() !== '') {
         camposAActualizar["MOV_CLAVE"] = clave;
       }
@@ -63,17 +63,17 @@ export const editarUsuarios = async (userData) => {
 
     if (error) throw error;
 
-    return { 
-      success: true, 
-      message: `Usuario de tipo ${origen} actualizado correctamente.`, 
-      data: data 
+    return {
+      success: true,
+      message: `Usuario de tipo ${origen} actualizado correctamente.`,
+      data: data
     };
 
   } catch (error) {
     console.error("❌ Error en editarUsuarios.js:", error.message);
-    return { 
-      success: false, 
-      message: "Error al actualizar usuario: " + error.message 
+    return {
+      success: false,
+      message: "Error al actualizar usuario: " + error.message
     };
   }
 };

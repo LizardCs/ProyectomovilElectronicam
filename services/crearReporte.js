@@ -32,8 +32,8 @@ export const crearReporte = async (data) => {
 
         if (errorUpdate) throw errorUpdate;
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             report_id: reportData.REP_ID
         };
 

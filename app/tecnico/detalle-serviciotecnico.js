@@ -39,10 +39,10 @@ export default function DetalleServicioTecnico() {
     const cargarFotoReal = async () => {
         setCargandoFoto(true);
         const res = await obtenerImagenServicio(servicio.SERV_ID);
-        
+
         if (res.success && res.imagen) {
-            const uri = res.imagen.startsWith('data:') 
-                ? res.imagen 
+            const uri = res.imagen.startsWith('data:')
+                ? res.imagen
                 : `data:image/jpeg;base64,${res.imagen}`;
             setFotoUri(uri);
         }
@@ -72,14 +72,14 @@ export default function DetalleServicioTecnico() {
             {/* Modal de Zoom */}
             <Modal visible={isImageVisible} transparent={true} animationType="fade">
                 <View style={styles.modalBackground}>
-                    <TouchableOpacity 
-                        style={styles.closeModalBtn} 
+                    <TouchableOpacity
+                        style={styles.closeModalBtn}
                         onPress={() => setIsImageVisible(false)}
                     >
                         <Ionicons name="close-circle" size={45} color="#FFF" />
                     </TouchableOpacity>
-                    
-                    <ImageZoom 
+
+                    <ImageZoom
                         cropWidth={width}
                         cropHeight={height}
                         imageWidth={width}
@@ -106,17 +106,17 @@ export default function DetalleServicioTecnico() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView 
-                style={styles.scrollView} 
-                contentContainerStyle={styles.scrollContent} 
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                
+
                 {/* Sección de Imagen con Loader */}
                 <View style={styles.imageSection}>
                     <Text style={styles.sectionLabel}>Referencia visual del equipo:</Text>
-                    <TouchableOpacity 
-                        activeOpacity={0.9} 
+                    <TouchableOpacity
+                        activeOpacity={0.9}
                         onPress={() => !cargandoFoto && fotoUri && setIsImageVisible(true)}
                         style={styles.imageContainer}
                     >
@@ -197,11 +197,11 @@ export default function DetalleServicioTecnico() {
                 </TouchableOpacity>
 
                 {!esCompletado && (
-                    <TouchableOpacity 
-                        style={[styles.button, styles.btnComenzar]} 
-                        onPress={() => router.push({ 
-                            pathname: "/tecnico/crear-reporte", 
-                            params: { servicio: JSON.stringify(servicio) } 
+                    <TouchableOpacity
+                        style={[styles.button, styles.btnComenzar]}
+                        onPress={() => router.push({
+                            pathname: "/tecnico/crear-reporte",
+                            params: { servicio: JSON.stringify(servicio) }
                         })}
                     >
                         <Ionicons name="document-text" size={20} color="#FFF" />

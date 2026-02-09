@@ -26,17 +26,17 @@ export const obtenerServiciosTecnico = async (cedula) => {
       SERV_IMG_ENV: null
     }));
 
-    return { 
-        success: true, 
-        servicios: serviciosMapeados 
+    return {
+      success: true,
+      servicios: serviciosMapeados
     };
 
   } catch (error) {
     console.error("❌ Error en obtenerServiciosTecnico.js:", error.message);
-    return { 
-        success: false, 
-        message: "No se pudo cargar tu lista de trabajos: " + error.message, 
-        servicios: [] 
+    return {
+      success: false,
+      message: "No se pudo cargar tu lista de trabajos: " + error.message,
+      servicios: []
     };
   }
 };

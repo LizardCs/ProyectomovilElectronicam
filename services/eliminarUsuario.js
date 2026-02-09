@@ -16,16 +16,16 @@ export const eliminarUsuario = async (id, origen) => {
 
     if (error) throw error;
 
-    return { 
-      success: true, 
-      message: `El usuario con ID ${id} ha sido eliminado de ${tabla} con éxito.` 
+    return {
+      success: true,
+      message: `El usuario con ID ${id} ha sido eliminado de ${tabla} con éxito.`
     };
 
   } catch (error) {
     console.error("❌ Error en eliminarUsuario.js:", error.message);
-    return { 
-      success: false, 
-      message: "No se pudo eliminar el usuario: " + error.message 
+    return {
+      success: false,
+      message: "No se pudo eliminar el usuario: " + error.message
     };
   }
 };

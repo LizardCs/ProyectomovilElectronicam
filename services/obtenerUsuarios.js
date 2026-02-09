@@ -36,7 +36,7 @@ export const obtenerUsuarios = async () => {
 
     const listaUnificada = [...usuariosMovil, ...usuariosWeb];
 
-    
+
 
     return {
       success: true,

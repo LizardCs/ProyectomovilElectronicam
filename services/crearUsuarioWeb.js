@@ -2,19 +2,19 @@ import { supabase } from './supabase';
 
 export const crearUsuarioWeb = async (userData) => {
   try {
-    const { 
-      cedula, 
-      nombre, 
-      apellido, 
-      usuario, 
-      clave, 
-      celular 
+    const {
+      cedula,
+      nombre,
+      apellido,
+      usuario,
+      clave,
+      celular
     } = userData;
 
     if (!cedula || !usuario || !clave) {
-      return { 
-        success: false, 
-        message: "Faltan campos críticos (Cédula, Usuario o Clave)" 
+      return {
+        success: false,
+        message: "Faltan campos críticos (Cédula, Usuario o Clave)"
       };
     }
 
@@ -41,17 +41,17 @@ export const crearUsuarioWeb = async (userData) => {
       throw error;
     }
 
-    return { 
-      success: true, 
-      message: "Usuario web creado exitosamente", 
-      data: data 
+    return {
+      success: true,
+      message: "Usuario web creado exitosamente",
+      data: data
     };
 
   } catch (error) {
     console.error("❌ Error en crearUsuarioWeb.js:", error.message);
-    return { 
-      success: false, 
-      message: error.message 
+    return {
+      success: false,
+      message: error.message
     };
   }
 };

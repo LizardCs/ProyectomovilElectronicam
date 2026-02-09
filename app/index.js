@@ -57,7 +57,7 @@ export default function Login() {
 
         try {
             const response = await login(usuario.trim(), clave.trim());
-            
+
             if (response.success && response.user) {
                 await SessionService.saveUser(response.user);
                 router.replace(response.redirect_to);
@@ -78,31 +78,31 @@ export default function Login() {
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <LinearGradient 
-                colors={['#0f172a', '#1e3a8a', '#1e40af']} 
+            <LinearGradient
+                colors={['#0f172a', '#1e3a8a', '#1e40af']}
                 style={styles.container}
             >
-                <StatusBar style="light" /> 
+                <StatusBar style="light" />
 
                 <View style={StyleSheet.absoluteFill}>
                     <Svg height="100%" width="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <Path 
-                            d="M0,40 C30,35 70,10 100,0" 
-                            stroke="#fde68a" 
-                            strokeWidth="0.5" 
-                            fill="none" 
+                        <Path
+                            d="M0,40 C30,35 70,10 100,0"
+                            stroke="#fde68a"
+                            strokeWidth="0.5"
+                            fill="none"
                             opacity="0.2"
                         />
                     </Svg>
                 </View>
 
                 <SafeAreaView style={{ flex: 1 }}>
-                    <KeyboardAvoidingView 
+                    <KeyboardAvoidingView
                         style={{ flex: 1 }}
                         behavior={Platform.OS === "ios" ? "padding" : "height"}
                     >
                         <View style={styles.innerContainer}>
-                            
+
                             <View style={styles.header}>
                                 <View style={styles.brandContainer}>
                                     <Text style={styles.brandTitle}>ELECTRÓNICA</Text>
@@ -138,16 +138,16 @@ export default function Login() {
                                         style={styles.input}
                                     />
                                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                        <Ionicons 
-                                            name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                                            size={20} 
-                                            color="#94a3b8" 
+                                        <Ionicons
+                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                            size={20}
+                                            color="#94a3b8"
                                         />
                                     </TouchableOpacity>
                                 </View>
 
-                                <TouchableOpacity 
-                                    onPress={handleLogin} 
+                                <TouchableOpacity
+                                    onPress={handleLogin}
                                     style={[styles.button, isLoading && styles.buttonDisabled]}
                                     disabled={isLoading}
                                 >

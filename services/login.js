@@ -3,9 +3,9 @@ import { supabase } from './supabase';
 export const login = async (usuario, clave) => {
   try {
     if (!usuario || !clave) {
-      return { 
-        success: false, 
-        message: "Usuario y contraseña requeridos" 
+      return {
+        success: false,
+        message: "Usuario y contraseña requeridos"
       };
     }
 
@@ -17,12 +17,12 @@ export const login = async (usuario, clave) => {
       .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_ROL, MOV_CELU, MOV_USU')
       .eq('MOV_USU', usuarioLimpio)
       .eq('MOV_CLAVE', claveLimpia)
-      .single(); 
+      .single();
 
     if (error || !data) {
-      return { 
-        success: false, 
-        message: "Usuario o contraseña incorrectos" 
+      return {
+        success: false,
+        message: "Usuario o contraseña incorrectos"
       };
     }
 
@@ -49,9 +49,9 @@ export const login = async (usuario, clave) => {
 
   } catch (error) {
     console.error("❌ Error en login.js:", error.message);
-    return { 
-      success: false, 
-      message: "Error de conexión con el servidor de seguridad" 
+    return {
+      success: false,
+      message: "Error de conexión con el servidor de seguridad"
     };
   }
 };

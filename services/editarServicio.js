@@ -17,9 +17,9 @@ export const editarServicio = async (formData) => {
 
     let cleanBase64 = null;
     if (SERV_IMG_ENV) {
-        cleanBase64 = SERV_IMG_ENV.includes(',') 
-            ? SERV_IMG_ENV.split(',')[1] 
-            : SERV_IMG_ENV;
+      cleanBase64 = SERV_IMG_ENV.includes(',')
+        ? SERV_IMG_ENV.split(',')[1]
+        : SERV_IMG_ENV;
     }
 
     const updateFields = {
@@ -42,17 +42,17 @@ export const editarServicio = async (formData) => {
 
     if (error) throw error;
 
-    return { 
-      success: true, 
-      message: "Servicio actualizado correctamente en la nube", 
-      data: data 
+    return {
+      success: true,
+      message: "Servicio actualizado correctamente en la nube",
+      data: data
     };
 
   } catch (error) {
     console.error("❌ Error en editarServicio.js:", error.message);
-    return { 
-      success: false, 
-      message: "Error al actualizar el servicio: " + error.message 
+    return {
+      success: false,
+      message: "Error al actualizar el servicio: " + error.message
     };
   }
 };

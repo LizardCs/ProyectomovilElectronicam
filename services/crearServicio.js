@@ -32,16 +32,16 @@ export const crearServicio = async (formData) => {
 
     if (error) throw error;
 
-    return { 
-      success: true, 
-      data: data[0] 
+    return {
+      success: true,
+      data: data[0]
     };
 
   } catch (error) {
     console.error("❌ Error en crearServicio.js:", error.message);
-    return { 
-      success: false, 
-      message: "No se pudo guardar el servicio: " + error.message 
+    return {
+      success: false,
+      message: "No se pudo guardar el servicio: " + error.message
     };
   }
 };

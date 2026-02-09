@@ -35,8 +35,8 @@ export default function DetalleServicioAdmin() {
         setCargandoFoto(true);
         const res = await obtenerImagenServicio(servicio.SERV_ID);
         if (res.success && res.imagen) {
-            const uri = res.imagen.startsWith('data:') 
-                ? res.imagen 
+            const uri = res.imagen.startsWith('data:')
+                ? res.imagen
                 : `data:image/jpeg;base64,${res.imagen}`;
             setFotoUri(uri);
         }
@@ -80,9 +80,9 @@ export default function DetalleServicioAdmin() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView 
+            <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.contentContainer} 
+                contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.card}>
