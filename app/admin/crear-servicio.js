@@ -44,6 +44,12 @@ export default function CrearServicio() {
         SERV_CED_REC: "",
         SERV_NOM_REC: "",
         SERV_EST: 0,
+        SERV_NOM_CLI: "",
+        SERV_TEL_CLI: "",
+        SERV_CIUDAD: "",
+        SERV_DIR: "",
+        SERV_OBS: "",
+        SERV_REQUIERE_FACT: false,
     });
 
     useEffect(() => {
@@ -85,7 +91,13 @@ export default function CrearServicio() {
                 SERV_CED_REC: servicio.SERV_CED_REC,
                 SERV_NOM_REC: servicio.SERV_NOM_REC,
                 SERV_EST: parseInt(servicio.SERV_EST),
-                SERV_IMG_ENV: servicio.SERV_IMG_ENV
+                SERV_IMG_ENV: servicio.SERV_IMG_ENV,
+                SERV_NOM_CLI: servicio.SERV_NOM_CLI || "",
+                SERV_TEL_CLI: servicio.SERV_TEL_CLI || "",
+                SERV_CIUDAD: servicio.SERV_CIUDAD || "",
+                SERV_DIR: servicio.SERV_DIR || "",
+                SERV_OBS: servicio.SERV_OBS || "",
+                SERV_REQUIERE_FACT: servicio.SERV_REQUIERE_FACT === true,
             });
         }
     };
@@ -133,6 +145,7 @@ export default function CrearServicio() {
         if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto", "Tome una foto del equipo antes de asignar."); return; }
         if (!formData.SERV_NUM) { Alert.alert("Falta número", "Ingrese el número de comprobante."); return; }
         if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico", "Seleccione al técnico responsable."); return; }
+        if (!formData.SERV_NOM_CLI) { Alert.alert("Falta cliente", "Ingrese el nombre del cliente."); return; }
 
         setIsLoading(true);
         try {
@@ -232,19 +245,98 @@ export default function CrearServicio() {
                             />
                         </View>
 
-                        {/* DESCRIPCIÓN */}
+                        {/* --- NUEVO BLOQUE: DATOS DEL CLIENTE --- */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="clipboard" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Detalles del problema</Text>
+                                <Ionicons name="person" size={20} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Datos del Cliente</Text>
                             </View>
                             <TextInput
-                                style={[styles.input, { height: 90, textAlignVertical: 'top' }]}
+                                style={styles.input}
+                                placeholder="Nombres y Apellidos"
+                                value={formData.SERV_NOM_CLI}
+                                onChangeText={(text) => handleChange("SERV_NOM_CLI", text)}
+                            />
+                            <TextInput
+                                style={[styles.input, { marginTop: 10 }]}
+                                placeholder="Teléfono"
+                                keyboardType="phone-pad"
+                                value={formData.SERV_TEL_CLI}
+                                onChangeText={(text) => handleChange("SERV_TEL_CLI", text)}
+                            />
+                        </View>
+
+                        {/* --- NUEVO BLOQUE: UBICACIÓN --- */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="location" size={20} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Ubicación</Text>
+                            </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ciudad"
+                                value={formData.SERV_CIUDAD}
+                                onChangeText={(text) => handleChange("SERV_CIUDAD", text)}
+                            />
+                            <TextInput
+                                style={[styles.input, { marginTop: 10 }]}
+                                placeholder="Dirección Exacta"
+                                value={formData.SERV_DIR}
+                                onChangeText={(text) => handleChange("SERV_DIR", text)}
+                            />
+                        </View>
+
+                        {/* DESCRIPCIÓN DEL DAÑO */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="build" size={20} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Daño / Problema</Text>
+                            </View>
+                            <TextInput
+                                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
                                 placeholder="Describa la falla reportada..."
                                 value={formData.SERV_DESCRIPCION}
                                 onChangeText={(text) => handleChange("SERV_DESCRIPCION", text)}
                                 multiline={true}
                             />
+                        </View>
+
+                        {/* --- NUEVO BLOQUE: OBSERVACIONES ADICIONALES --- */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="eye" size={20} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>Observaciones</Text>
+                            </View>
+                            <TextInput
+                                style={[styles.input, { height: 60, textAlignVertical: 'top' }]}
+                                placeholder="Observaciones adicionales (Opcional)"
+                                value={formData.SERV_OBS}
+                                onChangeText={(text) => handleChange("SERV_OBS", text)}
+                                multiline={true}
+                            />
+                        </View>
+
+                        {/* --- NUEVO BLOQUE: FACTURA (SELECTOR) --- */}
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="receipt" size={20} color="#007AFF" />
+                                <Text style={styles.sectionTitle}>¿Requiere Factura?</Text>
+                            </View>
+                            <View style={styles.radioContainer}>
+                                <TouchableOpacity
+                                    style={[styles.radioBtn, formData.SERV_REQUIERE_FACT && styles.radioBtnActive]}
+                                    onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: true })}
+                                >
+                                    <Text style={[styles.radioText, formData.SERV_REQUIERE_FACT && styles.radioTextActive]}>SÍ</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.radioBtn, !formData.SERV_REQUIERE_FACT && styles.radioBtnActive]}
+                                    onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: false })}
+                                >
+                                    <Text style={[styles.radioText, !formData.SERV_REQUIERE_FACT && styles.radioTextActive]}>NO</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         {/* TÉCNICO */}
@@ -280,6 +372,7 @@ export default function CrearServicio() {
                         <View style={styles.summaryCard}>
                             <Text style={styles.summaryText}>Asignado por: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_ENV}</Text></Text>
                             {formData.SERV_NOM_REC ? <Text style={styles.summaryText}>Hacia: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_REC}</Text></Text> : null}
+                            <Text style={styles.summaryText}>Factura: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_REQUIERE_FACT ? "SÍ" : "NO"}</Text></Text>
                         </View>
 
                         <View style={styles.actionButtons}>
@@ -349,5 +442,12 @@ const styles = StyleSheet.create({
     modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
     modalButtons: { flexDirection: "row", gap: 25, marginTop: 25 },
     modalButtonCancel: { padding: 10 },
-    modalButtonConfirm: { paddingHorizontal: 25, paddingVertical: 12, backgroundColor: "#FF3B30", borderRadius: 10 }
+    modalButtonConfirm: { paddingHorizontal: 25, paddingVertical: 12, backgroundColor: "#FF3B30", borderRadius: 10 },
+    
+    // --- NUEVOS ESTILOS PARA EL SELECTOR DE FACTURA ---
+    radioContainer: { flexDirection: 'row', gap: 15 },
+    radioBtn: { flex: 1, padding: 12, borderWidth: 1, borderColor: '#DDD', borderRadius: 10, alignItems: 'center', backgroundColor: '#FAFAFA' },
+    radioBtnActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+    radioText: { color: '#555', fontWeight: 'bold' },
+    radioTextActive: { color: '#FFF' }
 });

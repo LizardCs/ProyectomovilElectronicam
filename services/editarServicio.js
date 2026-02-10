@@ -8,7 +8,13 @@ export const editarServicio = async (formData) => {
       SERV_DESCRIPCION,
       SERV_CED_REC,
       SERV_NOM_REC,
-      SERV_IMG_ENV
+      SERV_IMG_ENV,
+      SERV_NOM_CLI,
+      SERV_TEL_CLI,
+      SERV_CIUDAD,
+      SERV_DIR,
+      SERV_OBS,
+      SERV_REQUIERE_FACT
     } = formData;
 
     if (!SERV_ID) {
@@ -27,6 +33,12 @@ export const editarServicio = async (formData) => {
       "SERV_DESCRIPCION": SERV_DESCRIPCION,
       "SERV_CED_REC": String(SERV_CED_REC).trim(),
       "SERV_NOM_REC": SERV_NOM_REC,
+      "SERV_NOM_CLI": SERV_NOM_CLI,
+      "SERV_TEL_CLI": SERV_TEL_CLI,
+      "SERV_CIUDAD": SERV_CIUDAD,
+      "SERV_DIR": SERV_DIR,
+      "SERV_OBS": SERV_OBS,
+      "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT
     };
 
     if (cleanBase64) {
