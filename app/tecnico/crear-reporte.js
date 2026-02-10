@@ -19,27 +19,21 @@ export default function CrearReporte() {
     const router = useRouter();
     const navigation = useNavigation();
     const params = useLocalSearchParams();
-    
-    // Convertimos el string a objeto JSON para poder usar sus datos
     const servicio = params.servicio ? JSON.parse(params.servicio) : {};
-    
+    const requiereFactura = servicio.SERV_REQUIERE_FACT === true;
     const [loading, setLoading] = useState(false);
     const sigRef = useRef(null);
 
-    // Estados de control de ventanas
     const [showTerms, setShowTerms] = useState(false);
     const [showSig, setShowSig] = useState(false);
 
-    // 👇 AUTOCOMPLETAMOS LOS DATOS DEL CLIENTE 👇
     const [nombreCliente, setNombreCliente] = useState(servicio.SERV_NOM_CLI || "");
-    const [cedulaCliente, setCedulaCliente] = useState(""); // Este aún lo debe llenar manual si se requiere
+    const [cedulaCliente, setCedulaCliente] = useState(servicio.SERV_CED_CLI || "");
     const [telefonoCliente, setTelefonoCliente] = useState(servicio.SERV_TEL_CLI || "");
-    // Unimos la ciudad y la dirección si existen
     const direccionCompleta = [servicio.SERV_CIUDAD, servicio.SERV_DIR].filter(Boolean).join(" - ");
     const [direccionCliente, setDireccionCliente] = useState(direccionCompleta);
-    const [correoCliente, setCorreoCliente] = useState("");
+    const [correoCliente, setCorreoCliente] = useState(servicio.SERV_CORREO_CLI || "");
 
-    // Datos Equipo
     const [unidad, setUnidad] = useState("");
     const [marca, setMarca] = useState("");
     const [modeloEq, setModeloEq] = useState("");
@@ -56,9 +50,7 @@ export default function CrearReporte() {
         aceptaCondiciones: false
     });
 
-    // 👇 AUTOCOMPLETAMOS EL DAÑO REPORTADO 👇
-    const [danioReportado, setDanioReportado] = useState(servicio.SERV_DESCRIPCION || "");
-    
+    const [danioReportado, setDanioReportado] = useState("");
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
@@ -79,8 +71,7 @@ export default function CrearReporte() {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-            // Solo alertar si hay firmas, fotos o unidad llena (ignoramos nombre y daño porque ya vienen pre-llenos)
-            const hayProgreso = unidad || foto1 || firma;
+            const hayProgreso = unidad || danioReportado || foto1 || firma;
             if (!hayProgreso || loading) return;
             e.preventDefault();
             Alert.alert("¿Descartar reporte?", "Se perderán todos los datos y fotos.", [
@@ -89,7 +80,7 @@ export default function CrearReporte() {
             ]);
         });
         return unsubscribe;
-    }, [navigation, unidad, foto1, firma, loading]);
+    }, [navigation, unidad, danioReportado, foto1, firma, loading]);
 
     const toggleCheck = (key) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -117,7 +108,12 @@ export default function CrearReporte() {
 
     const generarReporte = async () => {
         if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
-            Alert.alert("Atención", "Complete los campos obligatorios (Cliente, Equipo, Daño y Firma) y acepte las condiciones.");
+            Alert.alert("Atención", "Complete los campos obligatorios y acepte las condiciones.");
+            return;
+        }
+
+        if (requiereFactura && !foto3) {
+            Alert.alert("Atención", "El cliente solicitó factura. Por favor adjunte la foto de la factura generada.");
             return;
         }
 
@@ -161,7 +157,7 @@ export default function CrearReporte() {
             if (res.success) {
                 Alert.alert("Éxito", "Reporte finalizado.");
                 if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
-                router.push("/tecnico/home"); // O adonde quieras enviarlo luego
+                router.push("/tecnico/home");
             } else {
                 Alert.alert("Error", res.message || "Error al subir");
             }
@@ -237,7 +233,7 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora" value={unidad} onChangeText={setUnidad} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora " value={unidad} onChangeText={setUnidad} />
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
@@ -272,7 +268,7 @@ export default function CrearReporte() {
                         </TouchableOpacity>
                     </View>
                     {checks.accesorios && (
-                        <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios recibidos..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                        <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                     )}
                 </View>
 
@@ -303,7 +299,10 @@ export default function CrearReporte() {
                     <Text style={styles.sectionTitle}>7. Informe Gráfico</Text>
                     <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} />
                     <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} />
-                    <ItemFoto label="3. Factura" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} />
+                    {requiereFactura && (
+                        <ItemFoto label="3. Factura" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} />
+                    )}
+
                     <ItemFoto label="4. Verificación Eléctrica" icon="flash-outline" color="#FF3B30" foto={foto4} desc={desc4} onFoto={() => seleccionarImagen(4)} onDesc={setDesc4} />
                     <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} />
                 </View>
@@ -363,7 +362,7 @@ export default function CrearReporte() {
                         <Text style={styles.modalTitle}>Términos y Condiciones</Text>
                         <ScrollView style={styles.termsScroll}>
                             <Text style={styles.legalText}>
-                                <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text> El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
+                                <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text>  El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
                                 Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo. {"\n"}
                                 No se cubrirán daños distintos a los aquí descritos ni fallas derivadas de componentes que no fueron intervenidos en la reparación original. {"\n\n"}
 
@@ -374,7 +373,7 @@ export default function CrearReporte() {
                                 El valor de chequeo y transporte es acordado previamente con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado. {"\n\n"}
 
                                 <Text style={{ fontWeight: 'bold' }}>4. Protección de Datos (LOPDP):</Text> El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos.{"\n"}
-                                El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador. {"\n\n"}
+                                El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador {"\n\n"}
                                 <Text style={{ fontWeight: '600' }}>Nota: ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.</Text>{"\n\n"}
                                 <Text style={{ fontStyle: 'italic', fontWeight: '600' }}>Declaración de Aceptación: {"\n\n"} Como cliente certifico que los datos en este documento son reales y acepto las condiciones indicadas.</Text>{"\n\n"}
                             </Text>

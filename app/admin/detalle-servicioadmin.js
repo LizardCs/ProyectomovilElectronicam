@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Image,
     ScrollView,
     StyleSheet,
@@ -21,6 +22,7 @@ export default function DetalleServicioAdmin() {
     const params = useLocalSearchParams();
     const [servicioDetalle, setServicioDetalle] = useState(null);
     const [cargandoDatos, setCargandoDatos] = useState(true);
+    const [eliminando, setEliminando] = useState(false);
     
     const [fotoUri, setFotoUri] = useState(null);
     const [cargandoFoto, setCargandoFoto] = useState(true);
@@ -68,6 +70,49 @@ export default function DetalleServicioAdmin() {
             setFotoUri(uri);
         }
         setCargandoFoto(false);
+    };
+
+    const handleEliminar = () => {
+        Alert.alert(
+            "¿Estás seguro?",
+            `Se eliminará el servicio #${servicioDetalle.SERV_NUM} y su reporte. Esta acción NO se puede deshacer.`,
+            [
+                { text: "Cancelar", style: "cancel" },
+                { 
+                    text: "Sí, eliminar", 
+                    style: "destructive",
+                    onPress: confirmarEliminacion 
+                }
+            ]
+        );
+    };
+
+    const confirmarEliminacion = async () => {
+        setEliminando(true);
+        try {
+            // 1. Borramos el reporte asociado (si lo hay)
+            await supabase
+                .from('reportes')
+                .delete()
+                .eq('REP_SEV_NUM', servicioDetalle.SERV_NUM);
+
+            // 2. Borramos el servicio técnico
+            const { error: errorServicio } = await supabase
+                .from('serviciostecnicos')
+                .delete()
+                .eq('SERV_ID', servicioDetalle.SERV_ID);
+
+            if (errorServicio) throw errorServicio;
+
+            Alert.alert("Listo", "El registro ha sido eliminado correctamente.", [
+                { text: "Aceptar", onPress: () => router.back() }
+            ]);
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            Alert.alert("Error", "No se pudo eliminar el registro. Intente nuevamente.");
+        } finally {
+            setEliminando(false);
+        }
     };
 
     if (cargandoDatos) {
@@ -123,7 +168,7 @@ export default function DetalleServicioAdmin() {
                 <View style={styles.card}>
                     <View style={styles.titleContainer}>
                         <Ionicons name="construct" size={24} color="#007AFF" />
-                        <Text style={styles.titleText}>Servicio a Realizar</Text>
+                        <Text style={styles.titleText}>Servicio a realizar</Text>
                     </View>
 
                     <View style={styles.divider} />
@@ -166,7 +211,7 @@ export default function DetalleServicioAdmin() {
                         <View style={[styles.facturaBox, { backgroundColor: servicioDetalle.SERV_REQUIERE_FACT ? '#E8E2F8' : '#F2F2F7', borderColor: servicioDetalle.SERV_REQUIERE_FACT ? '#673AB7' : '#E5E5EA' }]}>
                             <Ionicons name="receipt" size={18} color={servicioDetalle.SERV_REQUIERE_FACT ? '#673AB7' : '#8E8E93'} />
                             <Text style={[styles.facturaText, { color: servicioDetalle.SERV_REQUIERE_FACT ? '#673AB7' : '#8E8E93' }]}>
-                                {servicioDetalle.SERV_REQUIERE_FACT ? "SÍ, EMITIR FACTURA" : "NO REQUIERE FACTURA"}
+                                {servicioDetalle.SERV_REQUIERE_FACT ? "SÍ, PEDIR FACTURA A CLIENTE" : "NO REQUIERE FACTURA"}
                             </Text>
                         </View>
                     </View>
@@ -227,8 +272,22 @@ export default function DetalleServicioAdmin() {
                             </View>
                         )}
                     </View>
-
                 </View>
+                <TouchableOpacity 
+                    style={styles.btnEliminar} 
+                    onPress={handleEliminar}
+                    disabled={eliminando}
+                >
+                    {eliminando ? (
+                        <ActivityIndicator size="small" color="#FF3B30" />
+                    ) : (
+                        <>
+                            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+                            <Text style={styles.btnTextEliminar}>Eliminar Servicio</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+                
             </ScrollView>
 
             <View style={styles.footer}>
@@ -280,7 +339,9 @@ const styles = StyleSheet.create({
     tecnicoText: { fontSize: 14, marginLeft: 8, color: "#333", fontWeight: "bold" },
     descriptionBox: { backgroundColor: "#FFF8E1", padding: 15, borderRadius: 12, borderWidth: 1, borderColor: "#FFECB3", minHeight: 80 },
     descriptionText: { fontSize: 15, color: "#444", lineHeight: 22, fontStyle: 'italic' },
-    footer: { backgroundColor: "#FFF", paddingHorizontal: 20, paddingTop: 15, paddingBottom: 10, borderTopLeftRadius: 25, borderTopRightRadius: 25, flexDirection: "row", justifyContent: "space-between", elevation: 20 },
+    btnEliminar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFEBEA', paddingVertical: 15, borderRadius: 15, marginTop: 20, borderWidth: 1, borderColor: '#FFD1CE' },
+    btnTextEliminar: { color: '#FF3B30', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
+    footer: { backgroundColor: '#FFF', paddingHorizontal: 20, paddingTop: 15, paddingBottom: 10, borderTopLeftRadius: 25, borderTopRightRadius: 25, flexDirection: "row", justifyContent: "space-between", elevation: 20 },
     button: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 15, borderRadius: 15, flex: 1 },
     btnSalir: { backgroundColor: "#8E8E93", marginRight: 10 },
     btnEditar: { backgroundColor: "#007AFF", marginLeft: 10 },
