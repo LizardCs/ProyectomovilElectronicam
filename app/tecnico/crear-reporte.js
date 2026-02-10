@@ -131,6 +131,7 @@ export default function CrearReporte() {
 
             const datosReporte = {
                 servicio, fechaSimple, fechaActual,
+                nombreTecnico: servicio.SERV_NOM_REC || 'Técnico sin asignar',
                 nombreCliente, cedulaCliente, telefonoCliente, direccionCliente, correoCliente,
                 unidad, marca, modeloEq, serieEq, colorEq,
                 checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
