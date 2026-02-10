@@ -120,7 +120,7 @@ export const generarHtmlReporte = (data) => {
                         <i class="fas fa-file-invoice" style="margin-right:5px;"></i> Orden: #${servicio.SERV_NUM}
                     </div>
                     <div style="margin-top: 4px;"><strong>Fecha:</strong> ${fechaSimple}</div>
-                    <div style="margin-top: 4px;"><strong>Técnico:</strong> Carlos Mantilla</div>
+                    <div style="margin-top: 4px;"><strong>Técnico:</strong> ${servicio.SERV_NOM_REC || 'No especificado'}</div>
                 </div>
             </header>
 
