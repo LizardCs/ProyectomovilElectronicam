@@ -16,7 +16,9 @@ export const crearServicio = async (formData) => {
       SERV_CIUDAD,
       SERV_DIR,
       SERV_OBS,
-      SERV_REQUIERE_FACT
+      SERV_REQUIERE_FACT,
+      SERV_CED_CLI, 
+      SERV_CORREO_CLI
     } = formData;
 
     const { data, error } = await supabase
@@ -29,7 +31,6 @@ export const crearServicio = async (formData) => {
           "SERV_CED_ENV": String(SERV_CED_ENV).trim(),
           "SERV_NOM_ENV": SERV_NOM_ENV,
           "SERV_IMG_ENV": SERV_IMG_ENV || null,
-          // 👇 Aquí está la corrección principal 👇
           "SERV_CED_REC": SERV_CED_REC ? String(SERV_CED_REC).trim() : null,
           "SERV_NOM_REC": SERV_NOM_REC || null,
           "SERV_EST": SERV_EST || 0,
@@ -38,7 +39,9 @@ export const crearServicio = async (formData) => {
           "SERV_CIUDAD": SERV_CIUDAD ? String(SERV_CIUDAD).trim() : "",
           "SERV_DIR": SERV_DIR ? String(SERV_DIR).trim() : "",
           "SERV_OBS": SERV_OBS || "",
-          "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT
+          "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT,
+          "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",
+          "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : ""
         }
       ])
       .select();

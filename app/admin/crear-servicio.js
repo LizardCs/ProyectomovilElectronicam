@@ -42,15 +42,17 @@ export default function CrearServicio() {
         SERV_DESCRIPCION: "",
         SERV_CED_ENV: "",
         SERV_NOM_ENV: "",
-        SERV_CED_REC: "", 
+        SERV_CED_REC: "",
         SERV_NOM_REC: "",
         SERV_EST: 0,
         SERV_NOM_CLI: "",
         SERV_TEL_CLI: "",
+        SERV_CED_CLI: "",
+        SERV_CORREO_CLI: "",
         SERV_CIUDAD: "",
         SERV_DIR: "",
         SERV_OBS: "",
-        SERV_REQUIERE_FACT: null, 
+        SERV_REQUIERE_FACT: null,
     });
 
     useEffect(() => {
@@ -83,7 +85,7 @@ export default function CrearServicio() {
         if (params.servicioEditar) {
             const servicio = JSON.parse(params.servicioEditar);
             setIsEditing(true);
-            
+
             // 👇 CORRECCIÓN AQUÍ: Aseguramos que tome exactamente los valores en mayúscula
             // y obligamos a que Factura sea estrictamente Booleano (true/false)
             setFormData({
@@ -98,6 +100,8 @@ export default function CrearServicio() {
                 SERV_IMG_ENV: servicio.SERV_IMG_ENV || null,
                 SERV_NOM_CLI: servicio.SERV_NOM_CLI || "",
                 SERV_TEL_CLI: servicio.SERV_TEL_CLI || "",
+                SERV_CED_CLI: servicio.SERV_CED_CLI || "",
+                SERV_CORREO_CLI: servicio.SERV_CORREO_CLI || "",
                 SERV_CIUDAD: servicio.SERV_CIUDAD || "",
                 SERV_DIR: servicio.SERV_DIR || "",
                 SERV_OBS: servicio.SERV_OBS || "",
@@ -258,18 +262,40 @@ export default function CrearServicio() {
                                 <Ionicons name="person" size={20} color="#007AFF" />
                                 <Text style={styles.sectionTitle}>Datos del Cliente <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
+
                             <TextInput
                                 style={styles.input}
-                                placeholder="Nombres y Apellidos"
+                                placeholder="Nombres y Apellidos *"
                                 value={formData.SERV_NOM_CLI}
                                 onChangeText={(text) => handleChange("SERV_NOM_CLI", text)}
                             />
+
+                            {/* 👇 CÉDULA NUEVA 👇 */}
                             <TextInput
                                 style={[styles.input, { marginTop: 10 }]}
-                                placeholder="Teléfono"
+                                placeholder="Número de cédula o RUC (Opcional)"
+                                keyboardType="numeric"
+                                maxLength={13}
+                                value={formData.SERV_CED_CLI}
+                                onChangeText={(text) => handleChange("SERV_CED_CLI", text.replace(/[^0-9]/g, ''))}
+                            />
+
+                            <TextInput
+                                style={[styles.input, { marginTop: 10 }]}
+                                placeholder="Teléfono *"
                                 keyboardType="phone-pad"
                                 value={formData.SERV_TEL_CLI}
                                 onChangeText={(text) => handleChange("SERV_TEL_CLI", text)}
+                            />
+
+                            {/* 👇 CORREO NUEVO 👇 */}
+                            <TextInput
+                                style={[styles.input, { marginTop: 10 }]}
+                                placeholder="Correo electrónico (Opcional)"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={formData.SERV_CORREO_CLI}
+                                onChangeText={(text) => handleChange("SERV_CORREO_CLI", text)}
                             />
                         </View>
 
@@ -330,25 +356,25 @@ export default function CrearServicio() {
                                 <Text style={styles.sectionTitle}>¿Requiere Factura? <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
                             <View style={styles.radioGroup}>
-                                <TouchableOpacity 
-                                    style={styles.radioOption} 
+                                <TouchableOpacity
+                                    style={styles.radioOption}
                                     onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: true })}
                                 >
-                                    <Ionicons 
-                                        name={formData.SERV_REQUIERE_FACT === true ? "radio-button-on" : "radio-button-off"} 
-                                        size={24} 
-                                        color={formData.SERV_REQUIERE_FACT === true ? "#007AFF" : "#AAA"} 
+                                    <Ionicons
+                                        name={formData.SERV_REQUIERE_FACT === true ? "radio-button-on" : "radio-button-off"}
+                                        size={24}
+                                        color={formData.SERV_REQUIERE_FACT === true ? "#007AFF" : "#AAA"}
                                     />
                                     <Text style={[styles.radioLabel, formData.SERV_REQUIERE_FACT === true && styles.radioLabelSelected]}>Sí</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={styles.radioOption} 
+                                <TouchableOpacity
+                                    style={styles.radioOption}
                                     onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: false })}
                                 >
-                                    <Ionicons 
-                                        name={formData.SERV_REQUIERE_FACT === false ? "radio-button-on" : "radio-button-off"} 
-                                        size={24} 
-                                        color={formData.SERV_REQUIERE_FACT === false ? "#007AFF" : "#AAA"} 
+                                    <Ionicons
+                                        name={formData.SERV_REQUIERE_FACT === false ? "radio-button-on" : "radio-button-off"}
+                                        size={24}
+                                        color={formData.SERV_REQUIERE_FACT === false ? "#007AFF" : "#AAA"}
                                     />
                                     <Text style={[styles.radioLabel, formData.SERV_REQUIERE_FACT === false && styles.radioLabelSelected]}>No</Text>
                                 </TouchableOpacity>
@@ -362,8 +388,8 @@ export default function CrearServicio() {
                                 <Text style={styles.sectionTitle}>Asignar a Técnico <Text style={styles.optionalText}>(Opcional)</Text></Text>
                             </View>
                             {formData.SERV_CED_REC ? (
-                                <TouchableOpacity onPress={() => handleChange("SERV_CED_REC", "")} style={{alignSelf: 'flex-end', marginBottom: 5}}>
-                                    <Text style={{color: '#FF3B30', fontSize: 12}}>Quitar selección</Text>
+                                <TouchableOpacity onPress={() => handleChange("SERV_CED_REC", "")} style={{ alignSelf: 'flex-end', marginBottom: 5 }}>
+                                    <Text style={{ color: '#FF3B30', fontSize: 12 }}>Quitar selección</Text>
                                 </TouchableOpacity>
                             ) : null}
                             <View style={styles.pickerContainer}>

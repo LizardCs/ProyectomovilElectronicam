@@ -19,7 +19,10 @@ export default function CrearReporte() {
     const router = useRouter();
     const navigation = useNavigation();
     const params = useLocalSearchParams();
-    const servicio = JSON.parse(params.servicio);
+    
+    // Convertimos el string a objeto JSON para poder usar sus datos
+    const servicio = params.servicio ? JSON.parse(params.servicio) : {};
+    
     const [loading, setLoading] = useState(false);
     const sigRef = useRef(null);
 
@@ -27,11 +30,13 @@ export default function CrearReporte() {
     const [showTerms, setShowTerms] = useState(false);
     const [showSig, setShowSig] = useState(false);
 
-    // Datos Cliente
-    const [nombreCliente, setNombreCliente] = useState("");
-    const [cedulaCliente, setCedulaCliente] = useState("");
-    const [telefonoCliente, setTelefonoCliente] = useState("");
-    const [direccionCliente, setDireccionCliente] = useState("");
+    // 👇 AUTOCOMPLETAMOS LOS DATOS DEL CLIENTE 👇
+    const [nombreCliente, setNombreCliente] = useState(servicio.SERV_NOM_CLI || "");
+    const [cedulaCliente, setCedulaCliente] = useState(""); // Este aún lo debe llenar manual si se requiere
+    const [telefonoCliente, setTelefonoCliente] = useState(servicio.SERV_TEL_CLI || "");
+    // Unimos la ciudad y la dirección si existen
+    const direccionCompleta = [servicio.SERV_CIUDAD, servicio.SERV_DIR].filter(Boolean).join(" - ");
+    const [direccionCliente, setDireccionCliente] = useState(direccionCompleta);
     const [correoCliente, setCorreoCliente] = useState("");
 
     // Datos Equipo
@@ -51,7 +56,9 @@ export default function CrearReporte() {
         aceptaCondiciones: false
     });
 
-    const [danioReportado, setDanioReportado] = useState("");
+    // 👇 AUTOCOMPLETAMOS EL DAÑO REPORTADO 👇
+    const [danioReportado, setDanioReportado] = useState(servicio.SERV_DESCRIPCION || "");
+    
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
@@ -72,7 +79,8 @@ export default function CrearReporte() {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-            const hayProgreso = nombreCliente || unidad || danioReportado || foto1 || firma;
+            // Solo alertar si hay firmas, fotos o unidad llena (ignoramos nombre y daño porque ya vienen pre-llenos)
+            const hayProgreso = unidad || foto1 || firma;
             if (!hayProgreso || loading) return;
             e.preventDefault();
             Alert.alert("¿Descartar reporte?", "Se perderán todos los datos y fotos.", [
@@ -81,7 +89,7 @@ export default function CrearReporte() {
             ]);
         });
         return unsubscribe;
-    }, [navigation, nombreCliente, unidad, danioReportado, foto1, firma, loading]);
+    }, [navigation, unidad, foto1, firma, loading]);
 
     const toggleCheck = (key) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -109,7 +117,7 @@ export default function CrearReporte() {
 
     const generarReporte = async () => {
         if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
-            Alert.alert("Atención", "Complete los campos obligatorios y acepte las condiciones.");
+            Alert.alert("Atención", "Complete los campos obligatorios (Cliente, Equipo, Daño y Firma) y acepte las condiciones.");
             return;
         }
 
@@ -153,7 +161,7 @@ export default function CrearReporte() {
             if (res.success) {
                 Alert.alert("Éxito", "Reporte finalizado.");
                 if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
-                router.push("/tecnico/home");
+                router.push("/tecnico/home"); // O adonde quieras enviarlo luego
             } else {
                 Alert.alert("Error", res.message || "Error al subir");
             }
@@ -229,7 +237,7 @@ export default function CrearReporte() {
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora " value={unidad} onChangeText={setUnidad} />
+                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora" value={unidad} onChangeText={setUnidad} />
                         <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
                     </View>
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
@@ -250,7 +258,7 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
-                {/* SECCIÓN 4: ACCESORIOS (CON LÓGICA CONDICIONAL) */}
+                {/* SECCIÓN 4: ACCESORIOS */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
@@ -264,11 +272,11 @@ export default function CrearReporte() {
                         </TouchableOpacity>
                     </View>
                     {checks.accesorios && (
-                        <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                        <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios recibidos..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                     )}
                 </View>
 
-                {/* SECCIÓN 5: ESTADO (CON EXCLUSIÓN MUTUA) */}
+                {/* SECCIÓN 5: ESTADO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>5. Estado del equipo</Text>
                     <View style={styles.row}>
@@ -318,7 +326,6 @@ export default function CrearReporte() {
                         />
                     </View>
 
-                    {/* Renderizado condicional de la firma */}
                     {checks.aceptaCondiciones ? (
                         <View>
                             <Text style={styles.label}>Firma Digital del Cliente</Text>
@@ -337,8 +344,7 @@ export default function CrearReporte() {
                         <View style={styles.lockedSignature}>
                             <Ionicons name="lock-closed-outline" size={20} color="#999" />
                             <Text style={styles.lockedText}>
-                                El cliente debe aceptar los términos para poder la firmar.
-
+                                El cliente debe aceptar los términos para poder firmar.
                             </Text>
                         </View>
                     )}
@@ -357,7 +363,7 @@ export default function CrearReporte() {
                         <Text style={styles.modalTitle}>Términos y Condiciones</Text>
                         <ScrollView style={styles.termsScroll}>
                             <Text style={styles.legalText}>
-                                <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text>  El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
+                                <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text> El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
                                 Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo. {"\n"}
                                 No se cubrirán daños distintos a los aquí descritos ni fallas derivadas de componentes que no fueron intervenidos en la reparación original. {"\n\n"}
 
@@ -365,13 +371,12 @@ export default function CrearReporte() {
                                 Conforme al Art. 44 de la LODC, los equipos no retirados en un plazo de 6 meses se considerarán legalmente abandonados, permitiendo al establecimiento disponer de los mismos para recuperar costos de reparación y almacenamiento. {"\n\n"}
 
                                 <Text style={{ fontWeight: 'bold' }}>3. Exclusiones de Garantía:</Text> La garantía quedará sin efecto si el equipo presenta sellos de seguridad rotos, evidencia de humedad, golpes, fluctuaciones eléctricas externas, o si ha sido manipulado por personal ajeno a este taller. {"\n"}
-                                El valor de chequeo y transporte es acordao previamente con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado. {"\n\n"}
+                                El valor de chequeo y transporte es acordado previamente con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado. {"\n\n"}
 
                                 <Text style={{ fontWeight: 'bold' }}>4. Protección de Datos (LOPDP):</Text> El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos.{"\n"}
-                                El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador {"\n\n"}
-                                <Text style={{ fontWeight: 'italic', fontWeight: '600' }}>Nota: ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.</Text>{"\n\n"}
+                                El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador. {"\n\n"}
+                                <Text style={{ fontWeight: '600' }}>Nota: ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.</Text>{"\n\n"}
                                 <Text style={{ fontStyle: 'italic', fontWeight: '600' }}>Declaración de Aceptación: {"\n\n"} Como cliente certifico que los datos en este documento son reales y acepto las condiciones indicadas.</Text>{"\n\n"}
-
                             </Text>
                         </ScrollView>
                         <View style={styles.modalButtons}>
@@ -430,10 +435,10 @@ const styles = StyleSheet.create({
     termsBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF9E6', padding: 12, borderRadius: 10, marginVertical: 15 },
     termsText: { flex: 1, fontSize: 11, color: '#856404', marginRight: 10 },
     signBox: { width: '100%', height: 130, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', borderRadius: 12, backgroundColor: '#F0F7FF', justifyContent: 'center', alignItems: 'center' },
+    lockedSignature: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F0F0', padding: 20, borderRadius: 12, marginTop: 10 },
+    lockedText: { color: '#999', marginLeft: 10, fontSize: 12, flex: 1 },
     btnSubmit: { backgroundColor: '#34C759', padding: 18, borderRadius: 15, alignItems: 'center', marginBottom: 40, elevation: 5 },
     btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-
-    // ESTILOS DE FIRMA Y MODAL
     signatureOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
     signatureContainer: { width: '100%', height: 450, backgroundColor: '#FFF', borderRadius: 20, overflow: 'hidden', padding: 10 },
     signatureHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EEE' },
@@ -441,7 +446,6 @@ const styles = StyleSheet.create({
     signatureFooter: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 15, backgroundColor: '#FFF' },
     sigBtn: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, elevation: 2 },
     sigBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
-
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { width: '90%', height: '75%', backgroundColor: '#FFF', borderRadius: 20, padding: 20, elevation: 10 },
     modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#001C38', marginBottom: 15, textAlign: 'center' },
