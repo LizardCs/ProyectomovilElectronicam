@@ -1,3 +1,4 @@
+// app/admin/crear-servicio.js
 import { Ionicons } from "@expo/vector-icons";
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -41,7 +42,7 @@ export default function CrearServicio() {
         SERV_DESCRIPCION: "",
         SERV_CED_ENV: "",
         SERV_NOM_ENV: "",
-        SERV_CED_REC: "",
+        SERV_CED_REC: "", 
         SERV_NOM_REC: "",
         SERV_EST: 0,
         SERV_NOM_CLI: "",
@@ -49,7 +50,7 @@ export default function CrearServicio() {
         SERV_CIUDAD: "",
         SERV_DIR: "",
         SERV_OBS: "",
-        SERV_REQUIERE_FACT: false,
+        SERV_REQUIERE_FACT: null, 
     });
 
     useEffect(() => {
@@ -82,22 +83,25 @@ export default function CrearServicio() {
         if (params.servicioEditar) {
             const servicio = JSON.parse(params.servicioEditar);
             setIsEditing(true);
+            
+            // 👇 CORRECCIÓN AQUÍ: Aseguramos que tome exactamente los valores en mayúscula
+            // y obligamos a que Factura sea estrictamente Booleano (true/false)
             setFormData({
                 SERV_ID: servicio.SERV_ID,
-                SERV_NUM: servicio.SERV_NUM.toString(),
-                SERV_DESCRIPCION: servicio.SERV_DESCRIPCION,
-                SERV_CED_ENV: servicio.SERV_CED_ENV,
-                SERV_NOM_ENV: servicio.SERV_NOM_ENV,
-                SERV_CED_REC: servicio.SERV_CED_REC,
-                SERV_NOM_REC: servicio.SERV_NOM_REC,
-                SERV_EST: parseInt(servicio.SERV_EST),
-                SERV_IMG_ENV: servicio.SERV_IMG_ENV,
+                SERV_NUM: servicio.SERV_NUM ? String(servicio.SERV_NUM) : "",
+                SERV_DESCRIPCION: servicio.SERV_DESCRIPCION || "",
+                SERV_CED_ENV: servicio.SERV_CED_ENV || "",
+                SERV_NOM_ENV: servicio.SERV_NOM_ENV || "",
+                SERV_CED_REC: servicio.SERV_CED_REC || "",
+                SERV_NOM_REC: servicio.SERV_NOM_REC || "",
+                SERV_EST: parseInt(servicio.SERV_EST || 0),
+                SERV_IMG_ENV: servicio.SERV_IMG_ENV || null,
                 SERV_NOM_CLI: servicio.SERV_NOM_CLI || "",
                 SERV_TEL_CLI: servicio.SERV_TEL_CLI || "",
                 SERV_CIUDAD: servicio.SERV_CIUDAD || "",
                 SERV_DIR: servicio.SERV_DIR || "",
                 SERV_OBS: servicio.SERV_OBS || "",
-                SERV_REQUIERE_FACT: servicio.SERV_REQUIERE_FACT === true,
+                SERV_REQUIERE_FACT: servicio.SERV_REQUIERE_FACT === true ? true : servicio.SERV_REQUIERE_FACT === false ? false : null,
             });
         }
     };
@@ -106,7 +110,6 @@ export default function CrearServicio() {
         const { status: camera } = await ImagePicker.requestCameraPermissionsAsync();
         const { status: library } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (camera !== 'granted' || library !== 'granted') {
-            Alert.alert("Permisos", "Se requiere acceso a cámara y galería para documentar el equipo.");
         }
     };
 
@@ -142,17 +145,20 @@ export default function CrearServicio() {
     };
 
     const handleSubmit = async () => {
-        if (!formData.SERV_IMG_ENV) { Alert.alert("Falta foto", "Tome una foto del equipo antes de asignar."); return; }
-        if (!formData.SERV_NUM) { Alert.alert("Falta número", "Ingrese el número de comprobante."); return; }
-        if (!formData.SERV_CED_REC) { Alert.alert("Falta técnico", "Seleccione al técnico responsable."); return; }
-        if (!formData.SERV_NOM_CLI) { Alert.alert("Falta cliente", "Ingrese el nombre del cliente."); return; }
+        if (!formData.SERV_NUM.trim()) { Alert.alert("Información faltante", "El número de servicio es obligatorio."); return; }
+        if (!formData.SERV_NOM_CLI.trim()) { Alert.alert("Información faltante", "El nombre del cliente es obligatorio."); return; }
+        if (!formData.SERV_TEL_CLI.trim()) { Alert.alert("Información faltante", "El teléfono del cliente es obligatorio."); return; }
+        if (!formData.SERV_CIUDAD.trim()) { Alert.alert("Información faltante", "La ciudad es obligatoria."); return; }
+        if (!formData.SERV_DIR.trim()) { Alert.alert("Información faltante", "La dirección es obligatoria."); return; }
+        if (!formData.SERV_DESCRIPCION.trim()) { Alert.alert("Información faltante", "Debe describir el daño o problema del equipo."); return; }
+        if (formData.SERV_REQUIERE_FACT === null) { Alert.alert("Información faltante", "Debe indicar si requiere factura o no."); return; }
 
         setIsLoading(true);
         try {
             const res = isEditing ? await editarServicio(formData) : await crearServicio(formData);
 
             if (res.success) {
-                Alert.alert("Éxito", isEditing ? "Servicio actualizado" : "Servicio asignado correctamente", [
+                Alert.alert("Éxito", isEditing ? "Servicio actualizado" : "Servicio creado correctamente", [
                     { text: "OK", onPress: () => router.push("/admin/home") }
                 ]);
             } else {
@@ -167,7 +173,7 @@ export default function CrearServicio() {
 
     const handleChange = (field, value) => {
         if (field === 'SERV_NUM') {
-            setFormData({ ...formData, [field]: value.replace(/[^0-9]/g, '') });
+            setFormData({ ...formData, [field]: value });
         } else if (field === 'SERV_CED_REC') {
             const tec = tecnicos.find(t => t.MOV_CED === value);
             setFormData({ ...formData, [field]: value, SERV_NOM_REC: tec ? tec.nombre_completo : "" });
@@ -177,7 +183,7 @@ export default function CrearServicio() {
     };
 
     const handleCancel = () => {
-        if (formData.SERV_IMG_ENV || formData.SERV_NUM) setShowCancelModal(true);
+        if (formData.SERV_NOM_CLI || formData.SERV_NUM) setShowCancelModal(true);
         else router.back();
     };
 
@@ -206,13 +212,13 @@ export default function CrearServicio() {
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="camera" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Foto del Equipo</Text>
+                                <Text style={styles.sectionTitle}>Foto del Equipo <Text style={styles.optionalText}>(Opcional)</Text></Text>
                             </View>
                             {formData.SERV_IMG_ENV ? (
                                 <View style={styles.imagePreviewContainer}>
                                     <Image source={{ uri: getPreviewUri() }} style={styles.imagePreview} />
                                     <TouchableOpacity style={styles.imageActionButton} onPress={() => setFormData({ ...formData, SERV_IMG_ENV: null })}>
-                                        <Text style={styles.imageActionText}>Borrar y repetir foto</Text>
+                                        <Text style={styles.imageActionText}>Borrar foto</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
@@ -229,27 +235,28 @@ export default function CrearServicio() {
                             )}
                         </View>
 
-                        {/* NÚMERO DE ORDEN */}
+                        {/* NÚMERO */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="document-text" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>N° de Servicio</Text>
+                                <Text style={styles.sectionTitle}>N° de Servicio <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
                             <TextInput
-                                style={styles.input}
-                                placeholder="Ej: 10542"
-                                maxLength={15}
+                                style={[styles.input, isEditing && { backgroundColor: '#E5E5EA', color: '#888' }]}
+                                placeholder="Ej: A-10542"
+                                maxLength={20}
+                                editable={!isEditing} // No dejamos cambiar el ID si estamos editando
                                 value={formData.SERV_NUM}
                                 onChangeText={(text) => handleChange("SERV_NUM", text)}
-                                keyboardType="numeric"
+                                autoCapitalize="characters"
                             />
                         </View>
 
-                        {/* --- NUEVO BLOQUE: DATOS DEL CLIENTE --- */}
+                        {/* CLIENTE */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="person" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Datos del Cliente</Text>
+                                <Text style={styles.sectionTitle}>Datos del Cliente <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
                             <TextInput
                                 style={styles.input}
@@ -266,11 +273,11 @@ export default function CrearServicio() {
                             />
                         </View>
 
-                        {/* --- NUEVO BLOQUE: UBICACIÓN --- */}
+                        {/* UBICACIÓN */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="location" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Ubicación</Text>
+                                <Text style={styles.sectionTitle}>Ubicación <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
                             <TextInput
                                 style={styles.input}
@@ -286,11 +293,11 @@ export default function CrearServicio() {
                             />
                         </View>
 
-                        {/* DESCRIPCIÓN DEL DAÑO */}
+                        {/* PROBLEMA */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="build" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Daño / Problema</Text>
+                                <Text style={styles.sectionTitle}>Daño / Problema <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
                             <TextInput
                                 style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
@@ -301,40 +308,49 @@ export default function CrearServicio() {
                             />
                         </View>
 
-                        {/* --- NUEVO BLOQUE: OBSERVACIONES ADICIONALES --- */}
+                        {/* OBSERVACIONES */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="eye" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Observaciones</Text>
+                                <Text style={styles.sectionTitle}>Observaciones <Text style={styles.optionalText}>(Opcional)</Text></Text>
                             </View>
                             <TextInput
                                 style={[styles.input, { height: 60, textAlignVertical: 'top' }]}
-                                placeholder="Observaciones adicionales (Opcional)"
+                                placeholder="Detalles extra..."
                                 value={formData.SERV_OBS}
                                 onChangeText={(text) => handleChange("SERV_OBS", text)}
                                 multiline={true}
                             />
                         </View>
 
-                        {/* --- NUEVO BLOQUE: FACTURA (SELECTOR) --- */}
+                        {/* FACTURA */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="receipt" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>¿Requiere Factura?</Text>
+                                <Text style={styles.sectionTitle}>¿Requiere Factura? <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
-                            <View style={styles.radioContainer}>
-                                <TouchableOpacity
-                                    style={[styles.radioBtn, formData.SERV_REQUIERE_FACT && styles.radioBtnActive]}
+                            <View style={styles.radioGroup}>
+                                <TouchableOpacity 
+                                    style={styles.radioOption} 
                                     onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: true })}
                                 >
-                                    <Text style={[styles.radioText, formData.SERV_REQUIERE_FACT && styles.radioTextActive]}>SÍ</Text>
+                                    <Ionicons 
+                                        name={formData.SERV_REQUIERE_FACT === true ? "radio-button-on" : "radio-button-off"} 
+                                        size={24} 
+                                        color={formData.SERV_REQUIERE_FACT === true ? "#007AFF" : "#AAA"} 
+                                    />
+                                    <Text style={[styles.radioLabel, formData.SERV_REQUIERE_FACT === true && styles.radioLabelSelected]}>Sí</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.radioBtn, !formData.SERV_REQUIERE_FACT && styles.radioBtnActive]}
+                                <TouchableOpacity 
+                                    style={styles.radioOption} 
                                     onPress={() => setFormData({ ...formData, SERV_REQUIERE_FACT: false })}
                                 >
-                                    <Text style={[styles.radioText, !formData.SERV_REQUIERE_FACT && styles.radioTextActive]}>NO</Text>
+                                    <Ionicons 
+                                        name={formData.SERV_REQUIERE_FACT === false ? "radio-button-on" : "radio-button-off"} 
+                                        size={24} 
+                                        color={formData.SERV_REQUIERE_FACT === false ? "#007AFF" : "#AAA"} 
+                                    />
+                                    <Text style={[styles.radioLabel, formData.SERV_REQUIERE_FACT === false && styles.radioLabelSelected]}>No</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -343,8 +359,13 @@ export default function CrearServicio() {
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="people" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Asignar a Técnico</Text>
+                                <Text style={styles.sectionTitle}>Asignar a Técnico <Text style={styles.optionalText}>(Opcional)</Text></Text>
                             </View>
+                            {formData.SERV_CED_REC ? (
+                                <TouchableOpacity onPress={() => handleChange("SERV_CED_REC", "")} style={{alignSelf: 'flex-end', marginBottom: 5}}>
+                                    <Text style={{color: '#FF3B30', fontSize: 12}}>Quitar selección</Text>
+                                </TouchableOpacity>
+                            ) : null}
                             <View style={styles.pickerContainer}>
                                 {tecnicos.map((tec) => (
                                     <TouchableOpacity
@@ -368,25 +389,20 @@ export default function CrearServicio() {
                             </View>
                         </View>
 
-                        {/* RESUMEN */}
-                        <View style={styles.summaryCard}>
-                            <Text style={styles.summaryText}>Asignado por: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_ENV}</Text></Text>
-                            {formData.SERV_NOM_REC ? <Text style={styles.summaryText}>Hacia: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_NOM_REC}</Text></Text> : null}
-                            <Text style={styles.summaryText}>Factura: <Text style={{ fontWeight: 'bold' }}>{formData.SERV_REQUIERE_FACT ? "SÍ" : "NO"}</Text></Text>
-                        </View>
-
+                        {/* ACCIONES */}
                         <View style={styles.actionButtons}>
                             <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                                 <Text style={{ fontWeight: 'bold', color: '#444' }}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
-                                {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>{isEditing ? "Actualizar" : "Asignar Trabajo"}</Text>}
+                                {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitButtonText}>{isEditing ? "Actualizar" : "Guardar Servicio"}</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
 
+            {/* MODAL */}
             <Modal visible={showCancelModal} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
@@ -418,6 +434,8 @@ const styles = StyleSheet.create({
     section: { marginBottom: 20 },
     sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
     sectionTitle: { fontSize: 15, fontWeight: "bold", marginLeft: 8, color: "#444" },
+    optionalText: { fontSize: 12, fontWeight: "normal", color: "#999" },
+    requiredAsterisk: { color: "#FF3B30", fontWeight: "bold" },
     input: { backgroundColor: "#F9F9F9", borderWidth: 1, borderColor: "#DDD", borderRadius: 10, padding: 12, fontSize: 16 },
     cameraButtons: { flexDirection: "row", justifyContent: "space-around" },
     cameraButton: { alignItems: "center", padding: 15, backgroundColor: "#F0F0F0", borderRadius: 12, width: "45%" },
@@ -431,9 +449,7 @@ const styles = StyleSheet.create({
     tecnicoOptionSelected: { backgroundColor: "#E3F2FD", borderColor: "#007AFF" },
     tecnicoName: { fontSize: 15, color: "#333" },
     tecnicoCedula: { fontSize: 12, color: "#888" },
-    summaryCard: { backgroundColor: "#F8F9FA", borderRadius: 12, padding: 15, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: "#007AFF" },
-    summaryText: { fontSize: 13, color: "#555", marginBottom: 2 },
-    actionButtons: { flexDirection: "row", gap: 10 },
+    actionButtons: { flexDirection: "row", gap: 10, marginTop: 10 },
     cancelButton: { flex: 1, padding: 15, backgroundColor: "#E5E5EA", borderRadius: 12, alignItems: "center" },
     submitButton: { flex: 2, padding: 15, backgroundColor: "#007AFF", borderRadius: 12, alignItems: "center" },
     submitButtonText: { fontWeight: "bold", color: "#FFF", fontSize: 16 },
@@ -443,11 +459,8 @@ const styles = StyleSheet.create({
     modalButtons: { flexDirection: "row", gap: 25, marginTop: 25 },
     modalButtonCancel: { padding: 10 },
     modalButtonConfirm: { paddingHorizontal: 25, paddingVertical: 12, backgroundColor: "#FF3B30", borderRadius: 10 },
-    
-    // --- NUEVOS ESTILOS PARA EL SELECTOR DE FACTURA ---
-    radioContainer: { flexDirection: 'row', gap: 15 },
-    radioBtn: { flex: 1, padding: 12, borderWidth: 1, borderColor: '#DDD', borderRadius: 10, alignItems: 'center', backgroundColor: '#FAFAFA' },
-    radioBtnActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-    radioText: { color: '#555', fontWeight: 'bold' },
-    radioTextActive: { color: '#FFF' }
+    radioGroup: { flexDirection: 'row', gap: 30, marginTop: 5, paddingLeft: 10 },
+    radioOption: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    radioLabel: { fontSize: 16, color: '#555' },
+    radioLabelSelected: { fontWeight: 'bold', color: '#007AFF' },
 });
