@@ -117,100 +117,59 @@ export default function CrearReporte() {
         }
     };
 
-    const validarCamposObligatorios = () => {
-        const errores = [];
-
-        if (!nombreCliente.trim()) {
-            errores.push("Debe ingresar el nombre del cliente en la Sección 1");
-        }
-
-        if (!unidad) {
-            errores.push("Debe seleccionar un equipo en la Sección 2");
-        } else if (unidad === "OTROS" && !unidadOtro.trim()) {
-            errores.push("Debe especificar el equipo en la Sección 2");
-        }
+const validarCamposObligatorios = () => {
+        if (!nombreCliente.trim()) return "Debe ingresar el nombre del cliente en la Sección 1.";
+        if (!unidad) return "Debe seleccionar un equipo en la Sección 2.";
+        if (unidad === "OTROS" && !unidadOtro.trim()) return "Debe especificar el equipo en la Sección 2.";
         
-        if (!marca) {
-            errores.push("Debe seleccionar una marca en la Sección 2");
-        } else if (marca === "OTROS" && !marcaOtra.trim()) {
-            errores.push("Debe especificar la marca en la Sección 2");
-        }
+        if (!marca) return "Debe seleccionar una marca en la Sección 2.";
+        if (marca === "OTROS" && !marcaOtra.trim()) return "Debe especificar la marca en la Sección 2.";
 
-        if (!modeloEq.trim()) {
-            errores.push("Debe ingresar el modelo del equipo en la Sección 2");
-        }
-        if (!serieEq.trim()) {
-            errores.push("Debe ingresar el N° de serie en la Sección 2");
-        }
-        if (!colorEq.trim()) {
-            errores.push("Debe ingresar el color en la Sección 2");
-        }
+        if (!modeloEq.trim()) return "Debe ingresar el modelo del equipo en la Sección 2.";
+        if (!serieEq.trim()) return "Debe ingresar el N° de serie en la Sección 2.";
+        if (!colorEq.trim()) return "Debe ingresar el color en la Sección 2.";
+
         const checkSeccion3 = checks.garantia || checks.papeles || checks.pendiente || checks.completo;
-        if (!checkSeccion3) {
-            errores.push("Debe seleccionar al menos una opción de estado en la Sección 3");
-        }
+        if (!checkSeccion3) return "Debe seleccionar al menos una opción de estado en la Sección 3.";
+        if (!danioReportado.trim()) return "Debe describir el daño reportado en la Sección 3.";
 
-        if (!danioReportado.trim()) {
-            errores.push("Debe describir el daño reportado en la Sección 3");
-        }
-
-        if (checks.accesorios && !accesoriosDesc.trim()) {
-            errores.push("Debe especificar los accesorios recibidos en la Sección 4");
-        }
+        if (checks.accesorios && !accesoriosDesc.trim()) return "Debe especificar los accesorios recibidos en la Sección 4.";
 
         const checkSeccion6 = checks.nivelacion || checks.presionAgua || checks.modeloSerieCheck || checks.conexionesElectricas;
-        if (!checkSeccion6) {
-            errores.push("Debe seleccionar al menos una opción de verificación en la Sección 6");
-        }
+        if (!checkSeccion6) return "Debe seleccionar al menos una opción de verificación en la Sección 6.";
 
-        // Sección 7: Informe Gráfico
-        if (!foto1) {
-            errores.push("Falta la foto de 'Modelo - Serie' en la Sección 7 (Imagen 1)");
-        }
-        if (!foto2) {
-            errores.push("Falta la foto del 'Estado del equipo' en la Sección 7 (Imagen 2)");
-        }
-        if (!foto4) {
-            errores.push("Falta la foto de 'Verificación Eléctrica' en la Sección 7 (Imagen 4)");
-        }
-        if (!foto5) {
-            errores.push("Falta la foto de 'Otra evidencia' en la Sección 7 (Imagen 5)");
-        }
-        if (requiereFactura && !foto3) {
-            errores.push("Falta la foto de 'Factura' en la Sección 7 (Imagen 3 - Requerida para este servicio)");
-        }
+        if (!foto1) return "Falta la foto de 'Modelo - Serie' en la Sección 7 (Imagen 1).";
+        if (!foto2) return "Falta la foto del 'Estado del equipo' en la Sección 7 (Imagen 2).";
+        if (requiereFactura && !foto3) return "Falta la foto de 'Factura' en la Sección 7 (Imagen 3).";
+        
+        if (!foto4) return "Falta la foto de 'Verificación Eléctrica' en la Sección 7 (Imagen 4).";
+        if (!faseNeutro.trim()) return "Falta voltaje FASE-NEUTRO en la Sección 7.";
+        if (!faseTierra.trim()) return "Falta voltaje FASE-TIERRA en la Sección 7.";
+        if (!neutroTierra.trim()) return "Falta voltaje NEUTRO-TIERRA en la Sección 7.";
 
-        // Validación específica para la foto 4 - Verificación Eléctrica
-        if (!faseNeutro.trim() || !faseTierra.trim() || !neutroTierra.trim()) {
-            errores.push("Debe completar los 3 voltajes (Fase-Neutro, Fase-Tierra, Neutro-Tierra) en la Sección 7 - Verificación Eléctrica");
-        }
+        if (!foto5) return "Falta la foto de 'Otra evidencia' en la Sección 7 (Imagen 5).";
 
-        // Sección 8: Firma y Cierre
-        if (!checks.aceptaCondiciones) {
-            errores.push("El cliente debe aceptar los términos y condiciones en la Sección 8");
-        }
-        if (!firma) {
-            errores.push("Falta la firma digital del cliente en la Sección 8");
-        }
+        if (!checks.aceptaCondiciones) return "El cliente debe aceptar los términos y condiciones en la Sección 8.";
+        if (!firma) return "Falta la firma digital del cliente en la Sección 8.";
 
-        return errores;
+        return null;
     };
 
     const generarReporte = async () => {
-        const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
-        const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
+        const error = validarCamposObligatorios();
         
-        const errores = validarCamposObligatorios();
-        
-        if (errores.length > 0) {
+        if (error) {
             Alert.alert(
-                "Datos incompletos",
-                `Por favor complete los siguientes campos:\n\n• ${errores.join("\n• ")}`,
-                [{ text: "Entendido", style: "cancel" }]
+                "Dato requerido",
+                error,
+                [{ text: "Aceptar", style: "cancel" }]
             );
             return;
         }
 
+        const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
+        const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
+        
         setLoading(true);
 
         try {
@@ -222,27 +181,19 @@ export default function CrearReporte() {
             });
 
             const convertToBase64 = (foto) => foto ? `data:image/jpeg;base64,${foto.base64}` : '';
-
             const desc4Generada = `FASE-NEUTRO: ${faseNeutro}v | FASE-TIERRA: ${faseTierra}v | NEUTRO-TIERRA: ${neutroTierra}v`;
 
             const datosReporte = {
                 servicio, fechaSimple, fechaActual,
                 nombreTecnico: servicio.SERV_NOM_REC || 'Técnico sin asignar',
                 nombreCliente, cedulaCliente, telefonoCliente, direccionCliente, correoCliente,
-                
-                unidad: unidadFinal, 
-                marca: marcaFinal,  
-                
+                unidad: unidadFinal, marca: marcaFinal,  
                 modeloEq, serieEq, colorEq,
                 checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
-                
                 img1: convertToBase64(foto1), desc1,
                 img2: convertToBase64(foto2), desc2,
                 img3: convertToBase64(foto3), desc3,
-                
-                img4: convertToBase64(foto4), 
-                desc4: desc4Generada,
-                
+                img4: convertToBase64(foto4), desc4: desc4Generada,
                 img5: convertToBase64(foto5), desc5,
                 firma
             };
