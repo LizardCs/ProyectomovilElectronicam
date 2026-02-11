@@ -15,6 +15,9 @@ import SignatureScreen from "react-native-signature-canvas";
 import { crearReporte } from "../../services/crearReporte";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
+const CAT_MARCAS = ["LG", "SAMSUNG", "SONY", "PANASONIC", "PHILIPS", "DAEWOO", "RCA", "MIDEA", "RIVIERA", "ENGY", "GLOBAL", "OTROS"];
+const CAT_PRODUCTOS = ["TV LED", "LAVADORA", "SECADORA", "REFRIGERADORA", "WASHTOWER", "COCINA", "EQUIPO AUDIO", "OTROS"];
+
 export default function CrearReporte() {
     const router = useRouter();
     const navigation = useNavigation();
@@ -26,6 +29,9 @@ export default function CrearReporte() {
 
     const [showTerms, setShowTerms] = useState(false);
     const [showSig, setShowSig] = useState(false);
+    
+    const [modalUnidad, setModalUnidad] = useState(false);
+    const [modalMarca, setModalMarca] = useState(false);
 
     const [nombreCliente, setNombreCliente] = useState(servicio.SERV_NOM_CLI || "");
     const [cedulaCliente, setCedulaCliente] = useState(servicio.SERV_CED_CLI || "");
@@ -35,7 +41,10 @@ export default function CrearReporte() {
     const [correoCliente, setCorreoCliente] = useState(servicio.SERV_CORREO_CLI || "");
 
     const [unidad, setUnidad] = useState("");
+    const [unidadOtro, setUnidadOtro] = useState(""); 
     const [marca, setMarca] = useState("");
+    const [marcaOtra, setMarcaOtra] = useState("");
+
     const [modeloEq, setModeloEq] = useState("");
     const [serieEq, setSerieEq] = useState("");
     const [colorEq, setColorEq] = useState("");
@@ -49,6 +58,10 @@ export default function CrearReporte() {
         accesorios: false,
         aceptaCondiciones: false
     });
+
+    const [faseNeutro, setFaseNeutro] = useState("");
+    const [faseTierra, setFaseTierra] = useState("");
+    const [neutroTierra, setNeutroTierra] = useState("");
 
     const [danioReportado, setDanioReportado] = useState("");
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
@@ -93,7 +106,7 @@ export default function CrearReporte() {
     };
 
     const abrirMedia = async (key, origen) => {
-        const opciones = { allowsEditing: true, aspect: [4, 3], quality: 0.5, base64: true };
+       const opciones = { allowsEditing: true, quality: 0.5, base64: true };
         let result = origen === 'camera' ? await ImagePicker.launchCameraAsync(opciones) : await ImagePicker.launchImageLibraryAsync(opciones);
 
         if (!result.canceled) {
@@ -107,14 +120,22 @@ export default function CrearReporte() {
     };
 
     const generarReporte = async () => {
-        if (!nombreCliente || !unidad || !danioReportado || !firma || !checks.aceptaCondiciones) {
-            Alert.alert("Atención", "Complete los campos obligatorios y acepte las condiciones.");
+        const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
+        const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
+        if (!nombreCliente || !unidadFinal || !marcaFinal || !danioReportado || !firma || !checks.aceptaCondiciones) {
+            Alert.alert("Atención", "Complete los campos obligatorios (Equipo, Marca, Daño) y acepte las condiciones.");
             return;
         }
 
-        if (requiereFactura && !foto3) {
-            Alert.alert("Atención", "El cliente solicitó factura. Por favor adjunte la foto de la factura generada.");
+        if (!foto1 || !foto2 || !foto4 || !foto5 || (requiereFactura && !foto3)) {
+            Alert.alert("Fotos Faltantes", "Las fotografías marcadas son OBLIGATORIAS para generar el reporte de servicio.");
             return;
+        }
+        if (checks.conexionesElectricas) {
+            if (!faseNeutro || !faseTierra || !neutroTierra) {
+                Alert.alert("Verificación Eléctrica Incompleta", "Ha marcado 'Instalación Eléctrica'. Debe ingresar obligatoriamente los voltajes: FASE-NEUTRO, FASE-TIERRA y NEUTRO-TIERRA.");
+                return;
+            }
         }
 
         setLoading(true);
@@ -133,8 +154,13 @@ export default function CrearReporte() {
                 servicio, fechaSimple, fechaActual,
                 nombreTecnico: servicio.SERV_NOM_REC || 'Técnico sin asignar',
                 nombreCliente, cedulaCliente, telefonoCliente, direccionCliente, correoCliente,
-                unidad, marca, modeloEq, serieEq, colorEq,
+                
+                unidad: unidadFinal, 
+                marca: marcaFinal,  
+                
+                modeloEq, serieEq, colorEq,
                 checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
+                faseNeutro, faseTierra, neutroTierra,
                 img1: convertToBase64(foto1), desc1,
                 img2: convertToBase64(foto2), desc2,
                 img3: convertToBase64(foto3), desc3,
@@ -156,18 +182,44 @@ export default function CrearReporte() {
             });
 
             if (res.success) {
-                Alert.alert("Éxito", "Reporte finalizado.");
+                Alert.alert("Éxito", "Reporte finalizado y enviado correctamente.");
                 if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
                 router.push("/tecnico/home");
             } else {
-                Alert.alert("Error", res.message || "Error al subir");
+                Alert.alert("Error", res.message || "Error al subir el reporte");
             }
         } catch (e) {
-            Alert.alert("Error", "Error: " + e.message);
+            Alert.alert("Error", "Ocurrió un error: " + e.message);
         } finally {
             setLoading(false);
         }
     };
+
+    const SelectorModal = ({ visible, onClose, title, items, onSelect }) => (
+        <Modal visible={visible} transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+                <View style={styles.dropdownContent}>
+                    <View style={styles.signatureHeader}>
+                        <Text style={styles.signatureTitle}>{title}</Text>
+                        <TouchableOpacity onPress={onClose}>
+                            <Ionicons name="close-circle" size={30} color="#FF3B30" />
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView style={{ marginTop: 10 }} showsVerticalScrollIndicator={false}>
+                        {items.map((item, index) => (
+                            <TouchableOpacity 
+                                key={index} 
+                                style={styles.dropdownItem} 
+                                onPress={() => { onSelect(item); onClose(); }}
+                            >
+                                <Text style={styles.dropdownItemText}>{item}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
+    );
 
     if (showSig) {
         return (
@@ -190,17 +242,10 @@ export default function CrearReporte() {
                     />
 
                     <View style={styles.signatureFooter}>
-                        <TouchableOpacity
-                            style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]}
-                            onPress={() => sigRef.current?.clearSignature()}
-                        >
+                        <TouchableOpacity style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]} onPress={() => sigRef.current?.clearSignature()}>
                             <Text style={styles.sigBtnText}>LIMPIAR</Text>
                         </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[styles.sigBtn, { backgroundColor: '#007AFF' }]}
-                            onPress={() => sigRef.current?.readSignature()}
-                        >
+                        <TouchableOpacity style={[styles.sigBtn, { backgroundColor: '#007AFF' }]} onPress={() => sigRef.current?.readSignature()}>
                             <Text style={styles.sigBtnText}>LISTO</Text>
                         </TouchableOpacity>
                     </View>
@@ -233,10 +278,30 @@ export default function CrearReporte() {
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
+                    
                     <View style={styles.row}>
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Equipo Ej. Lavadora " value={unidad} onChangeText={setUnidad} />
-                        <TextInput style={[styles.input, { width: '48%' }]} placeholder="Marca" value={marca} onChangeText={setMarca} />
+                        <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalUnidad(true)}>
+                            <Text style={unidad ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
+                                {unidad || "Seleccionar Equipo..."}
+                            </Text>
+                            <Ionicons name="chevron-down" size={16} color="#666" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalMarca(true)}>
+                            <Text style={marca ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
+                                {marca || "Seleccionar Marca..."}
+                            </Text>
+                            <Ionicons name="chevron-down" size={16} color="#666" />
+                        </TouchableOpacity>
                     </View>
+
+                    {unidad === "OTROS" && (
+                        <TextInput style={styles.input} placeholder="Especifique el Equipo..." value={unidadOtro} onChangeText={setUnidadOtro} maxLength={40} />
+                    )}
+                    {marca === "OTROS" && (
+                        <TextInput style={styles.input} placeholder="Especifique la Marca..." value={marcaOtra} onChangeText={setMarcaOtra} maxLength={40} />
+                    )}
+
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="N° Serie" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} maxLength={20} />
@@ -255,7 +320,6 @@ export default function CrearReporte() {
                     <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
-                {/* SECCIÓN 4: ACCESORIOS */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
                     <View style={styles.row}>
@@ -273,7 +337,6 @@ export default function CrearReporte() {
                     )}
                 </View>
 
-                {/* SECCIÓN 5: ESTADO */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>5. Estado del equipo</Text>
                     <View style={styles.row}>
@@ -294,18 +357,37 @@ export default function CrearReporte() {
                         <CheckItem label="Modelo/S Verificado" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
                         <CheckItem label="Inst. Eléctrica" value={checks.conexionesElectricas} onToggle={() => toggleCheck('conexionesElectricas')} />
                     </View>
+
+                    {checks.conexionesElectricas && (
+                        <View style={styles.electricalBox}>
+                            <Text style={styles.electricalTitle}><Ionicons name="warning" color="#F59E0B" /> Ingrese los voltajes (Obligatorio)</Text>
+                            <View style={styles.electricalRow}>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>Fase-Neutro</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseNeutro} onChangeText={setFaseNeutro} />
+                                </View>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>Fase-Tierra</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseTierra} onChangeText={setFaseTierra} />
+                                </View>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>Neutro-Tierra</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 0.5" value={neutroTierra} onChangeText={setNeutroTierra} />
+                                </View>
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>7. Informe Gráfico</Text>
-                    <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} />
-                    <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} />
+                    <Text style={styles.sectionTitle}>7. Informe Gráfico (FOTOS OBLIGATORIAS)</Text>
+                    <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} isRequired />
+                    <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} isRequired />
                     {requiereFactura && (
-                        <ItemFoto label="3. Factura" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} />
+                        <ItemFoto label="3. Factura (Requerida)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
                     )}
-
-                    <ItemFoto label="4. Verificación Eléctrica" icon="flash-outline" color="#FF3B30" foto={foto4} desc={desc4} onFoto={() => seleccionarImagen(4)} onDesc={setDesc4} />
-                    <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} />
+                    <ItemFoto label="4. Verificación Eléctrica" icon="flash-outline" color="#FF3B30" foto={foto4} desc={desc4} onFoto={() => seleccionarImagen(4)} onDesc={setDesc4} isRequired={checks.conexionesElectricas} />
+                    <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} isRequired />
                 </View>
 
                 <View style={styles.card}>
@@ -356,7 +438,9 @@ export default function CrearReporte() {
                 <View style={{ height: 50 }} />
             </ScrollView>
 
-            {/* MODAL DE TÉRMINOS Y CONDICIONES */}
+            <SelectorModal visible={modalUnidad} onClose={() => setModalUnidad(false)} title="Seleccionar Equipo" items={CAT_PRODUCTOS} onSelect={setUnidad} />
+            <SelectorModal visible={modalMarca} onClose={() => setModalMarca(false)} title="Seleccionar Marca" items={CAT_MARCAS} onSelect={setMarca} />
+
             <Modal visible={showTerms} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
@@ -366,13 +450,10 @@ export default function CrearReporte() {
                                 <Text style={{ fontWeight: 'bold' }}>1. Garantía de Servicio:</Text>  El establecimiento otorga una garantía limitada de noventa (90) días calendario exclusivamente sobre la mano de obra y la reparación de la falla específica reportada en este documento. {"\n"}
                                 Esta garantía entrará en vigencia a partir de la fecha de entrega del equipo. {"\n"}
                                 No se cubrirán daños distintos a los aquí descritos ni fallas derivadas de componentes que no fueron intervenidos en la reparación original. {"\n\n"}
-
                                 <Text style={{ fontWeight: 'bold' }}>2. Almacenaje y Abandono:</Text> Transcurridos 90 días desde la notificación de finalización del servicio, se cobrará una tasa de bodegaje de ley.  {"\n"}
                                 Conforme al Art. 44 de la LODC, los equipos no retirados en un plazo de 6 meses se considerarán legalmente abandonados, permitiendo al establecimiento disponer de los mismos para recuperar costos de reparación y almacenamiento. {"\n\n"}
-
                                 <Text style={{ fontWeight: 'bold' }}>3. Exclusiones de Garantía:</Text> La garantía quedará sin efecto si el equipo presenta sellos de seguridad rotos, evidencia de humedad, golpes, fluctuaciones eléctricas externas, o si ha sido manipulado por personal ajeno a este taller. {"\n"}
                                 El valor de chequeo y transporte es acordado previamente con el cliente, el cual es independiente del costo de reparación y se cancela por adelantado. {"\n\n"}
-
                                 <Text style={{ fontWeight: 'bold' }}>4. Protección de Datos (LOPDP):</Text> El cliente autoriza a Electrónica Mantilla al tratamiento de sus datos personales para fines de gestión de servicio, contacto mediante telefonía, WhatsApp, SMS o correo electrónico, y fines comerciales informativos.{"\n"}
                                 El titular podrá ejercer sus derechos de acceso, rectificación o eliminación según lo estipula la Ley Orgánica de Protección de Datos Personales vigente en Ecuador {"\n\n"}
                                 <Text style={{ fontWeight: '600' }}>Nota: ESTE TICKET NO CONSTITUYE PRUEBA DE INGRESO DE ESTE PRODUCTO.</Text>{"\n\n"}
@@ -401,9 +482,9 @@ const CheckItem = ({ label, value, onToggle }) => (
     </TouchableOpacity>
 );
 
-const ItemFoto = ({ label, icon, color, foto, desc, onFoto, onDesc }) => (
+const ItemFoto = ({ label, icon, color, foto, desc, onFoto, onDesc, isRequired }) => (
     <View style={{ marginBottom: 20 }}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.label}>{label} {isRequired && <Text style={{color:'red'}}>*</Text>}</Text>
         <TouchableOpacity style={styles.photoBtn} onPress={onFoto}>
             {foto ? <Image source={{ uri: foto.uri }} style={styles.fill} /> : <Ionicons name={icon} size={40} color={color} />}
         </TouchableOpacity>
@@ -426,6 +507,21 @@ const styles = StyleSheet.create({
     inputAcc: { borderBottomWidth: 1, borderBottomColor: '#EEE', fontSize: 14, marginTop: 5, paddingVertical: 5 },
     inputSmall: { fontSize: 12, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingVertical: 5, color: '#666' },
     row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+    
+    selectorBtn: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F9F9F9', borderBottomWidth: 1, borderBottomColor: '#DDD', padding: 10, marginHorizontal: 2 },
+    selectorBtnText: { fontSize: 14, color: '#001C38', fontWeight: 'bold' },
+    selectorBtnPlaceholder: { fontSize: 14, color: '#A0AAB5' },
+    dropdownContent: { width: '85%', maxHeight: '60%', backgroundColor: '#FFF', borderRadius: 20, padding: 15, elevation: 10 },
+    dropdownItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+    dropdownItemText: { fontSize: 16, color: '#001C38', textAlign: 'center', fontWeight: '600' },
+
+    electricalBox: { backgroundColor: '#FFFBEB', padding: 10, borderRadius: 8, marginTop: 10, borderWidth: 1, borderColor: '#FDE68A' },
+    electricalTitle: { fontSize: 12, fontWeight: 'bold', color: '#B45309', marginBottom: 8 },
+    electricalRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    voltCol: { width: '31%', alignItems: 'center' },
+    voltLabel: { fontSize: 10, fontWeight: 'bold', color: '#92400E', marginBottom: 4 },
+    voltInput: { backgroundColor: '#FFF', width: '100%', textAlign: 'center', borderRadius: 6, paddingVertical: 6, fontSize: 13, borderWidth: 1, borderColor: '#FCD34D' },
+
     checkItem: { flexDirection: 'row', alignItems: 'center', width: '48%' },
     checkLabel: { marginLeft: 8, fontSize: 13, color: '#333' },
     radioItem: { flexDirection: 'row', alignItems: 'center', width: '45%', paddingVertical: 10 },
