@@ -68,7 +68,6 @@ export default function CrearReporte() {
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
 
-    // Fotos
     const [foto1, setFoto1] = useState(null);
     const [desc1, setDesc1] = useState("");
     const [foto2, setFoto2] = useState(null);
@@ -76,7 +75,6 @@ export default function CrearReporte() {
     const [foto3, setFoto3] = useState(null);
     const [desc3, setDesc3] = useState("");
     const [foto4, setFoto4] = useState(null);
-    const [desc4, setDesc4] = useState("");
     const [foto5, setFoto5] = useState(null);
     const [desc5, setDesc5] = useState("");
 
@@ -122,6 +120,7 @@ export default function CrearReporte() {
     const generarReporte = async () => {
         const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
         const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
+        
         if (!nombreCliente || !unidadFinal || !marcaFinal || !danioReportado || !firma || !checks.aceptaCondiciones) {
             Alert.alert("Atención", "Complete los campos obligatorios (Equipo, Marca, Daño) y acepte las condiciones.");
             return;
@@ -131,11 +130,10 @@ export default function CrearReporte() {
             Alert.alert("Fotos Faltantes", "Las fotografías marcadas son OBLIGATORIAS para generar el reporte de servicio.");
             return;
         }
-        if (checks.conexionesElectricas) {
-            if (!faseNeutro || !faseTierra || !neutroTierra) {
-                Alert.alert("Verificación Eléctrica Incompleta", "Ha marcado 'Instalación Eléctrica'. Debe ingresar obligatoriamente los voltajes: FASE-NEUTRO, FASE-TIERRA y NEUTRO-TIERRA.");
-                return;
-            }
+
+        if (!faseNeutro.trim() || !faseTierra.trim() || !neutroTierra.trim()) {
+            Alert.alert("Verificación Eléctrica Incompleta", "Es obligatorio ingresar los 3 voltajes (Fase-Neutro, Fase-Tierra, Neutro-Tierra) en la sección de la Foto 4.");
+            return;
         }
 
         setLoading(true);
@@ -150,6 +148,8 @@ export default function CrearReporte() {
 
             const convertToBase64 = (foto) => foto ? `data:image/jpeg;base64,${foto.base64}` : '';
 
+            const desc4Generada = `FASE-NEUTRO: ${faseNeutro}v | FASE-TIERRA: ${faseTierra}v | NEUTRO-TIERRA: ${neutroTierra}v`;
+
             const datosReporte = {
                 servicio, fechaSimple, fechaActual,
                 nombreTecnico: servicio.SERV_NOM_REC || 'Técnico sin asignar',
@@ -160,11 +160,14 @@ export default function CrearReporte() {
                 
                 modeloEq, serieEq, colorEq,
                 checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
-                faseNeutro, faseTierra, neutroTierra,
+                
                 img1: convertToBase64(foto1), desc1,
                 img2: convertToBase64(foto2), desc2,
                 img3: convertToBase64(foto3), desc3,
-                img4: convertToBase64(foto4), desc4,
+                
+                img4: convertToBase64(foto4), 
+                desc4: desc4Generada,
+                
                 img5: convertToBase64(foto5), desc5,
                 firma
             };
@@ -357,36 +360,40 @@ export default function CrearReporte() {
                         <CheckItem label="Modelo/S Verificado" value={checks.modeloSerieCheck} onToggle={() => toggleCheck('modeloSerieCheck')} />
                         <CheckItem label="Inst. Eléctrica" value={checks.conexionesElectricas} onToggle={() => toggleCheck('conexionesElectricas')} />
                     </View>
-
-                    {checks.conexionesElectricas && (
-                        <View style={styles.electricalBox}>
-                            <Text style={styles.electricalTitle}><Ionicons name="warning" color="#F59E0B" /> Ingrese los voltajes (Obligatorio)</Text>
-                            <View style={styles.electricalRow}>
-                                <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>Fase-Neutro</Text>
-                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseNeutro} onChangeText={setFaseNeutro} />
-                                </View>
-                                <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>Fase-Tierra</Text>
-                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseTierra} onChangeText={setFaseTierra} />
-                                </View>
-                                <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>Neutro-Tierra</Text>
-                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 0.5" value={neutroTierra} onChangeText={setNeutroTierra} />
-                                </View>
-                            </View>
-                        </View>
-                    )}
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>7. Informe Gráfico (FOTOS OBLIGATORIAS)</Text>
+                    <Text style={styles.sectionTitle}>7. Informe Gráfico (IMGENES OBLIGATORIAS)</Text>
                     <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} isRequired />
                     <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} isRequired />
                     {requiereFactura && (
                         <ItemFoto label="3. Factura (Requerida)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
                     )}
-                    <ItemFoto label="4. Verificación Eléctrica" icon="flash-outline" color="#FF3B30" foto={foto4} desc={desc4} onFoto={() => seleccionarImagen(4)} onDesc={setDesc4} isRequired={checks.conexionesElectricas} />
+                    
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={styles.label}>4. Verificación Eléctrica <Text style={{color:'red'}}>*</Text></Text>
+                        <TouchableOpacity style={styles.photoBtn} onPress={() => seleccionarImagen(4)}>
+                            {foto4 ? <Image source={{ uri: foto4.uri }} style={styles.fill} /> : <Ionicons name="flash-outline" size={40} color="#FF3B30" />}
+                        </TouchableOpacity>
+                        
+                        <View style={styles.electricalBox}>
+                            <View style={styles.electricalRow}>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>FASE-NEUTRO</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseNeutro} onChangeText={setFaseNeutro} />
+                                </View>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>FASE-TIERRA</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseTierra} onChangeText={setFaseTierra} />
+                                </View>
+                                <View style={styles.voltCol}>
+                                    <Text style={styles.voltLabel}>NEUTRO-TIERRA</Text>
+                                    <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 0.5" value={neutroTierra} onChangeText={setNeutroTierra} />
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+
                     <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} isRequired />
                 </View>
 
@@ -515,12 +522,11 @@ const styles = StyleSheet.create({
     dropdownItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
     dropdownItemText: { fontSize: 16, color: '#001C38', textAlign: 'center', fontWeight: '600' },
 
-    electricalBox: { backgroundColor: '#FFFBEB', padding: 10, borderRadius: 8, marginTop: 10, borderWidth: 1, borderColor: '#FDE68A' },
-    electricalTitle: { fontSize: 12, fontWeight: 'bold', color: '#B45309', marginBottom: 8 },
+    electricalBox: { backgroundColor: '#F8F9FA', padding: 10, borderRadius: 8, marginTop: 5, borderWidth: 1, borderColor: '#EEE' },
     electricalRow: { flexDirection: 'row', justifyContent: 'space-between' },
     voltCol: { width: '31%', alignItems: 'center' },
-    voltLabel: { fontSize: 10, fontWeight: 'bold', color: '#92400E', marginBottom: 4 },
-    voltInput: { backgroundColor: '#FFF', width: '100%', textAlign: 'center', borderRadius: 6, paddingVertical: 6, fontSize: 13, borderWidth: 1, borderColor: '#FCD34D' },
+    voltLabel: { fontSize: 10, fontWeight: 'bold', color: '#555', marginBottom: 4 },
+    voltInput: { backgroundColor: '#FFF', width: '100%', textAlign: 'center', borderRadius: 6, paddingVertical: 8, fontSize: 13, borderWidth: 1, borderColor: '#DDD' },
 
     checkItem: { flexDirection: 'row', alignItems: 'center', width: '48%' },
     checkLabel: { marginLeft: 8, fontSize: 13, color: '#333' },
