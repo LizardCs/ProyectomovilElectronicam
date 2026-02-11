@@ -117,22 +117,82 @@ export default function CrearReporte() {
         }
     };
 
+    const validarCamposObligatorios = () => {
+        const errores = [];
+
+        // Sección 1: Datos del Cliente
+        if (!nombreCliente.trim()) {
+            errores.push("Debe ingresar el nombre del cliente en la Sección 1");
+        }
+
+        // Sección 2: Identificación del Equipo
+        if (!unidad) {
+            errores.push("Debe seleccionar un equipo en la Sección 2");
+        } else if (unidad === "OTROS" && !unidadOtro.trim()) {
+            errores.push("Debe especificar el equipo en la Sección 2");
+        }
+        
+        if (!marca) {
+            errores.push("Debe seleccionar una marca en la Sección 2");
+        } else if (marca === "OTROS" && !marcaOtra.trim()) {
+            errores.push("Debe especificar la marca en la Sección 2");
+        }
+
+        // Sección 3: Recepción y Diagnóstico
+        if (!danioReportado.trim()) {
+            errores.push("Debe describir el daño reportado en la Sección 3");
+        }
+
+        // Sección 4: Accesorios
+        if (checks.accesorios && !accesoriosDesc.trim()) {
+            errores.push("Debe especificar los accesorios recibidos en la Sección 4");
+        }
+
+        // Sección 7: Informe Gráfico
+        if (!foto1) {
+            errores.push("Falta la foto de 'Modelo - Serie' en la Sección 7 (Imagen 1)");
+        }
+        if (!foto2) {
+            errores.push("Falta la foto del 'Estado del equipo' en la Sección 7 (Imagen 2)");
+        }
+        if (!foto4) {
+            errores.push("Falta la foto de 'Verificación Eléctrica' en la Sección 7 (Imagen 4)");
+        }
+        if (!foto5) {
+            errores.push("Falta la foto de 'Otra evidencia' en la Sección 7 (Imagen 5)");
+        }
+        if (requiereFactura && !foto3) {
+            errores.push("Falta la foto de 'Factura' en la Sección 7 (Imagen 3 - Requerida para este servicio)");
+        }
+
+        // Validación específica para la foto 4 - Verificación Eléctrica
+        if (!faseNeutro.trim() || !faseTierra.trim() || !neutroTierra.trim()) {
+            errores.push("Debe completar los 3 voltajes (Fase-Neutro, Fase-Tierra, Neutro-Tierra) en la Sección 7 - Verificación Eléctrica");
+        }
+
+        // Sección 8: Firma y Cierre
+        if (!checks.aceptaCondiciones) {
+            errores.push("El cliente debe aceptar los términos y condiciones en la Sección 8");
+        }
+        if (!firma) {
+            errores.push("Falta la firma digital del cliente en la Sección 8");
+        }
+
+        return errores;
+    };
+
     const generarReporte = async () => {
         const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
         const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
         
-        if (!nombreCliente || !unidadFinal || !marcaFinal || !danioReportado || !firma || !checks.aceptaCondiciones) {
-            Alert.alert("Atención", "Complete los campos obligatorios (Equipo, Marca, Daño) y acepte las condiciones.");
-            return;
-        }
-
-        if (!foto1 || !foto2 || !foto4 || !foto5 || (requiereFactura && !foto3)) {
-            Alert.alert("Fotos Faltantes", "Las fotografías marcadas son OBLIGATORIAS para generar el reporte de servicio.");
-            return;
-        }
-
-        if (!faseNeutro.trim() || !faseTierra.trim() || !neutroTierra.trim()) {
-            Alert.alert("Verificación Eléctrica Incompleta", "Es obligatorio ingresar los 3 voltajes (Fase-Neutro, Fase-Tierra, Neutro-Tierra) en la sección de la Foto 4.");
+        const errores = validarCamposObligatorios();
+        
+        if (errores.length > 0) {
+            Alert.alert(
+                "Datos incompletos",
+                `Por favor complete los siguientes campos:\n\n• ${errores.join("\n• ")}`,
+                [{ text: "Entendido", style: "cancel" }]
+            );
             return;
         }
 
@@ -271,8 +331,8 @@ export default function CrearReporte() {
             <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>1. Datos del Cliente</Text>
-                    <TextInput style={styles.input} placeholder="Nombre del cliente" value={nombreCliente} onChangeText={setNombreCliente} maxLength={50} />
+                    <Text style={styles.sectionTitle}>1. Datos del Cliente <Text style={styles.requiredStar}>*</Text></Text>
+                    <TextInput style={styles.input} placeholder="Nombre del cliente *" value={nombreCliente} onChangeText={setNombreCliente} maxLength={50} />
                     <TextInput style={styles.input} placeholder="Número de cédula o RUC" keyboardType="numeric" maxLength={13} value={cedulaCliente} onChangeText={(text) => setCedulaCliente(text.replace(/[^0-9]/g, ''))} />
                     <TextInput style={styles.input} placeholder="Teléfono" keyboardType="phone-pad" maxLength={10} value={telefonoCliente} onChangeText={(text) => setTelefonoCliente(text.replace(/[^0-9]/g, ''))} />
                     <TextInput style={styles.input} placeholder="Dirección" value={direccionCliente} onChangeText={setDireccionCliente} />
@@ -280,29 +340,29 @@ export default function CrearReporte() {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>2. Identificación del Equipo</Text>
+                    <Text style={styles.sectionTitle}>2. Identificación del Equipo <Text style={styles.requiredStar}>*</Text></Text>
                     
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalUnidad(true)}>
                             <Text style={unidad ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
-                                {unidad || "Seleccionar Equipo..."}
+                                {unidad || "Seleccionar Equipo... *"}
                             </Text>
                             <Ionicons name="chevron-down" size={16} color="#666" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalMarca(true)}>
                             <Text style={marca ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
-                                {marca || "Seleccionar Marca..."}
+                                {marca || "Seleccionar Marca... *"}
                             </Text>
                             <Ionicons name="chevron-down" size={16} color="#666" />
                         </TouchableOpacity>
                     </View>
 
                     {unidad === "OTROS" && (
-                        <TextInput style={styles.input} placeholder="Especifique el Equipo..." value={unidadOtro} onChangeText={setUnidadOtro} maxLength={40} />
+                        <TextInput style={styles.input} placeholder="Especifique el Equipo... *" value={unidadOtro} onChangeText={setUnidadOtro} maxLength={40} />
                     )}
                     {marca === "OTROS" && (
-                        <TextInput style={styles.input} placeholder="Especifique la Marca..." value={marcaOtra} onChangeText={setMarcaOtra} maxLength={40} />
+                        <TextInput style={styles.input} placeholder="Especifique la Marca... *" value={marcaOtra} onChangeText={setMarcaOtra} maxLength={40} />
                     )}
 
                     <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
@@ -311,7 +371,7 @@ export default function CrearReporte() {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>3. Recepción y Diagnóstico</Text>
+                    <Text style={styles.sectionTitle}>3. Recepción y Diagnóstico <Text style={styles.requiredStar}>*</Text></Text>
                     <View style={styles.row}>
                         <CheckItem label="En Garantía" value={checks.garantia} onToggle={() => toggleCheck('garantia')} />
                         <CheckItem label="Con Papeles" value={checks.papeles} onToggle={() => toggleCheck('papeles')} />
@@ -320,7 +380,7 @@ export default function CrearReporte() {
                         <CheckItem label="Pendiente" value={checks.pendiente} onToggle={() => toggleCheck('pendiente')} />
                         <CheckItem label="Caja Completa" value={checks.completo} onToggle={() => toggleCheck('completo')} />
                     </View>
-                    <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO..." value={danioReportado} onChangeText={setDanioReportado} />
+                    <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO... *" value={danioReportado} onChangeText={setDanioReportado} />
                 </View>
 
                 <View style={styles.card}>
@@ -336,7 +396,7 @@ export default function CrearReporte() {
                         </TouchableOpacity>
                     </View>
                     {checks.accesorios && (
-                        <TextInput style={styles.inputAcc} placeholder="Especifique..." value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                        <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios... *" value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                     )}
                 </View>
 
@@ -363,15 +423,15 @@ export default function CrearReporte() {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>7. Informe Gráfico (IMGENES OBLIGATORIAS)</Text>
+                    <Text style={styles.sectionTitle}>7. Informe Gráfico (IMÁGENES OBLIGATORIAS)</Text>
                     <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} isRequired />
                     <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} isRequired />
                     {requiereFactura && (
-                        <ItemFoto label="3. Factura (Requerida)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
+                        <ItemFoto label="3. Factura (Requerida para este servicio)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
                     )}
                     
                     <View style={{ marginBottom: 20 }}>
-                        <Text style={styles.label}>4. Verificación Eléctrica <Text style={{color:'red'}}>*</Text></Text>
+                        <Text style={styles.label}>4. Verificación Eléctrica <Text style={styles.requiredStar}>*</Text></Text>
                         <TouchableOpacity style={styles.photoBtn} onPress={() => seleccionarImagen(4)}>
                             {foto4 ? <Image source={{ uri: foto4.uri }} style={styles.fill} /> : <Ionicons name="flash-outline" size={40} color="#FF3B30" />}
                         </TouchableOpacity>
@@ -379,15 +439,15 @@ export default function CrearReporte() {
                         <View style={styles.electricalBox}>
                             <View style={styles.electricalRow}>
                                 <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>FASE-NEUTRO</Text>
+                                    <Text style={styles.voltLabel}>FASE-NEUTRO <Text style={styles.requiredStar}>*</Text></Text>
                                     <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseNeutro} onChangeText={setFaseNeutro} />
                                 </View>
                                 <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>FASE-TIERRA</Text>
+                                    <Text style={styles.voltLabel}>FASE-TIERRA <Text style={styles.requiredStar}>*</Text></Text>
                                     <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 110" value={faseTierra} onChangeText={setFaseTierra} />
                                 </View>
                                 <View style={styles.voltCol}>
-                                    <Text style={styles.voltLabel}>NEUTRO-TIERRA</Text>
+                                    <Text style={styles.voltLabel}>NEUTRO-TIERRA <Text style={styles.requiredStar}>*</Text></Text>
                                     <TextInput style={styles.voltInput} keyboardType="numeric" placeholder="Ej: 0.5" value={neutroTierra} onChangeText={setNeutroTierra} />
                                 </View>
                             </View>
@@ -408,7 +468,7 @@ export default function CrearReporte() {
                     />
 
                     <View style={styles.termsBox}>
-                        <Text style={styles.termsText}>Aceptación de los términos de conformidad por parte del cliente.</Text>
+                        <Text style={styles.termsText}>Aceptación de los términos de conformidad por parte del cliente. <Text style={styles.requiredStar}>*</Text></Text>
                         <Switch
                             value={checks.aceptaCondiciones}
                             onValueChange={() => setShowTerms(true)}
@@ -417,14 +477,14 @@ export default function CrearReporte() {
 
                     {checks.aceptaCondiciones ? (
                         <View>
-                            <Text style={styles.label}>Firma Digital del Cliente</Text>
+                            <Text style={styles.label}>Firma Digital del Cliente <Text style={styles.requiredStar}>*</Text></Text>
                             <TouchableOpacity style={styles.signBox} onPress={() => setShowSig(true)}>
                                 {firma ? (
                                     <Image source={{ uri: firma }} style={styles.fill} resizeMode="contain" />
                                 ) : (
                                     <View style={{ alignItems: 'center' }}>
                                         <Ionicons name="pencil-outline" size={24} color="#999" />
-                                        <Text style={{ color: '#999', marginTop: 5 }}>Presione aquí para firmar</Text>
+                                        <Text style={{ color: '#999', marginTop: 5 }}>Presione aquí para firmar *</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -491,11 +551,11 @@ const CheckItem = ({ label, value, onToggle }) => (
 
 const ItemFoto = ({ label, icon, color, foto, desc, onFoto, onDesc, isRequired }) => (
     <View style={{ marginBottom: 20 }}>
-        <Text style={styles.label}>{label} {isRequired && <Text style={{color:'red'}}>*</Text>}</Text>
+        <Text style={styles.label}>{label} {isRequired && <Text style={styles.requiredStar}>*</Text>}</Text>
         <TouchableOpacity style={styles.photoBtn} onPress={onFoto}>
             {foto ? <Image source={{ uri: foto.uri }} style={styles.fill} /> : <Ionicons name={icon} size={40} color={color} />}
         </TouchableOpacity>
-        <TextInput style={styles.inputSmall} placeholder="Descripción de la foto..." value={desc} onChangeText={onDesc} />
+        <TextInput style={styles.inputSmall} placeholder="Descripción de la foto (opcional)..." value={desc} onChangeText={onDesc} />
     </View>
 );
 
@@ -508,6 +568,7 @@ const styles = StyleSheet.create({
     scroll: { padding: 15 },
     card: { backgroundColor: '#FFF', borderRadius: 15, padding: 15, marginBottom: 15, elevation: 3 },
     sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#001C38', marginBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingBottom: 5, textTransform: 'uppercase' },
+    requiredStar: { color: 'red', fontSize: 14, fontWeight: 'bold' },
     label: { fontSize: 13, fontWeight: 'bold', color: '#444', marginTop: 10, marginBottom: 5 },
     input: { backgroundColor: '#F9F9F9', borderBottomWidth: 1, borderBottomColor: '#DDD', padding: 8, marginBottom: 10, fontSize: 15 },
     inputArea: { backgroundColor: '#F9F9F9', borderRadius: 8, padding: 10, minHeight: 60, textAlignVertical: 'top' },
