@@ -274,7 +274,7 @@ export default function DetalleServicioTecnico() {
                                 styles.facturaText, 
                                 { color: servicioDetalle.SERV_REQUIERE_FACT ? '#673AB7' : '#8E8E93' }
                             ]}>
-                                {servicioDetalle.SERV_REQUIERE_FACT ? "SÍ, EL CLIENTE REQUIERE FACTURA" : "NO REQUIERE FACTURA"}
+                                {servicioDetalle.SERV_REQUIERE_FACT ? "SÍ, SOLICITAR AL CLIENTE FACTURA" : "NO REQUIERE FACTURA"}
                             </Text>
                         </View>
                     </View>
