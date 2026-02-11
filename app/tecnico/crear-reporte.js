@@ -120,12 +120,10 @@ export default function CrearReporte() {
     const validarCamposObligatorios = () => {
         const errores = [];
 
-        // Sección 1: Datos del Cliente
         if (!nombreCliente.trim()) {
             errores.push("Debe ingresar el nombre del cliente en la Sección 1");
         }
 
-        // Sección 2: Identificación del Equipo
         if (!unidad) {
             errores.push("Debe seleccionar un equipo en la Sección 2");
         } else if (unidad === "OTROS" && !unidadOtro.trim()) {
@@ -138,14 +136,31 @@ export default function CrearReporte() {
             errores.push("Debe especificar la marca en la Sección 2");
         }
 
-        // Sección 3: Recepción y Diagnóstico
+        if (!modeloEq.trim()) {
+            errores.push("Debe ingresar el modelo del equipo en la Sección 2");
+        }
+        if (!serieEq.trim()) {
+            errores.push("Debe ingresar el N° de serie en la Sección 2");
+        }
+        if (!colorEq.trim()) {
+            errores.push("Debe ingresar el color en la Sección 2");
+        }
+        const checkSeccion3 = checks.garantia || checks.papeles || checks.pendiente || checks.completo;
+        if (!checkSeccion3) {
+            errores.push("Debe seleccionar al menos una opción de estado en la Sección 3");
+        }
+
         if (!danioReportado.trim()) {
             errores.push("Debe describir el daño reportado en la Sección 3");
         }
 
-        // Sección 4: Accesorios
         if (checks.accesorios && !accesoriosDesc.trim()) {
             errores.push("Debe especificar los accesorios recibidos en la Sección 4");
+        }
+
+        const checkSeccion6 = checks.nivelacion || checks.presionAgua || checks.modeloSerieCheck || checks.conexionesElectricas;
+        if (!checkSeccion6) {
+            errores.push("Debe seleccionar al menos una opción de verificación en la Sección 6");
         }
 
         // Sección 7: Informe Gráfico
@@ -365,9 +380,9 @@ export default function CrearReporte() {
                         <TextInput style={styles.input} placeholder="Especifique la Marca... *" value={marcaOtra} onChangeText={setMarcaOtra} maxLength={40} />
                     )}
 
-                    <TextInput style={styles.input} placeholder="Modelo" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
-                    <TextInput style={styles.input} placeholder="N° Serie" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
-                    <TextInput style={styles.input} placeholder="Color" value={colorEq} onChangeText={setColorEq} maxLength={20} />
+                    <TextInput style={styles.input} placeholder="Modelo *" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
+                    <TextInput style={styles.input} placeholder="N° Serie *" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
+                    <TextInput style={styles.input} placeholder="Color *" value={colorEq} onChangeText={setColorEq} maxLength={20} />
                 </View>
 
                 <View style={styles.card}>
@@ -411,7 +426,7 @@ export default function CrearReporte() {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>6. Verificación Técnica</Text>
+                    <Text style={styles.sectionTitle}>6. Verificación Técnica <Text style={styles.requiredStar}>*</Text></Text>
                     <View style={styles.row}>
                         <CheckItem label="Nivelación" value={checks.nivelacion} onToggle={() => toggleCheck('nivelacion')} />
                         <CheckItem label="Presión de Agua" value={checks.presionAgua} onToggle={() => toggleCheck('presionAgua')} />
