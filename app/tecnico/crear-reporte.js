@@ -12,6 +12,7 @@ import {
     Text, TextInput, TouchableOpacity, View
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
+import FallosChecks from "../../components/FallosChecks";
 import { crearReporte } from "../../services/crearReporte";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
@@ -41,13 +42,15 @@ export default function CrearReporte() {
     const [correoCliente, setCorreoCliente] = useState(servicio.SERV_CORREO_CLI || "");
 
     const [unidad, setUnidad] = useState("");
-    const [unidadOtro, setUnidadOtro] = useState(""); 
+    const [unidadOtro, setUnidadOtro] = useState("");
     const [marca, setMarca] = useState("");
     const [marcaOtra, setMarcaOtra] = useState("");
 
     const [modeloEq, setModeloEq] = useState("");
     const [serieEq, setSerieEq] = useState("");
     const [colorEq, setColorEq] = useState("");
+    const [fallosSeleccionados, setFallosSeleccionados] = useState([]);
+    const [mostrarFallos, setMostrarFallos] = useState(false);
 
     const [checks, setChecks] = useState({
         garantia: false, papeles: false, pendiente: false, completo: false,
@@ -62,7 +65,7 @@ export default function CrearReporte() {
     const [faseNeutro, setFaseNeutro] = useState("");
     const [faseTierra, setFaseTierra] = useState("");
     const [neutroTierra, setNeutroTierra] = useState("");
-    
+
     const [danioReportado, setDanioReportado] = useState(servicio.SERV_DESCRIPCION || "");
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
@@ -89,7 +92,7 @@ export default function CrearReporte() {
                 { text: "Continuar", style: "cancel" },
                 { text: "Salir", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
             ]);
-        }); 
+        });
         return unsubscribe;
     }, [navigation, unidad, danioReportado, foto1, firma, loading]);
 
@@ -104,7 +107,7 @@ export default function CrearReporte() {
     };
 
     const abrirMedia = async (key, origen) => {
-       const opciones = { allowsEditing: true, quality: 0.5, base64: true };
+        const opciones = { allowsEditing: true, quality: 0.5, base64: true };
         let result = origen === 'camera' ? await ImagePicker.launchCameraAsync(opciones) : await ImagePicker.launchImageLibraryAsync(opciones);
 
         if (!result.canceled) {
@@ -121,7 +124,7 @@ export default function CrearReporte() {
         if (!nombreCliente.trim()) return "Debe ingresar el nombre del cliente en la Sección 1.";
         if (!unidad) return "Debe seleccionar un equipo en la Sección 2.";
         if (unidad === "OTROS" && !unidadOtro.trim()) return "Debe especificar el equipo en la Sección 2.";
-        
+
         if (!marca) return "Debe seleccionar una marca en la Sección 2.";
         if (marca === "OTROS" && !marcaOtra.trim()) return "Debe especificar la marca en la Sección 2.";
 
@@ -138,16 +141,16 @@ export default function CrearReporte() {
         const checkSeccion6 = checks.nivelacion || checks.presionAgua || checks.modeloSerieCheck || checks.conexionesElectricas;
         if (!checkSeccion6) return "Debe seleccionar al menos una opción de verificación en la Sección 6.";
 
-        if (!foto1) return "Falta la foto de 'Modelo - Serie' en la Sección 7 (Imagen 1).";
-        if (!foto2) return "Falta la foto del 'Estado del equipo' en la Sección 7 (Imagen 2).";
-        if (requiereFactura && !foto3) return "Falta la foto de 'Factura' en la Sección 7 (Imagen 3).";
-        
-        if (!foto4) return "Falta la foto de 'Verificación Eléctrica' en la Sección 7 (Imagen 4).";
+        if (!foto1) return "Debe capturar la foto del Sticker (Modelo/Serie) en la Sección 2.";
+        if (!foto2) return "Falta la foto del 'Estado de equipo' en la Sección 7 (Imagen 1).";
+        if (requiereFactura && !foto3) return "Falta la foto de 'Factura' en la Sección 7 (Imagen 4).";
+
+        if (!foto4) return "Falta la foto de 'Verificación Eléctrica' en la Sección 7 (Imagen 2).";
         if (!faseNeutro.trim()) return "Falta voltaje FASE-NEUTRO en la Sección 7.";
         if (!faseTierra.trim()) return "Falta voltaje FASE-TIERRA en la Sección 7.";
         if (!neutroTierra.trim()) return "Falta voltaje NEUTRO-TIERRA en la Sección 7.";
 
-        if (!foto5) return "Falta la foto de 'Otra evidencia' en la Sección 7 (Imagen 5).";
+        if (!foto5) return "Falta la foto de 'Otra evidencia' en la Sección 7 (Imagen 3).";
 
         if (!checks.aceptaCondiciones) return "El cliente debe aceptar los términos y condiciones en la Sección 8.";
         if (!firma) return "Falta la firma digital del cliente en la Sección 8.";
@@ -157,7 +160,7 @@ export default function CrearReporte() {
 
     const generarReporte = async () => {
         const error = validarCamposObligatorios();
-        
+
         if (error) {
             Alert.alert(
                 "Dato requerido",
@@ -169,7 +172,7 @@ export default function CrearReporte() {
 
         const unidadFinal = unidad === "OTROS" ? unidadOtro.trim() : unidad;
         const marcaFinal = marca === "OTROS" ? marcaOtra.trim() : marca;
-        
+
         setLoading(true);
 
         try {
@@ -187,7 +190,7 @@ export default function CrearReporte() {
                 servicio, fechaSimple, fechaActual,
                 nombreTecnico: servicio.SERV_NOM_REC || 'Técnico sin asignar',
                 nombreCliente, cedulaCliente, telefonoCliente, direccionCliente, correoCliente,
-                unidad: unidadFinal, marca: marcaFinal,  
+                unidad: unidadFinal, marca: marcaFinal,
                 modeloEq, serieEq, colorEq,
                 checks, danioReportado, inspeccionEstadoDesc, recomendaciones, accesoriosDesc,
                 img1: convertToBase64(foto1), desc1,
@@ -236,9 +239,9 @@ export default function CrearReporte() {
                     </View>
                     <ScrollView style={{ marginTop: 10 }} showsVerticalScrollIndicator={false}>
                         {items.map((item, index) => (
-                            <TouchableOpacity 
-                                key={index} 
-                                style={styles.dropdownItem} 
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.dropdownItem}
                                 onPress={() => { onSelect(item); onClose(); }}
                             >
                                 <Text style={styles.dropdownItemText}>{item}</Text>
@@ -305,20 +308,57 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="Correo electrónico" keyboardType="email-address" autoCapitalize="none" value={correoCliente} onChangeText={setCorreoCliente} />
                 </View>
 
+                {/* ============ SECCIÓN IA============ */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>2. Identificación del Equipo <Text style={styles.requiredStar}>*</Text></Text>
-                    
+
+                    {/* Foto del Sticker */}
+                    <Text style={styles.label}>Foto del Sticker (Modelo/Serie) <Text style={styles.requiredStar}>*</Text></Text>
+                    <TouchableOpacity style={styles.stickerPhotoBtn} onPress={() => seleccionarImagen(1)}>
+                        {foto1 ? (
+                            <Image source={{ uri: foto1.uri }} style={styles.fill} />
+                        ) : (
+                            <View style={styles.placeholderContent}>
+                                <Ionicons name="barcode-outline" size={50} color="#007AFF" />
+                                <Text style={styles.placeholderText}>Presione para capturar el sticker</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Botón IA */}
+                    <TouchableOpacity
+                        style={[styles.iaButton, !foto1 && styles.iaButtonDisabled]}
+                        disabled={!foto1}
+                        onPress={() => {
+                            Alert.alert("IA", "Procesando imagen con inteligencia artificial...\n\n(Mockup: Se llenarán los campos automáticamente)");
+                            setUnidad("TV LED");
+                            setMarca("SAMSUNG");
+                            setModeloEq("UN55TU8000");
+                            setSerieEq("0A3K5B9X200045H");
+                            setColorEq("Negro");
+                            setMostrarFallos(true);
+                        }}
+                    >
+                        <Ionicons name="scan-outline" size={20} color="#FFF" />
+                        <Text style={styles.iaButtonText}>USAR IA PARA RECONOCER EL DISPOSITIVO</Text>
+                    </TouchableOpacity>
+
+                    {/* Datos del equipo */}
+                    <View style={styles.divider}>
+                        <Text style={styles.dividerText}>DATOS DEL EQUIPO</Text>
+                    </View>
+
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalUnidad(true)}>
                             <Text style={unidad ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
-                                {unidad || "Seleccionar Equipo... *"}
+                                {unidad || "Equipo... *"}
                             </Text>
                             <Ionicons name="chevron-down" size={16} color="#666" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.selectorBtn} onPress={() => setModalMarca(true)}>
                             <Text style={marca ? styles.selectorBtnText : styles.selectorBtnPlaceholder}>
-                                {marca || "Seleccionar Marca... *"}
+                                {marca || "Marca... *"}
                             </Text>
                             <Ionicons name="chevron-down" size={16} color="#666" />
                         </TouchableOpacity>
@@ -334,6 +374,36 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="Modelo *" value={modeloEq} onChangeText={setModeloEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="N° Serie *" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="Color *" value={colorEq} onChangeText={setColorEq} maxLength={20} />
+
+                    {/* Posibles Fallos (visible solo después de IA) */}
+                    {mostrarFallos && (
+                        <View style={styles.fallosSection}>
+                            <View style={styles.divider}>
+                                <View style={styles.dividerRow}>
+                                    <Ionicons name="bulb-outline" size={16} color="#FF9500" />
+                                    <Text style={styles.dividerText}>POSIBLES FALLOS Y SOLUCIONES</Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.dividerHint}>Seleccione los fallos para autocompletar el diagnóstico</Text>
+
+                            <FallosChecks
+                                onFallosChange={(fallos) => {
+                                    setFallosSeleccionados(fallos);
+                                    // Autocompletar daño reportado con los fallos seleccionados
+                                    if (fallos.length > 0) {
+                                        const textoFallos = fallos.map((f, i) =>
+                                            `${i + 1}. ${f.fallo}`
+                                        ).join("\n");
+                                        const textoCompleto = `Se revisó el equipo ${unidad || '[EQUIPO]'} marca ${marca || '[MARCA]'} modelo ${modeloEq || '[MODELO]'} porque:\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
+                                        setDanioReportado(textoCompleto);
+                                    } else {
+                                        setDanioReportado("");
+                                    }
+                                }}
+                            />
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.card}>
@@ -390,18 +460,14 @@ export default function CrearReporte() {
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>7. Informe Gráfico (IMÁGENES OBLIGATORIAS)</Text>
-                    <ItemFoto label="1. Modelo - Serie" icon="barcode-outline" color="#007AFF" foto={foto1} desc={desc1} onFoto={() => seleccionarImagen(1)} onDesc={setDesc1} isRequired />
-                    <ItemFoto label="2. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} isRequired />
-                    {requiereFactura && (
-                        <ItemFoto label="3. Factura (Requerida para este servicio)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
-                    )}
-                    
+                    <ItemFoto label="1. Estado de equipo" icon="construct-outline" color="#34C759" foto={foto2} desc={desc2} onFoto={() => seleccionarImagen(2)} onDesc={setDesc2} isRequired />
+
                     <View style={{ marginBottom: 20 }}>
-                        <Text style={styles.label}>4. Verificación Eléctrica <Text style={styles.requiredStar}>*</Text></Text>
+                        <Text style={styles.label}>2. Verificación Eléctrica <Text style={styles.requiredStar}>*</Text></Text>
                         <TouchableOpacity style={styles.photoBtn} onPress={() => seleccionarImagen(4)}>
                             {foto4 ? <Image source={{ uri: foto4.uri }} style={styles.fill} /> : <Ionicons name="flash-outline" size={40} color="#FF3B30" />}
                         </TouchableOpacity>
-                        
+
                         <View style={styles.electricalBox}>
                             <View style={styles.electricalRow}>
                                 <View style={styles.voltCol}>
@@ -420,7 +486,10 @@ export default function CrearReporte() {
                         </View>
                     </View>
 
-                    <ItemFoto label="5. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} isRequired />
+                    <ItemFoto label="3. Otra evidencia" icon="images-outline" color="#5856D6" foto={foto5} desc={desc5} onFoto={() => seleccionarImagen(5)} onDesc={setDesc5} isRequired />
+                    {requiereFactura && (
+                        <ItemFoto label="4. Factura (Requerida para este servicio)" icon="document-text-outline" color="#FF9500" foto={foto3} desc={desc3} onFoto={() => seleccionarImagen(3)} onDesc={setDesc3} isRequired />
+                    )}
                 </View>
 
                 <View style={styles.card}>
@@ -541,7 +610,7 @@ const styles = StyleSheet.create({
     inputAcc: { borderBottomWidth: 1, borderBottomColor: '#EEE', fontSize: 14, marginTop: 5, paddingVertical: 5 },
     inputSmall: { fontSize: 12, borderBottomWidth: 1, borderBottomColor: '#EEE', paddingVertical: 5, color: '#666' },
     row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    
+
     selectorBtn: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F9F9F9', borderBottomWidth: 1, borderBottomColor: '#DDD', padding: 10, marginHorizontal: 2 },
     selectorBtnText: { fontSize: 14, color: '#001C38', fontWeight: 'bold' },
     selectorBtnPlaceholder: { fontSize: 14, color: '#A0AAB5' },
@@ -581,5 +650,16 @@ const styles = StyleSheet.create({
     termsScroll: { flex: 1, marginBottom: 20 },
     legalText: { fontSize: 13, lineHeight: 20, color: '#444', textAlign: 'justify' },
     modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-    modalBtn: { width: '48%', padding: 15, borderRadius: 10, alignItems: 'center' }
+    modalBtn: { width: '48%', padding: 15, borderRadius: 10, alignItems: 'center' },
+    stickerPhotoBtn: { width: '100%', height: 180, backgroundColor: '#F8F9FA', borderRadius: 12, justifyContent: 'center', alignItems: 'center',  marginBottom: 10, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', overflow: 'hidden'},
+    placeholderContent: { alignItems: 'center',justifyContent: 'center' },
+    placeholderText: {color: '#007AFF', marginTop: 8, fontSize: 13, fontWeight: '600' },
+    iaButton: { backgroundColor: '#5856D6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, marginBottom: 15, elevation: 3, gap: 8 },
+    iaButtonDisabled: { backgroundColor: '#CCC', elevation: 0 },
+    iaButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
+    dividerText: { fontSize: 11, fontWeight: 'bold',  color: '#999', letterSpacing: 1, backgroundColor: '#FFF', paddingHorizontal: 10, marginBottom: -1 },
+    fallosSection: { marginTop: 5, },
+    dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, },
+    dividerHint: { fontSize: 10, color: '#FF9500', fontStyle: 'italic', marginTop: 4, marginLeft: 22, },
 });
