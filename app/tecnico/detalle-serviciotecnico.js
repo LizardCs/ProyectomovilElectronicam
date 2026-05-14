@@ -4,10 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert, // <-- NUEVO
+    Alert,
     Dimensions,
     Image,
-    Linking, // <-- NUEVO: Para abrir WhatsApp
+    Linking,
     Modal,
     ScrollView,
     StyleSheet,
@@ -43,6 +43,7 @@ export default function DetalleServicioTecnico() {
                     setCargandoDatos(false);
                     return;
                 }
+                
                 const { data, error } = await supabase
                     .from('SERVICIOSTECNICOS')
                     .select(`
@@ -58,6 +59,11 @@ export default function DetalleServicioTecnico() {
                         USERSWEB (
                             WEB_NOMBRES,
                             WEB_APELLIDOS
+                        ),
+                        USERSMOVIL (
+                            MOV_CED,
+                            NOM_MOV,
+                            MOV_APE
                         )
                     `)
                     .eq('SERV_NUM', servicioParam.SERV_NUM)
@@ -72,7 +78,9 @@ export default function DetalleServicioTecnico() {
                         SERV_CORREO_CLI: data.CLIENTES?.CLI_CORREO || '',
                         SERV_DIR: data.CLIENTES?.CLI_DIRECCION || '',
                         SERV_CIUDAD: data.CLIENTES?.CLI_CIUDAD || '',
-                        SERV_NOM_ENV: data.USERSWEB ? `${data.USERSWEB.WEB_NOMBRES} ${data.USERSWEB.WEB_APELLIDOS}` : 'Administración'
+                        SERV_NOM_ENV: data.USERSWEB ? `${data.USERSWEB.WEB_NOMBRES} ${data.USERSWEB.WEB_APELLIDOS}` : 'Administración',
+                        SERV_CED_REC: data.USERSMOVIL?.MOV_CED || '',
+                        SERV_NOM_REC: data.USERSMOVIL ? `${data.USERSMOVIL.NOM_MOV} ${data.USERSMOVIL.MOV_APE}`.trim() : 'Técnico Móvil'
                     };
 
                     setServicioDetalle(servicioAplanado);

@@ -210,7 +210,8 @@ export default function CrearReporte() {
                 tipo: danioReportado.substring(0, 50),
                 pdf_base64: base64,
                 serv_id: servicio.SERV_ID,
-                serv_num: servicio.SERV_NUM
+                serv_num: servicio.SERV_NUM,
+                mov_id: servicio.SERV_MOV_ID
             });
 
             if (res.success) {
@@ -390,7 +391,6 @@ export default function CrearReporte() {
                             <FallosChecks
                                 onFallosChange={(fallos) => {
                                     setFallosSeleccionados(fallos);
-                                    // Autocompletar daño reportado con los fallos seleccionados
                                     if (fallos.length > 0) {
                                         const textoFallos = fallos.map((f, i) =>
                                             `${i + 1}. ${f.fallo}`
@@ -651,14 +651,14 @@ const styles = StyleSheet.create({
     legalText: { fontSize: 13, lineHeight: 20, color: '#444', textAlign: 'justify' },
     modalButtons: { flexDirection: 'row', justifyContent: 'space-between' },
     modalBtn: { width: '48%', padding: 15, borderRadius: 10, alignItems: 'center' },
-    stickerPhotoBtn: { width: '100%', height: 180, backgroundColor: '#F8F9FA', borderRadius: 12, justifyContent: 'center', alignItems: 'center',  marginBottom: 10, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', overflow: 'hidden'},
-    placeholderContent: { alignItems: 'center',justifyContent: 'center' },
-    placeholderText: {color: '#007AFF', marginTop: 8, fontSize: 13, fontWeight: '600' },
+    stickerPhotoBtn: { width: '100%', height: 180, backgroundColor: '#F8F9FA', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10, borderStyle: 'dashed', borderWidth: 2, borderColor: '#007AFF', overflow: 'hidden' },
+    placeholderContent: { alignItems: 'center', justifyContent: 'center' },
+    placeholderText: { color: '#007AFF', marginTop: 8, fontSize: 13, fontWeight: '600' },
     iaButton: { backgroundColor: '#5856D6', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: 10, marginBottom: 15, elevation: 3, gap: 8 },
     iaButtonDisabled: { backgroundColor: '#CCC', elevation: 0 },
     iaButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
-    dividerText: { fontSize: 11, fontWeight: 'bold',  color: '#999', letterSpacing: 1, backgroundColor: '#FFF', paddingHorizontal: 10, marginBottom: -1 },
+    dividerText: { fontSize: 11, fontWeight: 'bold', color: '#999', letterSpacing: 1, backgroundColor: '#FFF', paddingHorizontal: 10, marginBottom: -1 },
     fallosSection: { marginTop: 5, },
     dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, },
     dividerHint: { fontSize: 10, color: '#FF9500', fontStyle: 'italic', marginTop: 4, marginLeft: 22, },
