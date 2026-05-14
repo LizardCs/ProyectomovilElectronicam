@@ -43,15 +43,39 @@ export default function DetalleServicioTecnico() {
                     setCargandoDatos(false);
                     return;
                 }
-
                 const { data, error } = await supabase
-                    .from('serviciostecnicos')
-                    .select('*')
+                    .from('SERVICIOSTECNICOS')
+                    .select(`
+                        *,
+                        CLIENTES (
+                            CLI_CEDULA,
+                            CLI_NOMBRES,
+                            CLI_TELEFONO,
+                            CLI_CORREO,
+                            CLI_DIRECCION,
+                            CLI_CIUDAD
+                        ),
+                        USERSWEB (
+                            WEB_NOMBRES,
+                            WEB_APELLIDOS
+                        )
+                    `)
                     .eq('SERV_NUM', servicioParam.SERV_NUM)
                     .single();
 
                 if (data && !error) {
-                    setServicioDetalle(data);
+                    const servicioAplanado = {
+                        ...data,
+                        SERV_CED_CLI: data.CLIENTES?.CLI_CEDULA || '',
+                        SERV_NOM_CLI: data.CLIENTES?.CLI_NOMBRES || 'Cliente no registrado',
+                        SERV_TEL_CLI: data.CLIENTES?.CLI_TELEFONO || '',
+                        SERV_CORREO_CLI: data.CLIENTES?.CLI_CORREO || '',
+                        SERV_DIR: data.CLIENTES?.CLI_DIRECCION || '',
+                        SERV_CIUDAD: data.CLIENTES?.CLI_CIUDAD || '',
+                        SERV_NOM_ENV: data.USERSWEB ? `${data.USERSWEB.WEB_NOMBRES} ${data.USERSWEB.WEB_APELLIDOS}` : 'Administración'
+                    };
+
+                    setServicioDetalle(servicioAplanado);
                     cargarFotoReal(data.SERV_ID);
                 } else {
                     console.error("Error al traer datos de Supabase:", error);
@@ -79,7 +103,6 @@ export default function DetalleServicioTecnico() {
         setCargandoFoto(false);
     };
 
-    // 👇 NUEVA FUNCIÓN PARA ABRIR WHATSAPP 👇
     const abrirWhatsApp = (telefono) => {
         if (!telefono) return;
         

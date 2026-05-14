@@ -29,15 +29,15 @@ export default function CrearReporte() {
 
     const [showTerms, setShowTerms] = useState(false);
     const [showSig, setShowSig] = useState(false);
-    
     const [modalUnidad, setModalUnidad] = useState(false);
     const [modalMarca, setModalMarca] = useState(false);
 
     const [nombreCliente, setNombreCliente] = useState(servicio.SERV_NOM_CLI || "");
     const [cedulaCliente, setCedulaCliente] = useState(servicio.SERV_CED_CLI || "");
     const [telefonoCliente, setTelefonoCliente] = useState(servicio.SERV_TEL_CLI || "");
-    const direccionCompleta = [servicio.SERV_CIUDAD, servicio.SERV_DIR].filter(Boolean).join(" - ");
-    const [direccionCliente, setDireccionCliente] = useState(direccionCompleta);
+    const [direccionCliente, setDireccionCliente] = useState(
+        [servicio.SERV_CIUDAD, servicio.SERV_DIR].filter(Boolean).join(" - ")
+    );
     const [correoCliente, setCorreoCliente] = useState(servicio.SERV_CORREO_CLI || "");
 
     const [unidad, setUnidad] = useState("");
@@ -62,8 +62,8 @@ export default function CrearReporte() {
     const [faseNeutro, setFaseNeutro] = useState("");
     const [faseTierra, setFaseTierra] = useState("");
     const [neutroTierra, setNeutroTierra] = useState("");
-
-    const [danioReportado, setDanioReportado] = useState("");
+    
+    const [danioReportado, setDanioReportado] = useState(servicio.SERV_DESCRIPCION || "");
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
@@ -89,7 +89,7 @@ export default function CrearReporte() {
                 { text: "Continuar", style: "cancel" },
                 { text: "Salir", style: "destructive", onPress: () => navigation.dispatch(e.data.action) }
             ]);
-        });
+        }); 
         return unsubscribe;
     }, [navigation, unidad, danioReportado, foto1, firma, loading]);
 
@@ -117,7 +117,7 @@ export default function CrearReporte() {
         }
     };
 
-const validarCamposObligatorios = () => {
+    const validarCamposObligatorios = () => {
         if (!nombreCliente.trim()) return "Debe ingresar el nombre del cliente en la Sección 1.";
         if (!unidad) return "Debe seleccionar un equipo en la Sección 2.";
         if (unidad === "OTROS" && !unidadOtro.trim()) return "Debe especificar el equipo en la Sección 2.";
@@ -202,9 +202,9 @@ const validarCamposObligatorios = () => {
             const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
 
             const res = await crearReporte({
-                cedula: servicio.SERV_CED_REC,
-                nombre: servicio.SERV_NOM_REC,
-                tipo: danioReportado,
+                cedula: servicio.SERV_CED_REC || "",
+                nombre: servicio.SERV_NOM_REC || "",
+                tipo: danioReportado.substring(0, 50),
                 pdf_base64: base64,
                 serv_id: servicio.SERV_ID,
                 serv_num: servicio.SERV_NUM

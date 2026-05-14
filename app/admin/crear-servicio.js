@@ -20,6 +20,7 @@ import {
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { buscarCliente } from "../../services/buscarCliente";
 import { crearServicio } from "../../services/crearServicio";
 import { editarServicio } from "../../services/editarServicio";
 import { obtenerTecnicos } from "../../services/obtenerTecnicos";
@@ -34,6 +35,36 @@ export default function CrearServicio() {
     const [user, setUser] = useState(null);
     const [tecnicos, setTecnicos] = useState([]);
     const [isEditing, setIsEditing] = useState(false);
+    const [isSearchingClient, setIsSearchingClient] = useState(false);
+
+    const handleBuscarCliente = async () => {
+        const query = formData.SERV_CED_CLI || formData.SERV_TEL_CLI;
+        
+        if (!query) {
+            Alert.alert("Aviso", "Ingrese una cédula o teléfono para buscar.");
+            return;
+        }
+
+        setIsSearchingClient(true);
+        const res = await buscarCliente(query);
+        setIsSearchingClient(false);
+
+        if (res.success && res.cliente) {
+            setFormData(prev => ({
+                ...prev,
+                SERV_CED_CLI: res.cliente.CLI_CEDULA || "",
+                SERV_NOM_CLI: res.cliente.CLI_NOMBRES || "",
+                SERV_TEL_CLI: res.cliente.CLI_TELEFONO || "",
+                SERV_CORREO_CLI: res.cliente.CLI_CORREO || "",
+                SERV_DIRECCION: res.cliente.CLI_DIRECCION || "",
+                SERV_CIUDAD: res.cliente.CLI_CIUDAD || ""
+            }));
+            Alert.alert("Cliente Encontrado", "Los datos se han autocompletado.");
+        } else {
+            Alert.alert("Nuevo Cliente", "No se encontró registro. Puede ingresar los datos manualmente para registrarlo.");
+        }
+    };
+    
 
     const [formData, setFormData] = useState({
         SERV_ID: null,
@@ -85,9 +116,6 @@ export default function CrearServicio() {
         if (params.servicioEditar) {
             const servicio = JSON.parse(params.servicioEditar);
             setIsEditing(true);
-
-            // 👇 CORRECCIÓN AQUÍ: Aseguramos que tome exactamente los valores en mayúscula
-            // y obligamos a que Factura sea estrictamente Booleano (true/false)
             setFormData({
                 SERV_ID: servicio.SERV_ID,
                 SERV_NUM: servicio.SERV_NUM ? String(servicio.SERV_NUM) : "",
@@ -216,7 +244,7 @@ export default function CrearServicio() {
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="camera" size={20} color="#007AFF" />
-                                <Text style={styles.sectionTitle}>Foto del Equipo <Text style={styles.optionalText}>(Opcional)</Text></Text>
+                                <Text style={styles.sectionTitle}>Foto del equipo o nota de servicio <Text style={styles.optionalText}>(Opcional)</Text></Text>
                             </View>
                             {formData.SERV_IMG_ENV ? (
                                 <View style={styles.imagePreviewContainer}>
@@ -256,13 +284,60 @@ export default function CrearServicio() {
                             />
                         </View>
 
-                        {/* CLIENTE */}
+                       {/* CLIENTE */}
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <Ionicons name="person" size={20} color="#007AFF" />
                                 <Text style={styles.sectionTitle}>Datos del Cliente <Text style={styles.requiredAsterisk}>*</Text></Text>
                             </View>
 
+                            {/* 1. TELÉFONO (Con botón de búsqueda) */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 }}>
+                                <TextInput
+                                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                                    placeholder="Teléfono *"
+                                    keyboardType="phone-pad"
+                                    maxLength={10}
+                                    value={formData.SERV_TEL_CLI}
+                                    onChangeText={(text) => handleChange("SERV_TEL_CLI", text)}
+                                />
+                                <TouchableOpacity 
+                                    style={{ backgroundColor: '#E3F2FD', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#007AFF' }}
+                                    onPress={handleBuscarCliente}
+                                    disabled={isSearchingClient}
+                                >
+                                    {isSearchingClient ? (
+                                        <ActivityIndicator size="small" color="#007AFF" />
+                                    ) : (
+                                        <Ionicons name="search" size={20} color="#007AFF" />
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* 2. CÉDULA (Con botón de búsqueda) */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 }}>
+                                <TextInput
+                                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                                    placeholder="Número de cédula o RUC (Opcional)"
+                                    keyboardType="numeric"
+                                    maxLength={13}
+                                    value={formData.SERV_CED_CLI}
+                                    onChangeText={(text) => handleChange("SERV_CED_CLI", text.replace(/[^0-9]/g, ''))}
+                                />
+                                <TouchableOpacity 
+                                    style={{ backgroundColor: '#E3F2FD', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#007AFF' }}
+                                    onPress={handleBuscarCliente}
+                                    disabled={isSearchingClient}
+                                >
+                                    {isSearchingClient ? (
+                                        <ActivityIndicator size="small" color="#007AFF" />
+                                    ) : (
+                                        <Ionicons name="search" size={20} color="#007AFF" />
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* 3. NOMBRES */}
                             <TextInput
                                 style={styles.input}
                                 placeholder="Nombres y Apellidos *"
@@ -270,27 +345,9 @@ export default function CrearServicio() {
                                 onChangeText={(text) => handleChange("SERV_NOM_CLI", text)}
                             />
 
-                            {/* 👇 CÉDULA NUEVA 👇 */}
+                            {/* 4. CORREO */}
                             <TextInput
-                                style={[styles.input, { marginTop: 10 }]}
-                                placeholder="Número de cédula o RUC (Opcional)"
-                                keyboardType="numeric"
-                                maxLength={13}
-                                value={formData.SERV_CED_CLI}
-                                onChangeText={(text) => handleChange("SERV_CED_CLI", text.replace(/[^0-9]/g, ''))}
-                            />
-
-                            <TextInput
-                                style={[styles.input, { marginTop: 10 }]}
-                                placeholder="Teléfono *"
-                                keyboardType="phone-pad"
-                                value={formData.SERV_TEL_CLI}
-                                onChangeText={(text) => handleChange("SERV_TEL_CLI", text)}
-                            />
-
-                            {/* 👇 CORREO NUEVO 👇 */}
-                            <TextInput
-                                style={[styles.input, { marginTop: 10 }]}
+                                style={styles.input}
                                 placeholder="Correo electrónico (Opcional)"
                                 keyboardType="email-address"
                                 autoCapitalize="none"

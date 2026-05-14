@@ -3,8 +3,8 @@ import { supabase } from './supabase';
 export const obtenerTecnicos = async () => {
   try {
     const { data, error } = await supabase
-      .from('usersmovil')
-      .select('MOV_CED, NOM_MOV, MOV_APE')
+      .from('USERSMOVIL')
+      .select('MOV_CED, NOM_MOV, MOV_APE, MOV_ROL') 
       .eq('MOV_ROL', 0)
       .order('NOM_MOV', { ascending: true });
 

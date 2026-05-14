@@ -1,10 +1,5 @@
 import { supabase } from './supabase';
 
-/**
- * Lógica extraída de editar-usuarios.php
- * Actualiza la información de un usuario en 'usersmovil' o 'usersweb' según su origen.
- * Ajustado para nombres de columna en MAYÚSCULAS.
- */
 export const editarUsuarios = async (userData) => {
   try {
     const {
@@ -26,13 +21,13 @@ export const editarUsuarios = async (userData) => {
     let columnaId = '';
 
     if (origen === 'MOVIL') {
-      tabla = 'usersmovil';
+      tabla = 'USERSMOVIL';
       columnaId = 'MOV_ID';
       camposAActualizar = {
         "NOM_MOV": nombre,
         "MOV_APE": apellido,
         "MOV_CELU": String(celular).trim(),
-        "MOV_USU": usuario
+        "MOV_USU": usuario.trim().toLowerCase()
       };
 
       if (clave && clave.trim() !== '') {
@@ -40,13 +35,13 @@ export const editarUsuarios = async (userData) => {
       }
 
     } else {
-      tabla = 'usersweb';
+      tabla = 'USERSWEB';
       columnaId = 'WEB_ID';
       camposAActualizar = {
         "WEB_NOMBRES": nombre,
         "WEB_APELLIDOS": apellido,
         "WEB_CELU": String(celular).trim(),
-        "WEB_USU": usuario
+        "WEB_USU": usuario.trim().toLowerCase()
       };
 
       if (clave && clave.trim() !== '') {
@@ -65,7 +60,7 @@ export const editarUsuarios = async (userData) => {
 
     return {
       success: true,
-      message: `Usuario de tipo ${origen} actualizado correctamente.`,
+      message: `Usuario ${origen} actualizado correctamente.`,
       data: data
     };
 

@@ -4,8 +4,9 @@ export const obtenerImagenServicio = async (servId) => {
   try {
     if (!servId) return { success: false, imagen: null };
 
+    // Solo cambiamos el nombre de la tabla a MAYÚSCULAS
     const { data, error } = await supabase
-      .from('serviciostecnicos')
+      .from('SERVICIOSTECNICOS') 
       .select('SERV_IMG_ENV')
       .eq('SERV_ID', servId)
       .single();

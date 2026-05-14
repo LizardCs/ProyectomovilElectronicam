@@ -70,16 +70,23 @@ export default function HomeAdmin() {
   };
 
   const fetchData = async () => {
+    const userData = await SessionService.getStoredUser();
+
+    if (!userData) {
+      router.replace('/');
+      return;
+    }
+
     if (activeTab === "servicios") {
-      await fetchServicios();
+      await fetchServicios(userData);
     } else {
       await fetchUsuarios();
     }
   };
 
-  const fetchServicios = async () => {
+  const fetchServicios = async (userData) => {
     try {
-      const res = await obtenerServicios();
+      const res = await obtenerServicios(userData.id, userData.rol);
       if (res.success) setServicios(res.servicios);
     } catch (error) {
       console.error("Error cargando servicios:", error);
