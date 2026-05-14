@@ -5,8 +5,8 @@ export const eliminarUsuario = async (id, origen) => {
     if (!id || !origen) {
       return { success: false, message: "ID y origen son requeridos para eliminar." };
     }
-
-    const tabla = (origen === 'MOVIL') ? 'usersmovil' : 'usersweb';
+    
+    const tabla = (origen === 'MOVIL') ? 'USERSMOVIL' : 'USERSWEB';
     const columnaId = (origen === 'MOVIL') ? 'MOV_ID' : 'WEB_ID';
 
     const { error } = await supabase
@@ -18,7 +18,7 @@ export const eliminarUsuario = async (id, origen) => {
 
     return {
       success: true,
-      message: `El usuario con ID ${id} ha sido eliminado de ${tabla} con éxito.`
+      message: `Usuario eliminado de ${tabla} con éxito.`
     };
 
   } catch (error) {

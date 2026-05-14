@@ -3,14 +3,14 @@ import { supabase } from './supabase';
 export const obtenerUsuarios = async () => {
   try {
     const { data: dataMovil, error: errorMovil } = await supabase
-      .from('usersmovil')
-      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL');
+      .from('USERSMOVIL')
+      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL, MOV_CELU'); // <-- Agregado
 
     if (errorMovil) throw errorMovil;
 
     const { data: dataWeb, error: errorWeb } = await supabase
-      .from('usersweb')
-      .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU');
+      .from('USERSWEB')
+      .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU, WEB_CELU'); // <-- Agregado
 
     if (errorWeb) throw errorWeb;
 
@@ -20,6 +20,7 @@ export const obtenerUsuarios = async () => {
       nombre: u.NOM_MOV,
       apellido: u.MOV_APE,
       usuario: u.MOV_USU,
+      celular: u.MOV_CELU,
       rol: u.MOV_ROL,
       origen: 'MOVIL'
     }));
@@ -30,13 +31,12 @@ export const obtenerUsuarios = async () => {
       nombre: u.WEB_NOMBRES,
       apellido: u.WEB_APELLIDOS,
       usuario: u.WEB_USU,
-      rol: 'WEB',
+      celular: u.WEB_CELU,
+      rol: 1,
       origen: 'WEB'
     }));
 
     const listaUnificada = [...usuariosMovil, ...usuariosWeb];
-
-
 
     return {
       success: true,
@@ -47,7 +47,7 @@ export const obtenerUsuarios = async () => {
     console.error("❌ Error en obtenerUsuarios.js:", error.message);
     return {
       success: false,
-      message: "No se pudo unificar la lista de usuarios: " + error.message,
+      message: "Error al obtener usuarios: " + error.message,
       usuarios: []
     };
   }

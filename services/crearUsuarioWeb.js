@@ -19,16 +19,15 @@ export const crearUsuarioWeb = async (userData) => {
     }
 
     const { data, error } = await supabase
-      .from('usersweb')
+      .from('USERSWEB')
       .insert([
         {
           "WEB_CED": String(cedula).trim(),
           "WEB_NOMBRES": nombre,
           "WEB_APELLIDOS": apellido,
-          "WEB_USU": usuario,
+          "WEB_USU": usuario.trim().toLowerCase(),
           "WEB_CLAVE": clave,
-          "WEB_CELU": String(celular).trim(),
-          "WEB_FEC_CREADO": new Date().toISOString()
+          "WEB_CELU": String(celular).trim()
         }
       ])
       .select()
