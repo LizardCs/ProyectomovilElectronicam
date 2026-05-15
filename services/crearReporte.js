@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 
 export const crearReporte = async (data) => {
     try {
-        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num, mov_id, equipo_nombre, equipo_modelo, usa_repuestos } = data;
+        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num, mov_id, equipo_nombre, equipo_modelo, usa_repuestos, repuestos_ids } = data;
 
         if (!pdf_base64 || !serv_id) {
             return { success: false, message: "Faltan datos obligatorios para crear el reporte." };
@@ -31,6 +31,20 @@ export const crearReporte = async (data) => {
             .single();
 
         if (errorReport) throw errorReport;
+        if (usa_repuestos && repuestos_ids && repuestos_ids.length > 0) {
+            const repuestosData = repuestos_ids.map(repuestoId => ({
+                "REP_ID": reportData.REP_ID,
+                "REPUESTO_ID": repuestoId,
+            }));
+
+            const { error: errorRepuestos } = await supabase
+                .from('REPORTE_REPUESTOS')
+                .insert(repuestosData);
+
+            if (errorRepuestos) {
+                console.error("❌ Error guardando repuestos:", errorRepuestos.message);
+            }
+        }
 
         const { error: errorUpdate } = await supabase
             .from('SERVICIOSTECNICOS')

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
 import FallosChecks from "../../components/FallosChecks";
+import RepuestoSelector from "../../components/RepuestoSelector";
 import { crearReporte } from "../../services/crearReporte";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
@@ -59,6 +60,7 @@ export default function CrearReporte() {
         modeloSerieCheck: false, conexionesElectricas: false,
         conexionesAgua: false, equipoInstalado: false,
         accesorios: false,
+        usaRepuestos: false,
         aceptaCondiciones: false
     });
 
@@ -70,6 +72,8 @@ export default function CrearReporte() {
     const [inspeccionEstadoDesc, setInspeccionEstadoDesc] = useState("");
     const [accesoriosDesc, setAccesoriosDesc] = useState("");
     const [recomendaciones, setRecomendaciones] = useState("");
+    const [cantidadRepuestos, setCantidadRepuestos] = useState(1);
+    const [repuestosSeleccionados, setRepuestosSeleccionados] = useState([]);
 
     const [foto1, setFoto1] = useState(null);
     const [desc1, setDesc1] = useState("");
@@ -214,9 +218,11 @@ export default function CrearReporte() {
                 mov_id: servicio.SERV_MOV_ID,
                 equipo_nombre: unidadFinal,
                 equipo_modelo: modeloEq,
-                usa_repuestos: false
+                usa_repuestos: checks.usaRepuestos || false,
+                repuestos_ids: checks.usaRepuestos
+                    ? repuestosSeleccionados.filter(id => id != null)
+                    : [],
             });
-
             if (res.success) {
                 Alert.alert("Éxito", "Reporte finalizado y enviado correctamente.");
                 if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
@@ -460,7 +466,6 @@ export default function CrearReporte() {
 
                     {checks.usaRepuestos && (
                         <View style={styles.repuestosContainer}>
-                            {/* Selector de cantidad */}
                             <Text style={styles.repuestosLabel}>Cantidad de repuestos utilizados:</Text>
                             <View style={styles.spinRow}>
                                 <TouchableOpacity
@@ -480,7 +485,6 @@ export default function CrearReporte() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Lista de repuestos (se genera según cantidad) */}
                             {Array.from({ length: cantidadRepuestos }, (_, index) => (
                                 <View key={index} style={styles.repuestoItem}>
                                     <Text style={styles.repuestoItemLabel}>Repuesto {index + 1}:</Text>
@@ -492,6 +496,7 @@ export default function CrearReporte() {
                                             nuevos[index] = repuestoId;
                                             setRepuestosSeleccionados(nuevos);
                                         }}
+                                        categoriaEquipo={unidad}
                                     />
                                 </View>
                             ))}
