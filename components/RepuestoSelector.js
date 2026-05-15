@@ -21,12 +21,10 @@ const RepuestoSelector = ({ index, seleccionados, onSelect, categoriaEquipo }) =
     const [loading, setLoading] = useState(false);
     const [repuestoSeleccionado, setRepuestoSeleccionado] = useState(null);
 
-    // Cargar repuestos cuando cambia la categoría
     useEffect(() => {
         cargarRepuestos();
     }, [categoriaEquipo]);
 
-    // Actualizar el nombre del repuesto seleccionado
     useEffect(() => {
         if (seleccionados[index] && repuestos.length > 0) {
             const encontrado = repuestos.find(r => r.REPUESTO_ID === seleccionados[index]);

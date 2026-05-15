@@ -4,13 +4,13 @@ export const obtenerUsuarios = async () => {
   try {
     const { data: dataMovil, error: errorMovil } = await supabase
       .from('USERSMOVIL')
-      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL, MOV_CELU'); // <-- Agregado
+      .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL, MOV_CELU');
 
     if (errorMovil) throw errorMovil;
 
     const { data: dataWeb, error: errorWeb } = await supabase
       .from('USERSWEB')
-      .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU, WEB_CELU'); // <-- Agregado
+      .select('WEB_ID, WEB_CED, WEB_NOMBRES, WEB_APELLIDOS, WEB_USU, WEB_CELU');
 
     if (errorWeb) throw errorWeb;
 

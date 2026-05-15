@@ -22,7 +22,7 @@ export const buscarCliente = async (query) => {
     }
 
   } catch (error) {
-    console.error("❌ Error en buscarCliente.js:", error.message);
+    console.error("Error en buscarCliente.js:", error.message);
     return { success: false, message: error.message };
   }
 };
