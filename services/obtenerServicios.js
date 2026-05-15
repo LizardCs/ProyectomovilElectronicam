@@ -11,14 +11,14 @@ export const obtenerServicios = async (userId, rol) => {
         SERV_FECH_ASIG, 
         SERV_FECH_FIN, 
         SERV_EST,
-        SERV_MOV_ID,
+        SERV_TEC_ASIG_ID,
         CLIENTES (
           CLI_CEDULA,
           CLI_NOMBRES
         )
       `);
     if (parseInt(rol) === 2) {
-      query = query.eq('SERV_MOV_ID', userId);
+      query = query.eq('SERV_TEC_ASIG_ID', userId);
     }
 
     const { data, error } = await query.order('SERV_ID', { ascending: false });
