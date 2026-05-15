@@ -84,7 +84,7 @@ export const editarServicio = async (formData) => {
     const updateFields = {
       "SERV_NUM": String(SERV_NUM).trim(),
       "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
-      "SERV_MOV_ID": movId,
+      "SERV_TEC_ASIG_ID": movId,
       "SERV_OBS": SERV_OBS || "",
       "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT
     };

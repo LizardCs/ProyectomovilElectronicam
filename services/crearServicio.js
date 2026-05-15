@@ -86,7 +86,7 @@ export const crearServicio = async (formData) => {
         "SERV_NUM": String(SERV_NUM).trim(),
         "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
         "SERV_WEB_ID": webId,
-        "SERV_MOV_ID": movId,
+        "SERV_TEC_ASIG_ID": movId,
         "SERV_CLI_ID": cliId,
         "SERV_EST": SERV_EST || 0,
         "SERV_IMG_ENV": SERV_IMG_ENV || null,
