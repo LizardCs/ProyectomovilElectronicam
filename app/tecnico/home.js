@@ -171,7 +171,7 @@ export default function HomeTecnico() {
           <Text style={[styles.statNumber, filtroActivo === "listos" && { color: '#FFF' }]}>
             {servicios.filter(s => parseInt(s.SERV_EST) === 1).length}
           </Text>
-          <Text style={[styles.statLabel, filtroActivo === "listos" && { color: '#FFF' }]}>Listos</Text>
+          <Text style={[styles.statLabel, filtroActivo === "listos" && { color: '#FFF' }]}>Finalizado</Text>
         </TouchableOpacity>
       </View>
 
@@ -208,7 +208,7 @@ export default function HomeTecnico() {
                 <View style={styles.tareaHeader}>
                   <View style={styles.tareaIdContainer}><Text style={styles.tareaId}>ORDEN #{s.SERV_NUM}</Text></View>
                   <View style={[styles.estadoBadge, { backgroundColor: parseInt(s.SERV_EST) === 1 ? "#34C759" : "#FF9500" }]}>
-                    <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "LISTO" : "PENDIENTE"}</Text>
+                    <Text style={styles.estadoText}>{parseInt(s.SERV_EST) === 1 ? "FINALIZADO" : "PENDIENTE"}</Text>
                   </View>
                 </View>
 

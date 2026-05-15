@@ -38,7 +38,6 @@ export default function DetalleServicioAdmin() {
                     return;
                 }
 
-                // 👇 Añadimos MOV_CED al Join de USERSMOVIL 👇
                 const { data, error } = await supabase
                     .from('SERVICIOSTECNICOS')
                     .select(`
@@ -69,8 +68,6 @@ export default function DetalleServicioAdmin() {
                         SERV_CORREO_CLI: data.CLIENTES?.CLI_CORREO || '',
                         SERV_DIR: data.CLIENTES?.CLI_DIRECCION || '',
                         SERV_CIUDAD: data.CLIENTES?.CLI_CIUDAD || '',
-                        
-                        // 👇 Aquí mapeamos la cédula del técnico para que el formulario lo seleccione 👇
                         SERV_CED_REC: data.USERSMOVIL?.MOV_CED || '', 
                         SERV_NOM_REC: data.USERSMOVIL ? `${data.USERSMOVIL.NOM_MOV} ${data.USERSMOVIL.MOV_APE}`.trim() : 'Pendiente'
                     };
@@ -120,13 +117,11 @@ export default function DetalleServicioAdmin() {
     const confirmarEliminacion = async () => {
         setEliminando(true);
         try {
-            // 1. Borramos el reporte asociado (si lo hay)
             await supabase
                 .from('reportes')
                 .delete()
                 .eq('REP_SEV_NUM', servicioDetalle.SERV_NUM);
 
-            // 2. Borramos el servicio técnico
             const { error: errorServicio } = await supabase
                 .from('SERVICIOSTECNICOS')
                 .delete()

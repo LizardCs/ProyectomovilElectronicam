@@ -244,7 +244,7 @@ export default function HomeAdmin() {
               : usuarios.filter(u => u.origen === "WEB").length}
           </Text>
           <Text style={[styles.statLabel, (filtroActivo === "listos" || filtroActivo === "web") && { color: '#FFF' }]}>
-            {activeTab === "servicios" ? "Listos" : "Web"}
+            {activeTab === "servicios" ? "Finalizado" : "Web"}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -322,7 +322,7 @@ export default function HomeAdmin() {
                     { backgroundColor: activeTab === "servicios" ? (parseInt(item.SERV_EST) === 1 ? "#34C759" : "#FF9500") : getRolInfo(item).color }
                   ]}>
                     <Text style={styles.estadoText}>
-                      {activeTab === "servicios" ? (parseInt(item.SERV_EST) === 1 ? "COMPLETADO" : "PENDIENTE") : getRolInfo(item).texto}
+                      {activeTab === "servicios" ? (parseInt(item.SERV_EST) === 1 ? "FINALIZADO" : "PENDIENTE") : getRolInfo(item).texto}
                     </Text>
                   </View>
                 </View>

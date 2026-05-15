@@ -97,7 +97,6 @@ export const editarServicio = async (formData) => {
       updateFields["SERV_IMG_ENV"] = cleanBase64;
     }
 
-    // 5. Ejecutar la actualización final
     const { data, error } = await supabase
       .from('SERVICIOSTECNICOS')
       .update(updateFields)

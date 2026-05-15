@@ -161,7 +161,6 @@ export default function CrearServicio() {
                 setFormData({ ...formData, SERV_IMG_ENV: manipResult.base64 });
             }
         } catch (e) {
-            console.error("Error al procesar imagen:", e);
             Alert.alert("Error", "No se pudo procesar la imagen.");
         }
     };
@@ -277,7 +276,7 @@ export default function CrearServicio() {
                                 style={[styles.input, isEditing && { backgroundColor: '#E5E5EA', color: '#888' }]}
                                 placeholder="Ej: A-10542"
                                 maxLength={20}
-                                editable={!isEditing} // No dejamos cambiar el ID si estamos editando
+                                editable={!isEditing}
                                 value={formData.SERV_NUM}
                                 onChangeText={(text) => handleChange("SERV_NUM", text)}
                                 autoCapitalize="characters"

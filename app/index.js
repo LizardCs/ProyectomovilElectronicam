@@ -42,7 +42,6 @@ export default function Login() {
                 user.rol === 1 ? router.replace("/admin/home") : router.replace("/tecnico/home");
             }
         } catch (error) {
-            //console.log('Sin sesión previa');
         }
     };
 
@@ -65,7 +64,6 @@ export default function Login() {
                 Alert.alert("Acceso Denegado", response.message || "Usuario o contraseña incorrectos.");
             }
         } catch (error) {
-            console.error("❌ Error en Login:", error);
             Alert.alert(
                 "🔌 Error de conexión",
                 "No se pudo conectar con el servidor en la nube.\n\n" +

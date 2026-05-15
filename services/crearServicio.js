@@ -20,7 +20,6 @@ export const crearServicio = async (formData) => {
       SERV_CORREO_CLI
     } = formData;
 
-    // 1. Validamos que el teléfono esté presente en lugar de la cédula
     if (!SERV_NUM || !SERV_TEL_CLI) {
       return { 
         success: false, 
@@ -32,7 +31,6 @@ export const crearServicio = async (formData) => {
     const cedulaCliente = SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "";
     const telefonoCliente = String(SERV_TEL_CLI).trim();
 
-    // 2. Buscamos al cliente por cédula (si existe) o por teléfono
     let query = supabase.from('CLIENTES').select('CLI_ID');
     if (cedulaCliente !== "") {
       query = query.eq('CLI_CEDULA', cedulaCliente);
@@ -45,7 +43,6 @@ export const crearServicio = async (formData) => {
     if (clienteExistente) {
       cliId = clienteExistente.CLI_ID;
     } else {
-      // 3. Si no existe, lo creamos. Insertamos null si la cédula viene vacía.
       const { data: nuevoCliente, error: errCliente } = await supabase
         .from('CLIENTES')
         .insert([{
@@ -83,7 +80,6 @@ export const crearServicio = async (formData) => {
       if (tech) movId = tech.MOV_ID;
     }
 
-    // 4. Inserción del servicio en la tabla principal (Todo en MAYÚSCULAS)
     const { data, error } = await supabase
       .from('SERVICIOSTECNICOS')
       .insert([{
@@ -91,7 +87,7 @@ export const crearServicio = async (formData) => {
         "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
         "SERV_WEB_ID": webId,
         "SERV_MOV_ID": movId,
-        "SERV_CLI_ID": cliId, // ✅ Ahora sí, 100% en mayúsculas como debe ser
+        "SERV_CLI_ID": cliId,
         "SERV_EST": SERV_EST || 0,
         "SERV_IMG_ENV": SERV_IMG_ENV || null,
         "SERV_OBS": SERV_OBS || "",
