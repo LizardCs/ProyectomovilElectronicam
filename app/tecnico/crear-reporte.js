@@ -215,7 +215,7 @@ export default function CrearReporte() {
                 pdf_base64: base64,
                 serv_id: servicio.SERV_ID,
                 serv_num: servicio.SERV_NUM,
-                mov_id: servicio.SERV_MOV_ID,
+                mov_id: servicio.SERV_TEC_ASIG_ID,
                 equipo_nombre: unidadFinal,
                 equipo_modelo: modeloEq,
                 usa_repuestos: checks.usaRepuestos || false,

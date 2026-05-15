@@ -34,7 +34,7 @@ export const obtenerServiciosTecnico = async (cedula) => {
           WEB_APELLIDOS
         )
       `)
-      .eq('SERV_MOV_ID', techData.MOV_ID)
+      .eq('SERV_TEC_ASIG_ID', techData.MOV_ID)
       .order('SERV_FECH_ASIG', { ascending: false });
 
     if (error) throw error;
