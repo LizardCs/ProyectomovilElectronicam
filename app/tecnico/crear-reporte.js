@@ -17,7 +17,7 @@ import { crearReporte } from "../../services/crearReporte";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
 const CAT_MARCAS = ["LG", "SAMSUNG", "SONY", "PANASONIC", "PHILIPS", "DAEWOO", "RCA", "MIDEA", "RIVIERA", "ENGY", "GLOBAL", "OTROS"];
-const CAT_PRODUCTOS = ["TV LED", "LAVADORA", "SECADORA", "REFRIGERADORA", "WASHTOWER", "COCINA", "EQUIPO AUDIO", "OTROS"];
+const CAT_PRODUCTOS = ["TV LED", "LAVADORA", "SECADORA", "REFRIGERADORA", "COCINA", "EQUIPO AUDIO", "OTROS"];
 
 export default function CrearReporte() {
     const router = useRouter();
@@ -211,7 +211,10 @@ export default function CrearReporte() {
                 pdf_base64: base64,
                 serv_id: servicio.SERV_ID,
                 serv_num: servicio.SERV_NUM,
-                mov_id: servicio.SERV_MOV_ID
+                mov_id: servicio.SERV_MOV_ID,
+                equipo_nombre: unidadFinal,
+                equipo_modelo: modeloEq,
+                usa_repuestos: false
             });
 
             if (res.success) {
@@ -420,7 +423,10 @@ export default function CrearReporte() {
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>4. ¿Recibe Accesorios?</Text>
+                    <Text style={styles.sectionTitle}>4. Accesorios y Repuestos</Text>
+
+                    {/* ===== ACCESORIOS ===== */}
+                    <Text style={styles.subLabel}>¿Recibe accesorios del cliente?</Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
                             <Ionicons name={checks.accesorios ? "radio-button-on" : "radio-button-off"} size={22} color={checks.accesorios ? "#001C38" : "#666"} />
@@ -432,7 +438,64 @@ export default function CrearReporte() {
                         </TouchableOpacity>
                     </View>
                     {checks.accesorios && (
-                        <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios... *" value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                        <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios recibidos... *" value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
+                    )}
+
+                    {/* ===== REPUESTOS ===== */}
+                    <Text style={styles.subLabel}>¿Utilizó repuestos?</Text>
+                    <View style={styles.row}>
+                        <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, usaRepuestos: true })}>
+                            <Ionicons name={checks.usaRepuestos ? "radio-button-on" : "radio-button-off"} size={22} color={checks.usaRepuestos ? "#001C38" : "#666"} />
+                            <Text style={styles.radioLabel}>SÍ</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.radioItem} onPress={() => {
+                            setChecks({ ...checks, usaRepuestos: false });
+                            setCantidadRepuestos(0);
+                            setRepuestosSeleccionados([]);
+                        }}>
+                            <Ionicons name={!checks.usaRepuestos ? "radio-button-on" : "radio-button-off"} size={22} color={!checks.usaRepuestos ? "#001C38" : "#666"} />
+                            <Text style={styles.radioLabel}>NO</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {checks.usaRepuestos && (
+                        <View style={styles.repuestosContainer}>
+                            {/* Selector de cantidad */}
+                            <Text style={styles.repuestosLabel}>Cantidad de repuestos utilizados:</Text>
+                            <View style={styles.spinRow}>
+                                <TouchableOpacity
+                                    style={styles.spinBtn}
+                                    onPress={() => setCantidadRepuestos(prev => Math.max(1, prev - 1))}
+                                >
+                                    <Ionicons name="remove-circle" size={32} color="#007AFF" />
+                                </TouchableOpacity>
+
+                                <Text style={styles.spinNumber}>{cantidadRepuestos}</Text>
+
+                                <TouchableOpacity
+                                    style={styles.spinBtn}
+                                    onPress={() => setCantidadRepuestos(prev => Math.min(3, prev + 1))}
+                                >
+                                    <Ionicons name="add-circle" size={32} color="#007AFF" />
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Lista de repuestos (se genera según cantidad) */}
+                            {Array.from({ length: cantidadRepuestos }, (_, index) => (
+                                <View key={index} style={styles.repuestoItem}>
+                                    <Text style={styles.repuestoItemLabel}>Repuesto {index + 1}:</Text>
+                                    <RepuestoSelector
+                                        index={index}
+                                        seleccionados={repuestosSeleccionados}
+                                        onSelect={(repuestoId) => {
+                                            const nuevos = [...repuestosSeleccionados];
+                                            nuevos[index] = repuestoId;
+                                            setRepuestosSeleccionados(nuevos);
+                                        }}
+                                    />
+                                </View>
+                            ))}
+                        </View>
                     )}
                 </View>
 

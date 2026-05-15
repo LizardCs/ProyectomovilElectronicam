@@ -2,8 +2,7 @@ import { supabase } from './supabase';
 
 export const crearReporte = async (data) => {
     try {
-        // 👇 1. Agregamos mov_id aquí para recibirlo del frontend
-        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num, mov_id } = data;
+        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num, mov_id, equipo_nombre, equipo_modelo, usa_repuestos } = data;
 
         if (!pdf_base64 || !serv_id) {
             return { success: false, message: "Faltan datos obligatorios para crear el reporte." };
@@ -22,7 +21,10 @@ export const crearReporte = async (data) => {
                     "REP_NOM_USU": nombre,          
                     "REP_TIPO": tipo,
                     "REP_DOC": cleanBase64,
-                    "REP_FECHA": new Date().toISOString()
+                    "REP_FECHA": new Date().toISOString(),
+                    "REP_EQUIPO_NOMBRE": equipo_nombre || null,
+                    "REP_EQUIPO_MODELO": equipo_modelo || null,
+                    "REP_USA_REPUESTOS": usa_repuestos || false
                 }
             ])
             .select()
