@@ -337,7 +337,7 @@ export default function DetalleServicioTecnico() {
                             ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                                     <Ionicons name="image-outline" size={40} color="#CCC" />
-                                    <Text style={{ color: '#999' }}>Sin imagen disponible</Text>
+                                    <Text style={{ color: '#999' }}>No se subió imagen</Text>
                                 </View>
                             )}
                         </TouchableOpacity>
