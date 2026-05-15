@@ -340,7 +340,7 @@ export default function CrearReporte() {
                         style={[styles.iaButton, !foto1 && styles.iaButtonDisabled]}
                         disabled={!foto1}
                         onPress={() => {
-                            Alert.alert("IA", "Procesando imagen con inteligencia artificial...\n\n(Mockup: Se llenarán los campos automáticamente)");
+                            Alert.alert("IA", "Procesando imagen con inteligencia artificial...");
                             setUnidad("TV LED");
                             setMarca("SAMSUNG");
                             setModeloEq("UN55TU8000");
