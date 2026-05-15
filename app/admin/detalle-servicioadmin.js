@@ -39,13 +39,40 @@ export default function DetalleServicioAdmin() {
                 }
 
                 const { data, error } = await supabase
-                    .from('serviciostecnicos')
-                    .select('*')
+                    .from('SERVICIOSTECNICOS')
+                    .select(`
+                        *,
+                        CLIENTES (
+                            CLI_CEDULA,
+                            CLI_NOMBRES,
+                            CLI_TELEFONO,
+                            CLI_CORREO,
+                            CLI_DIRECCION,
+                            CLI_CIUDAD
+                        ),
+                        USERSMOVIL (
+                            MOV_CED, 
+                            NOM_MOV,
+                            MOV_APE
+                        )
+                    `)
                     .eq('SERV_NUM', servicioParam.SERV_NUM)
                     .single();
 
                 if (data && !error) {
-                    setServicioDetalle(data);
+                    const servicioAplanado = {
+                        ...data,
+                        SERV_CED_CLI: data.CLIENTES?.CLI_CEDULA || '',
+                        SERV_NOM_CLI: data.CLIENTES?.CLI_NOMBRES || 'No registrado',
+                        SERV_TEL_CLI: data.CLIENTES?.CLI_TELEFONO || '',
+                        SERV_CORREO_CLI: data.CLIENTES?.CLI_CORREO || '',
+                        SERV_DIR: data.CLIENTES?.CLI_DIRECCION || '',
+                        SERV_CIUDAD: data.CLIENTES?.CLI_CIUDAD || '',
+                        SERV_CED_REC: data.USERSMOVIL?.MOV_CED || '', 
+                        SERV_NOM_REC: data.USERSMOVIL ? `${data.USERSMOVIL.NOM_MOV} ${data.USERSMOVIL.MOV_APE}`.trim() : 'Pendiente'
+                    };
+
+                    setServicioDetalle(servicioAplanado);
                     cargarFoto(data.SERV_ID);
                 } else {
                     console.error("Error al traer datos de Supabase:", error);
@@ -90,15 +117,13 @@ export default function DetalleServicioAdmin() {
     const confirmarEliminacion = async () => {
         setEliminando(true);
         try {
-            // 1. Borramos el reporte asociado (si lo hay)
             await supabase
                 .from('reportes')
                 .delete()
                 .eq('REP_SEV_NUM', servicioDetalle.SERV_NUM);
 
-            // 2. Borramos el servicio técnico
             const { error: errorServicio } = await supabase
-                .from('serviciostecnicos')
+                .from('SERVICIOSTECNICOS')
                 .delete()
                 .eq('SERV_ID', servicioDetalle.SERV_ID);
 

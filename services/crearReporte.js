@@ -2,28 +2,52 @@ import { supabase } from './supabase';
 
 export const crearReporte = async (data) => {
     try {
-        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num } = data;
+        const { cedula, nombre, tipo, pdf_base64, serv_id, serv_num, mov_id, equipo_nombre, equipo_modelo, usa_repuestos, repuestos_ids } = data;
+
+        if (!pdf_base64 || !serv_id) {
+            return { success: false, message: "Faltan datos obligatorios para crear el reporte." };
+        }
 
         const cleanBase64 = pdf_base64.includes(',') ? pdf_base64.split(',')[1] : pdf_base64;
+        
         const { data: reportData, error: errorReport } = await supabase
-            .from('reportes')
+            .from('REPORTES')
             .insert([
                 {
-                    "REP_CED_USU": String(cedula),
-                    "REP_NOM_USU": nombre,
+                    "REP_SERV_ID": serv_id,       
+                    "REP_SEV_NUM": String(serv_num),
+                    "REP_MOV_ID": mov_id,            
+                    "REP_CED_USU": String(cedula),  
+                    "REP_NOM_USU": nombre,          
                     "REP_TIPO": tipo,
                     "REP_DOC": cleanBase64,
-                    "REP_SEV_NUM": String(serv_num),
-                    "REP_FECHA": new Date().toISOString()
+                    "REP_FECHA": new Date().toISOString(),
+                    "REP_EQUIPO_NOMBRE": equipo_nombre || null,
+                    "REP_EQUIPO_MODELO": equipo_modelo || null,
+                    "REP_USA_REPUESTOS": usa_repuestos || false
                 }
             ])
             .select()
             .single();
 
         if (errorReport) throw errorReport;
+        if (usa_repuestos && repuestos_ids && repuestos_ids.length > 0) {
+            const repuestosData = repuestos_ids.map(repuestoId => ({
+                "REP_ID": reportData.REP_ID,
+                "REPUESTO_ID": repuestoId,
+            }));
+
+            const { error: errorRepuestos } = await supabase
+                .from('REPORTE_REPUESTOS')
+                .insert(repuestosData);
+
+            if (errorRepuestos) {
+                console.error("❌ Error guardando repuestos:", errorRepuestos.message);
+            }
+        }
 
         const { error: errorUpdate } = await supabase
-            .from('serviciostecnicos')
+            .from('SERVICIOSTECNICOS')
             .update({
                 "SERV_EST": 1,
                 "SERV_FECH_FIN": new Date().toISOString()
@@ -34,11 +58,12 @@ export const crearReporte = async (data) => {
 
         return {
             success: true,
-            report_id: reportData.REP_ID
+            report_id: reportData.REP_ID,
+            message: "¡Reporte guardado y servicio finalizado!"
         };
 
     } catch (error) {
         console.error("❌ Error en crearReporte.js:", error.message);
-        return { success: false, message: "Error al sincronizar reporte: " + error.message };
+        return { success: false, message: "Error: " + error.message };
     }
 };

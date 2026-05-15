@@ -19,17 +19,20 @@ export const crearUsuarioMovil = async (userData) => {
       };
     }
 
+    const rolNumerico = parseInt(rol);
+    const rolFinal = isNaN(rolNumerico) ? 0 : rolNumerico;
+
     const { data, error } = await supabase
-      .from('usersmovil')
+      .from('USERSMOVIL')
       .insert([
         {
           "MOV_CED": String(cedula).trim(),
           "NOM_MOV": nombre,
           "MOV_APE": apellido,
           "MOV_CELU": String(celular).trim(),
-          "MOV_USU": usuario,
+          "MOV_USU": usuario.trim().toLowerCase(),
           "MOV_CLAVE": clave,
-          "MOV_ROL": rol || 0
+          "MOV_ROL": rolFinal 
         }
       ])
       .select()

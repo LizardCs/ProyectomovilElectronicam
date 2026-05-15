@@ -5,59 +5,113 @@ export const crearServicio = async (formData) => {
     const {
       SERV_NUM,
       SERV_DESCRIPCION,
-      SERV_CED_ENV,
-      SERV_NOM_ENV,
-      SERV_IMG_ENV,
-      SERV_CED_REC,
-      SERV_NOM_REC,
+      SERV_CED_ENV, 
+      SERV_CED_REC, 
       SERV_EST,
+      SERV_IMG_ENV,
+      SERV_OBS,
+      SERV_REQUIERE_FACT,
+
+      SERV_CED_CLI,
       SERV_NOM_CLI,
       SERV_TEL_CLI,
       SERV_CIUDAD,
       SERV_DIR,
-      SERV_OBS,
-      SERV_REQUIERE_FACT,
-      SERV_CED_CLI, 
       SERV_CORREO_CLI
     } = formData;
 
-    const { data, error } = await supabase
-      .from('serviciostecnicos')
-      .insert([
-        {
-          "SERV_NUM": String(SERV_NUM).trim(),
-          "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
-          "SERV_FECH_ASIG": new Date().toISOString(),
-          "SERV_CED_ENV": String(SERV_CED_ENV).trim(),
-          "SERV_NOM_ENV": SERV_NOM_ENV,
-          "SERV_IMG_ENV": SERV_IMG_ENV || null,
-          "SERV_CED_REC": SERV_CED_REC ? String(SERV_CED_REC).trim() : null,
-          "SERV_NOM_REC": SERV_NOM_REC || null,
-          "SERV_EST": SERV_EST || 0,
-          "SERV_NOM_CLI": SERV_NOM_CLI ? String(SERV_NOM_CLI).trim() : "",
-          "SERV_TEL_CLI": SERV_TEL_CLI ? String(SERV_TEL_CLI).trim() : "",
-          "SERV_CIUDAD": SERV_CIUDAD ? String(SERV_CIUDAD).trim() : "",
-          "SERV_DIR": SERV_DIR ? String(SERV_DIR).trim() : "",
-          "SERV_OBS": SERV_OBS || "",
-          "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT,
-          "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",
-          "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : ""
-        }
-      ])
-      .select();
+    if (!SERV_NUM || !SERV_TEL_CLI) {
+      return { 
+        success: false, 
+        message: "El número de servicio y el teléfono del cliente son obligatorios." 
+      };
+    }
 
-    if (error) throw error;
+    let cliId = null;
+    const cedulaCliente = SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "";
+    const telefonoCliente = String(SERV_TEL_CLI).trim();
+
+    let query = supabase.from('CLIENTES').select('CLI_ID');
+    if (cedulaCliente !== "") {
+      query = query.eq('CLI_CEDULA', cedulaCliente);
+    } else {
+      query = query.eq('CLI_TELEFONO', telefonoCliente);
+    }
+    
+    const { data: clienteExistente } = await query.maybeSingle();
+
+    if (clienteExistente) {
+      cliId = clienteExistente.CLI_ID;
+    } else {
+      const { data: nuevoCliente, error: errCliente } = await supabase
+        .from('CLIENTES')
+        .insert([{
+          "CLI_CEDULA": cedulaCliente !== "" ? cedulaCliente : null,
+          "CLI_NOMBRES": SERV_NOM_CLI || "Consumidor Final",
+          "CLI_CORREO": SERV_CORREO_CLI || "",
+          "CLI_TELEFONO": telefonoCliente,
+          "CLI_DIRECCION": SERV_DIR || "",
+          "CLI_CIUDAD": SERV_CIUDAD || ""
+        }])
+        .select('CLI_ID')
+        .single();
+
+      if (errCliente) throw new Error("Error al registrar cliente: " + errCliente.message);
+      cliId = nuevoCliente.CLI_ID;
+    }
+
+    let webId = null;
+    if (SERV_CED_ENV) {
+      const { data: admin } = await supabase
+        .from('USERSWEB')
+        .select('WEB_ID')
+        .eq('WEB_CED', String(SERV_CED_ENV).trim())
+        .maybeSingle();
+      if (admin) webId = admin.WEB_ID;
+    }
+
+    let movId = null;
+    if (SERV_CED_REC) {
+      const { data: tech } = await supabase
+        .from('USERSMOVIL')
+        .select('MOV_ID')
+        .eq('MOV_CED', String(SERV_CED_REC).trim())
+        .maybeSingle();
+      if (tech) movId = tech.MOV_ID;
+    }
+
+    const { data, error } = await supabase
+      .from('SERVICIOSTECNICOS')
+      .insert([{
+        "SERV_NUM": String(SERV_NUM).trim(),
+        "SERV_DESCRIPCION": SERV_DESCRIPCION || "",
+        "SERV_WEB_ID": webId,
+        "SERV_TEC_ASIG_ID": movId,
+        "SERV_CLI_ID": cliId,
+        "SERV_EST": SERV_EST || 0,
+        "SERV_IMG_ENV": SERV_IMG_ENV || null,
+        "SERV_OBS": SERV_OBS || "",
+        "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT || false
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') throw new Error("Este número de servicio ya se encuentra registrado.");
+      throw error;
+    }
 
     return {
       success: true,
-      data: data[0]
+      message: "Servicio técnico y asignaciones creadas exitosamente",
+      data: data
     };
 
   } catch (error) {
     console.error("❌ Error en crearServicio.js:", error.message);
     return {
       success: false,
-      message: "No se pudo guardar el servicio: " + error.message
+      message: error.message
     };
   }
 };

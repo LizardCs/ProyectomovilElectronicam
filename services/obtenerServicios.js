@@ -1,11 +1,27 @@
 import { supabase } from './supabase';
 
-export const obtenerServicios = async () => {
+export const obtenerServicios = async (userId, rol) => {
   try {
-    const { data, error } = await supabase
-      .from('serviciostecnicos')
-      .select('SERV_ID, SERV_NUM, SERV_DESCRIPCION, SERV_FECH_ASIG, SERV_FECH_FIN, SERV_CED_ENV, SERV_NOM_ENV, SERV_CED_REC, SERV_NOM_REC, SERV_EST')
-      .order('SERV_ID', { ascending: false });
+    let query = supabase
+      .from('SERVICIOSTECNICOS')
+      .select(`
+        SERV_ID, 
+        SERV_NUM, 
+        SERV_DESCRIPCION, 
+        SERV_FECH_ASIG, 
+        SERV_FECH_FIN, 
+        SERV_EST,
+        SERV_TEC_ASIG_ID,
+        CLIENTES (
+          CLI_CEDULA,
+          CLI_NOMBRES
+        )
+      `);
+    if (parseInt(rol) === 2) {
+      query = query.eq('SERV_TEC_ASIG_ID', userId);
+    }
+
+    const { data, error } = await query.order('SERV_ID', { ascending: false });
 
     if (error) throw error;
 
@@ -15,12 +31,9 @@ export const obtenerServicios = async () => {
       SERV_DESCRIPCION: s.SERV_DESCRIPCION,
       SERV_FECH_ASIG: s.SERV_FECH_ASIG,
       SERV_FECH_FIN: s.SERV_FECH_FIN,
-      SERV_CED_ENV: s.SERV_CED_ENV,
-      SERV_NOM_ENV: s.SERV_NOM_ENV,
-      SERV_IMG_ENV: null,
-      SERV_CED_REC: s.SERV_CED_REC,
-      SERV_NOM_REC: s.SERV_NOM_REC,
-      SERV_EST: s.SERV_EST
+      SERV_EST: s.SERV_EST,
+      SERV_CED_CLI: s.CLIENTES?.CLI_CEDULA || 'S/N',
+      SERV_NOM_CLI: s.CLIENTES?.CLI_NOMBRES || 'Sin Cliente'
     }));
 
     return {
@@ -32,7 +45,7 @@ export const obtenerServicios = async () => {
     console.error("❌ Error en obtenerServicios.js:", error.message);
     return {
       success: false,
-      message: "No se pudo cargar la lista: " + error.message,
+      message: "Error al cargar servicios: " + error.message,
       servicios: []
     };
   }

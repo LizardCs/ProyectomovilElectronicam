@@ -4,10 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert, // <-- NUEVO
+    Alert,
     Dimensions,
     Image,
-    Linking, // <-- NUEVO: Para abrir WhatsApp
+    Linking,
     Modal,
     ScrollView,
     StyleSheet,
@@ -43,15 +43,47 @@ export default function DetalleServicioTecnico() {
                     setCargandoDatos(false);
                     return;
                 }
-
+                
                 const { data, error } = await supabase
-                    .from('serviciostecnicos')
-                    .select('*')
+                    .from('SERVICIOSTECNICOS')
+                    .select(`
+                        *,
+                        CLIENTES (
+                            CLI_CEDULA,
+                            CLI_NOMBRES,
+                            CLI_TELEFONO,
+                            CLI_CORREO,
+                            CLI_DIRECCION,
+                            CLI_CIUDAD
+                        ),
+                        USERSWEB (
+                            WEB_NOMBRES,
+                            WEB_APELLIDOS
+                        ),
+                        USERSMOVIL (
+                            MOV_CED,
+                            NOM_MOV,
+                            MOV_APE
+                        )
+                    `)
                     .eq('SERV_NUM', servicioParam.SERV_NUM)
                     .single();
 
                 if (data && !error) {
-                    setServicioDetalle(data);
+                    const servicioAplanado = {
+                        ...data,
+                        SERV_CED_CLI: data.CLIENTES?.CLI_CEDULA || '',
+                        SERV_NOM_CLI: data.CLIENTES?.CLI_NOMBRES || 'Cliente no registrado',
+                        SERV_TEL_CLI: data.CLIENTES?.CLI_TELEFONO || '',
+                        SERV_CORREO_CLI: data.CLIENTES?.CLI_CORREO || '',
+                        SERV_DIR: data.CLIENTES?.CLI_DIRECCION || '',
+                        SERV_CIUDAD: data.CLIENTES?.CLI_CIUDAD || '',
+                        SERV_NOM_ENV: data.USERSWEB ? `${data.USERSWEB.WEB_NOMBRES} ${data.USERSWEB.WEB_APELLIDOS}` : 'Administración',
+                        SERV_CED_REC: data.USERSMOVIL?.MOV_CED || '',
+                        SERV_NOM_REC: data.USERSMOVIL ? `${data.USERSMOVIL.NOM_MOV} ${data.USERSMOVIL.MOV_APE}`.trim() : 'Técnico Móvil'
+                    };
+
+                    setServicioDetalle(servicioAplanado);
                     cargarFotoReal(data.SERV_ID);
                 } else {
                     console.error("Error al traer datos de Supabase:", error);
@@ -79,14 +111,11 @@ export default function DetalleServicioTecnico() {
         setCargandoFoto(false);
     };
 
-    // 👇 NUEVA FUNCIÓN PARA ABRIR WHATSAPP 👇
     const abrirWhatsApp = (telefono) => {
         if (!telefono) return;
         
-        // Limpiamos el número de espacios o guiones
         let numeroLimpio = telefono.replace(/\D/g, '');
         
-        // Si empieza con 0 (Ej: 098...), lo cambiamos por el código de Ecuador 593
         if (numeroLimpio.startsWith('0')) {
             numeroLimpio = '593' + numeroLimpio.substring(1);
         }
@@ -308,7 +337,7 @@ export default function DetalleServicioTecnico() {
                             ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                                     <Ionicons name="image-outline" size={40} color="#CCC" />
-                                    <Text style={{ color: '#999' }}>Sin imagen disponible</Text>
+                                    <Text style={{ color: '#999' }}>No se subió imagen</Text>
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -370,7 +399,6 @@ const styles = StyleSheet.create({
     clienteNombre: { fontSize: 18, color: "#001C38", fontWeight: "bold", marginBottom: 6 },
     clienteDato: { fontSize: 14, color: "#555", marginTop: 4 },
     
-    // 👇 ESTILO DEL BOTÓN DE WHATSAPP 👇
     whatsappButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, marginTop: 10, borderWidth: 1, borderColor: '#C8E6C9' },
     whatsappText: { color: '#2E7D32', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
 
