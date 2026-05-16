@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import TextRecognition from '@react-native-ml-kit/text-recognition';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -15,6 +17,7 @@ import SignatureScreen from "react-native-signature-canvas";
 import FallosChecks from "../../components/FallosChecks";
 import RepuestoSelector from "../../components/RepuestoSelector";
 import { crearReporte } from "../../services/crearReporte";
+import { obtenerFallosPorCategoria } from "../../services/obtenerFallos";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
 const CAT_MARCAS = ["LG", "SAMSUNG", "SONY", "PANASONIC", "PHILIPS", "DAEWOO", "RCA", "MIDEA", "RIVIERA", "ENGY", "GLOBAL", "OTROS"];
@@ -50,6 +53,7 @@ export default function CrearReporte() {
     const [modeloEq, setModeloEq] = useState("");
     const [serieEq, setSerieEq] = useState("");
     const [colorEq, setColorEq] = useState("");
+    const [fallosDB, setFallosDB] = useState([]);
     const [fallosSeleccionados, setFallosSeleccionados] = useState([]);
     const [mostrarFallos, setMostrarFallos] = useState(false);
 
@@ -99,6 +103,52 @@ export default function CrearReporte() {
         });
         return unsubscribe;
     }, [navigation, unidad, danioReportado, foto1, firma, loading]);
+
+    useEffect(() => {
+        const cargarFallos = async () => {
+            const categoriasMap = {
+                "TV LED": 1,
+                "LAVADORA": 2,
+                "SECADORA": 3,
+                "REFRIGERADORA": 4,
+                "WASHTOWER": 5,
+                "COCINA": 6,
+                "EQUIPO AUDIO": 7,
+                "OTROS": 8,
+                "GENERAL": 9
+            };
+
+            const unidadBuscar = unidad === "OTROS" ? unidadOtro.trim().toUpperCase() : unidad;
+            const catId = categoriasMap[unidadBuscar] || categoriasMap[unidad];
+
+            if (!catId) {
+                setFallosDB([]);
+                return;
+            }
+
+            try {
+                const res = await obtenerFallosPorCategoria(catId);
+                if (res.success && res.data && res.data.length > 0) {
+                    const fallosFormateados = res.data.map(item => ({
+                        fallo: item.FALLO,
+                        solucion: item.SOLUCION
+                    }));
+                    setFallosDB(fallosFormateados);
+                } else {
+                    setFallosDB([]);
+                }
+            } catch (error) {
+                console.error("Error al cargar fallos:", error);
+                setFallosDB([]);
+            }
+        };
+
+        if (unidad) {
+            cargarFallos();
+        } else {
+            setFallosDB([]);
+        }
+    }, [unidad, unidadOtro]);
 
     const toggleCheck = (key) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -339,18 +389,77 @@ export default function CrearReporte() {
                     <TouchableOpacity
                         style={[styles.iaButton, !foto1 && styles.iaButtonDisabled]}
                         disabled={!foto1}
-                        onPress={() => {
-                            Alert.alert("IA", "Procesando imagen con inteligencia artificial...");
-                            setUnidad("TV LED");
-                            setMarca("SAMSUNG");
-                            setModeloEq("UN55TU8000");
-                            setSerieEq("0A3K5B9X200045H");
-                            setColorEq("Negro");
-                            setMostrarFallos(true);
+                        onPress={async () => {
+                            if (!foto1) return;
+
+                            try {
+                                setLoading(true);
+
+                                const manipResult = await ImageManipulator.manipulateAsync(
+                                    foto1.uri,
+                                    [{ resize: { width: 1200 } }],
+                                    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+                                );
+                                const result = await TextRecognition.recognize(manipResult.uri);
+                                const textoExtraido = result.text.toUpperCase();
+                                const modeloMatch = textoExtraido.match(/MODEL[O\s:CODE/]*([A-Z0-9-]+)/);
+                                if (modeloMatch) setModeloEq(modeloMatch[1]);
+                                const serieMatch = textoExtraido.match(/(?:S\/N|SERIE|SN|SIN|S1N|S!N|SERIAL)[\s\S]{0,30}?([A-Z0-9]{8,})/);
+                                if (serieMatch) setSerieEq(serieMatch[1]);
+                                let marcaEncontrada = false;
+
+                                for (const m of CAT_MARCAS) {
+                                    if (textoExtraido.includes(m) && m !== "OTROS") {
+                                        setMarca(m);
+                                        marcaEncontrada = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!marcaEncontrada) {
+                                    const marcasExtras = ["PRIMA", "INDURAMA", "MABE", "HACEB", "WHIRLPOOL", "ELECTROLUX", "OSTER", "TCL", "HISENSE"];
+                                    for (const m of marcasExtras) {
+                                        if (textoExtraido.includes(m)) {
+                                            setMarca("OTROS");
+                                            setMarcaOtra(m);
+                                            marcaEncontrada = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (modeloMatch) {
+                                    const mod = modeloMatch[1];
+                                    if (mod.startsWith("UN") || mod.startsWith("QN") || mod.startsWith("OLED") || mod.startsWith("KDL") || mod.startsWith("PX") ||
+                                        mod.includes("24") || mod.includes("32") || mod.includes("40") || mod.includes("42") || mod.includes("43") || mod.includes("48") ||
+                                        mod.includes("50") || mod.includes("55") || mod.includes("60") || mod.includes("65") || mod.includes("70") || mod.includes("75") || mod.includes("85")) {
+                                        setUnidad("TV LED");
+                                    } else if (mod.startsWith("WA") || mod.startsWith("WF") || mod.startsWith("WT") || textoExtraido.includes("LAVADORA")) {
+                                        setUnidad("LAVADORA");
+                                    } else if (mod.startsWith("RF") || mod.startsWith("RT") || textoExtraido.includes("REFRIGERADOR")) {
+                                        setUnidad("REFRIGERADORA");
+                                    }
+                                }
+
+                                setMostrarFallos(true);
+                                Alert.alert("Análisis Completado", "El OCR extrajo los datos disponibles de la etiqueta.");
+
+                            } catch (error) {
+                                console.error("Error en IA:", error);
+                                Alert.alert("Error", "Hubo un problema al procesar la imagen localmente.");
+                            } finally {
+                                setLoading(false);
+                            }
                         }}
                     >
-                        <Ionicons name="scan-outline" size={20} color="#FFF" />
-                        <Text style={styles.iaButtonText}>USAR IA PARA RECONOCER EL DISPOSITIVO</Text>
+                        {loading ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <>
+                                <Ionicons name="scan-outline" size={20} color="#FFF" />
+                                <Text style={styles.iaButtonText}>USAR IA PARA RECONOCER EL DISPOSITIVO</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     {/* Datos del equipo */}
@@ -385,8 +494,8 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="N° Serie *" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="Color *" value={colorEq} onChangeText={setColorEq} maxLength={20} />
 
-                    {/* Posibles Fallos (visible solo después de IA) */}
-                    {mostrarFallos && (
+                    {/* Posibles Fallos (visible siempre que haya fallosDB con datos) */}
+                    {fallosDB.length > 0 && (
                         <View style={styles.fallosSection}>
                             <View style={styles.divider}>
                                 <View style={styles.dividerRow}>
@@ -398,13 +507,23 @@ export default function CrearReporte() {
                             <Text style={styles.dividerHint}>Seleccione los fallos para autocompletar el diagnóstico</Text>
 
                             <FallosChecks
+                                listaFallos={fallosDB}
                                 onFallosChange={(fallos) => {
                                     setFallosSeleccionados(fallos);
                                     if (fallos.length > 0) {
-                                        const textoFallos = fallos.map((f, i) =>
-                                            `${i + 1}. ${f.fallo}`
-                                        ).join("\n");
-                                        const textoCompleto = `Se revisó el equipo ${unidad || '[EQUIPO]'} marca ${marca || '[MARCA]'} modelo ${modeloEq || '[MODELO]'} porque:\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
+                                        let textoFallos = "";
+
+                                        if (fallos.length === 1) {
+                                            // Formato Singular (1 fallo)
+                                            textoFallos = `PROBLEMA: ${fallos[0].fallo}`;
+                                        } else {
+                                            // Formato Plural (Unidos por un punto y espacio)
+                                            const fallosUnidos = fallos.map(f => f.fallo).join(". ");
+                                            textoFallos = `PROBLEMAS: ${fallosUnidos}`;
+                                        }
+                                        
+                                        const textoCompleto = `En la revisión del equipo, tras la evaluación técnica se determina:\n\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
+                                        
                                         setDanioReportado(textoCompleto);
                                     } else {
                                         setDanioReportado("");
@@ -425,7 +544,13 @@ export default function CrearReporte() {
                         <CheckItem label="Pendiente" value={checks.pendiente} onToggle={() => toggleCheck('pendiente')} />
                         <CheckItem label="Caja Completa" value={checks.completo} onToggle={() => toggleCheck('completo')} />
                     </View>
-                    <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO... *" value={danioReportado} onChangeText={setDanioReportado} />
+                    <TextInput
+                        style={styles.inputArea}
+                        multiline
+                        placeholder="Describa el daño reportado o detalles adicionales aquí... *"
+                        value={danioReportado}
+                        onChangeText={setDanioReportado}
+                    />
                 </View>
 
                 <View style={styles.card}>
