@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
 import FallosChecks from "../../components/FallosChecks";
+import { reconocerSticker } from "../../components/reconocimientoSticker";
 import RepuestoSelector from "../../components/RepuestoSelector";
 import { crearReporte } from "../../services/crearReporte";
 import { obtenerFallosPorCategoria } from "../../services/obtenerFallos";
@@ -395,57 +396,61 @@ export default function CrearReporte() {
                             try {
                                 setLoading(true);
 
+                                console.log("🤖 [IA] Iniciando reconocimiento de imagen...");
+
                                 const manipResult = await ImageManipulator.manipulateAsync(
                                     foto1.uri,
                                     [{ resize: { width: 1200 } }],
                                     { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
                                 );
+
                                 const result = await TextRecognition.recognize(manipResult.uri);
                                 const textoExtraido = result.text.toUpperCase();
-                                const modeloMatch = textoExtraido.match(/MODEL[O\s:CODE/]*([A-Z0-9-]+)/);
-                                if (modeloMatch) setModeloEq(modeloMatch[1]);
-                                const serieMatch = textoExtraido.match(/(?:S\/N|SERIE|SN|SIN|S1N|S!N|SERIAL)[\s\S]{0,30}?([A-Z0-9]{8,})/);
-                                if (serieMatch) setSerieEq(serieMatch[1]);
-                                let marcaEncontrada = false;
 
-                                for (const m of CAT_MARCAS) {
-                                    if (textoExtraido.includes(m) && m !== "OTROS") {
-                                        setMarca(m);
-                                        marcaEncontrada = true;
-                                        break;
+                                console.log("📝 [IA] Texto extraído del sticker:");
+                                console.log("═══════════════════════════════════");
+                                console.log(textoExtraido);
+                                console.log("═══════════════════════════════════");
+                                const datos = reconocerSticker(textoExtraido);
+                                if (datos.marca) {
+                                    setMarca(datos.marca);
+                                    if (datos.marcaOtra) {
+                                        setMarcaOtra(datos.marcaOtra);
                                     }
                                 }
 
-                                if (!marcaEncontrada) {
-                                    const marcasExtras = ["PRIMA", "INDURAMA", "MABE", "HACEB", "WHIRLPOOL", "ELECTROLUX", "OSTER", "TCL", "HISENSE"];
-                                    for (const m of marcasExtras) {
-                                        if (textoExtraido.includes(m)) {
-                                            setMarca("OTROS");
-                                            setMarcaOtra(m);
-                                            marcaEncontrada = true;
-                                            break;
-                                        }
-                                    }
+                                if (datos.modelo) {
+                                    setModeloEq(datos.modelo);
                                 }
 
-                                if (modeloMatch) {
-                                    const mod = modeloMatch[1];
-                                    if (mod.startsWith("UN") || mod.startsWith("QN") || mod.startsWith("OLED") || mod.startsWith("KDL") || mod.startsWith("PX") ||
-                                        mod.includes("24") || mod.includes("32") || mod.includes("40") || mod.includes("42") || mod.includes("43") || mod.includes("48") ||
-                                        mod.includes("50") || mod.includes("55") || mod.includes("60") || mod.includes("65") || mod.includes("70") || mod.includes("75") || mod.includes("85")) {
-                                        setUnidad("TV LED");
-                                    } else if (mod.startsWith("WA") || mod.startsWith("WF") || mod.startsWith("WT") || textoExtraido.includes("LAVADORA")) {
-                                        setUnidad("LAVADORA");
-                                    } else if (mod.startsWith("RF") || mod.startsWith("RT") || textoExtraido.includes("REFRIGERADOR")) {
-                                        setUnidad("REFRIGERADORA");
+                                if (datos.serie) {
+                                    setSerieEq(datos.serie);
+                                }
+
+                                if (datos.unidad) {
+                                    if (!CAT_PRODUCTOS.includes(datos.unidad)) {
+                                        setUnidad("OTROS");
+                                        setUnidadOtro(datos.unidad);
+                                    } else {
+                                        setUnidad(datos.unidad);
                                     }
                                 }
 
                                 setMostrarFallos(true);
-                                Alert.alert("Análisis Completado", "El OCR extrajo los datos disponibles de la etiqueta.");
+                                const partes = [];
+                                if (datos.marca) partes.push(`Marca: ${datos.marcaOtra || datos.marca}`);
+                                if (datos.modelo) partes.push(`Modelo: ${datos.modelo}`);
+                                if (datos.serie && datos.serie !== datos.modelo) partes.push(`Serie: ${datos.serie}`);
+                                if (datos.unidad) partes.push(`Equipo: ${datos.unidad}`);
+
+                                const mensaje = partes.length > 0
+                                    ? `Datos detectados:\n\n${partes.join('\n')}\n\nVerifique y complete los campos manualmente si es necesario.`
+                                    : "No se pudieron detectar datos automáticamente. Complete los campos manualmente.";
+
+                                Alert.alert("Análisis Completado", mensaje);
 
                             } catch (error) {
-                                console.error("Error en IA:", error);
+                                console.error("[IA] Error en el proceso:", error);
                                 Alert.alert("Error", "Hubo un problema al procesar la imagen localmente.");
                             } finally {
                                 setLoading(false);
@@ -521,9 +526,9 @@ export default function CrearReporte() {
                                             const fallosUnidos = fallos.map(f => f.fallo).join(". ");
                                             textoFallos = `PROBLEMAS: ${fallosUnidos}`;
                                         }
-                                        
+
                                         const textoCompleto = `En la revisión del equipo, tras la evaluación técnica se determina:\n\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
-                                        
+
                                         setDanioReportado(textoCompleto);
                                     } else {
                                         setDanioReportado("");
