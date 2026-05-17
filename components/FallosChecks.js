@@ -1,82 +1,103 @@
 // components/FallosChecks.js
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { MOCK_FALLOS } from "../utils/mocks/mockFallos";
 
-const FallosChecks = ({ onFallosChange }) => {
+const FallosChecks = ({ listaFallos = [], onFallosChange }) => {
     const [fallosSeleccionados, setFallosSeleccionados] = useState([]);
     const [falloExpandido, setFalloExpandido] = useState(null);
 
-    const toggleFallo = (id) => {
-        setFallosSeleccionados(prev => {
-            const nuevos = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-            if (onFallosChange) {
-                const fallosData = nuevos.map(falloId => 
-                    MOCK_FALLOS.find(f => f.id === falloId)
-                );
-                onFallosChange(fallosData);
-            }
-            return nuevos;
-        });
+    useEffect(() => {
+        setFallosSeleccionados([]);
+        setFalloExpandido(null);
+        if (onFallosChange) onFallosChange([]);
+    }, [listaFallos]);
+
+    const toggleFallo = (item) => {
+        const existe = fallosSeleccionados.find(f => f.fallo === item.fallo);
+        let nuevos;
+
+        if (existe) {
+            nuevos = fallosSeleccionados.filter(f => f.fallo !== item.fallo);
+        } else {
+            nuevos = [...fallosSeleccionados, item];
+        }
+
+        setFallosSeleccionados(nuevos);
+        if (onFallosChange) {
+            onFallosChange(nuevos);
+        }
     };
 
-    const toggleExpandir = (id) => {
-        setFalloExpandido(falloExpandido === id ? null : id);
+    const toggleExpandir = (falloText) => {
+        setFalloExpandido(falloExpandido === falloText ? null : falloText);
     };
+
+    if (!listaFallos || listaFallos.length === 0) {
+        return (
+            <View style={[styles.container, { alignItems: 'center', padding: 15 }]}>
+                <Text style={styles.subtitle}>Seleccione un equipo para cargar los fallos comunes.</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Text style={styles.subtitle}>
                 Marque los fallos que presenta el equipo:
             </Text>
-            {MOCK_FALLOS.map((item) => (
-                <View key={item.id} style={styles.falloItem}>
-                    <TouchableOpacity 
-                        style={styles.falloHeader} 
-                        onPress={() => {
-                            toggleFallo(item.id);
-                            if (!fallosSeleccionados.includes(item.id)) {
-                                toggleExpandir(item.id);
-                            }
-                        }}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.falloLeft}>
-                            <Ionicons 
-                                name={fallosSeleccionados.includes(item.id) ? "checkbox" : "square-outline"} 
-                                size={22} 
-                                color={fallosSeleccionados.includes(item.id) ? "#001C38" : "#666"} 
-                            />
-                            <Text style={[
-                                styles.falloText,
-                                fallosSeleccionados.includes(item.id) && styles.falloTextSelected
-                            ]}>
-                                {item.fallo}
-                            </Text>
-                        </View>
-                        {fallosSeleccionados.includes(item.id) && (
-                            <TouchableOpacity onPress={() => toggleExpandir(item.id)}>
+            {listaFallos.map((item, index) => {
+                const isSelected = fallosSeleccionados.some(f => f.fallo === item.fallo);
+                const isExpanded = falloExpandido === item.fallo;
+
+                return (
+                    <View key={index} style={styles.falloItem}>
+                        <TouchableOpacity 
+                            style={styles.falloHeader} 
+                            onPress={() => {
+                                toggleFallo(item);
+                                if (!isSelected) {
+                                    toggleExpandir(item.fallo);
+                                }
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.falloLeft}>
                                 <Ionicons 
-                                    name={falloExpandido === item.id ? "chevron-up-circle" : "chevron-down-circle"} 
-                                    size={24} 
-                                    color="#007AFF" 
+                                    name={isSelected ? "checkbox" : "square-outline"} 
+                                    size={22} 
+                                    color={isSelected ? "#001C38" : "#666"} 
                                 />
-                            </TouchableOpacity>
-                        )}
-                    </TouchableOpacity>
-                    
-                    {fallosSeleccionados.includes(item.id) && falloExpandido === item.id && (
-                        <View style={styles.falloExpandido}>
-                            <View style={styles.falloExpandidoHeader}>
-                                <Ionicons name="bulb-outline" size={18} color="#FF9500" />
-                                <Text style={styles.falloExpandidoTitle}>Posible Solución:</Text>
+                                <Text style={[
+                                    styles.falloText,
+                                    isSelected && styles.falloTextSelected
+                                ]}>
+                                    {item.fallo}
+                                </Text>
                             </View>
-                            <Text style={styles.falloExpandidoText}>{item.solucion}</Text>
-                        </View>
-                    )}
-                </View>
-            ))}
+                            {isSelected && (
+                                <TouchableOpacity onPress={() => toggleExpandir(item.fallo)}>
+                                    <Ionicons 
+                                        name={isExpanded ? "chevron-up-circle" : "chevron-down-circle"} 
+                                        size={24} 
+                                        color="#007AFF" 
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </TouchableOpacity>
+                        
+                        {isSelected && isExpanded && (
+                            <View style={styles.falloExpandido}>
+                                <View style={styles.falloExpandidoHeader}>
+                                    <Ionicons name="bulb-outline" size={18} color="#FF9500" />
+                                    <Text style={styles.falloExpandidoTitle}>Posible Solución:</Text>
+                                </View>
+                                <Text style={styles.falloExpandidoText}>{item.solucion}</Text>
+                            </View>
+                        )}
+                    </View>
+                );
+            })}
         </View>
     );
 };

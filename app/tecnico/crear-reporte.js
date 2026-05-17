@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import TextRecognition from '@react-native-ml-kit/text-recognition';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -13,8 +15,10 @@ import {
 } from "react-native";
 import SignatureScreen from "react-native-signature-canvas";
 import FallosChecks from "../../components/FallosChecks";
+import { reconocerSticker } from "../../components/reconocimientoSticker";
 import RepuestoSelector from "../../components/RepuestoSelector";
 import { crearReporte } from "../../services/crearReporte";
+import { obtenerFallosPorCategoria } from "../../services/obtenerFallos";
 import { generarHtmlReporte } from "../../utils/reporteTemplate";
 
 const CAT_MARCAS = ["LG", "SAMSUNG", "SONY", "PANASONIC", "PHILIPS", "DAEWOO", "RCA", "MIDEA", "RIVIERA", "ENGY", "GLOBAL", "OTROS"];
@@ -50,6 +54,7 @@ export default function CrearReporte() {
     const [modeloEq, setModeloEq] = useState("");
     const [serieEq, setSerieEq] = useState("");
     const [colorEq, setColorEq] = useState("");
+    const [fallosDB, setFallosDB] = useState([]);
     const [fallosSeleccionados, setFallosSeleccionados] = useState([]);
     const [mostrarFallos, setMostrarFallos] = useState(false);
 
@@ -86,6 +91,8 @@ export default function CrearReporte() {
     const [desc5, setDesc5] = useState("");
 
     const [firma, setFirma] = useState(null);
+    const [iaProcesada, setIaProcesada] = useState(false);
+    const [currentImageUri, setCurrentImageUri] = useState(null);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('beforeRemove', (e) => {
@@ -99,6 +106,52 @@ export default function CrearReporte() {
         });
         return unsubscribe;
     }, [navigation, unidad, danioReportado, foto1, firma, loading]);
+
+    useEffect(() => {
+        const cargarFallos = async () => {
+            const categoriasMap = {
+                "TV LED": 1,
+                "LAVADORA": 2,
+                "SECADORA": 3,
+                "REFRIGERADORA": 4,
+                "WASHTOWER": 5,
+                "COCINA": 6,
+                "EQUIPO AUDIO": 7,
+                "OTROS": 8,
+                "GENERAL": 9
+            };
+
+            const unidadBuscar = unidad === "OTROS" ? unidadOtro.trim().toUpperCase() : unidad;
+            const catId = categoriasMap[unidadBuscar] || categoriasMap[unidad];
+
+            if (!catId) {
+                setFallosDB([]);
+                return;
+            }
+
+            try {
+                const res = await obtenerFallosPorCategoria(catId);
+                if (res.success && res.data && res.data.length > 0) {
+                    const fallosFormateados = res.data.map(item => ({
+                        fallo: item.FALLO,
+                        solucion: item.SOLUCION
+                    }));
+                    setFallosDB(fallosFormateados);
+                } else {
+                    setFallosDB([]);
+                }
+            } catch (error) {
+                console.error("Error al cargar fallos:", error);
+                setFallosDB([]);
+            }
+        };
+
+        if (unidad) {
+            cargarFallos();
+        } else {
+            setFallosDB([]);
+        }
+    }, [unidad, unidadOtro]);
 
     const toggleCheck = (key) => setChecks(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -116,7 +169,11 @@ export default function CrearReporte() {
 
         if (!result.canceled) {
             const asset = result.assets[0];
-            if (key === 1) setFoto1(asset);
+            if (key === 1) {
+                setFoto1(asset);
+                setIaProcesada(false);
+                setCurrentImageUri(asset.uri);
+            }
             else if (key === 2) setFoto2(asset);
             else if (key === 3) setFoto3(asset);
             else if (key === 4) setFoto4(asset);
@@ -180,6 +237,11 @@ export default function CrearReporte() {
         setLoading(true);
 
         try {
+            // Timeout de seguridad de 30 segundos
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('La operación tomó demasiado tiempo. Verifique su conexión.')), 30000);
+            });
+
             const fechaActual = new Date().toLocaleDateString('es-ES', {
                 year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
@@ -205,33 +267,75 @@ export default function CrearReporte() {
                 firma
             };
 
+            // Generar PDF con timeout
             const htmlContent = generarHtmlReporte(datosReporte);
-            const { base64, uri } = await Print.printToFileAsync({ html: htmlContent, base64: true });
+            const { base64, uri } = await Promise.race([
+                Print.printToFileAsync({ html: htmlContent, base64: true }),
+                timeoutPromise
+            ]);
 
-            const res = await crearReporte({
-                cedula: servicio.SERV_CED_REC || "",
-                nombre: servicio.SERV_NOM_REC || "",
-                tipo: danioReportado.substring(0, 50),
-                pdf_base64: base64,
-                serv_id: servicio.SERV_ID,
-                serv_num: servicio.SERV_NUM,
-                mov_id: servicio.SERV_TEC_ASIG_ID,
-                equipo_nombre: unidadFinal,
-                equipo_modelo: modeloEq,
-                usa_repuestos: checks.usaRepuestos || false,
-                repuestos_ids: checks.usaRepuestos
-                    ? repuestosSeleccionados.filter(id => id != null)
-                    : [],
-            });
+            if (!base64) {
+                throw new Error('No se pudo generar el PDF correctamente');
+            }
+
+            const res = await Promise.race([
+                crearReporte({
+                    cedula: servicio.SERV_CED_REC || "",
+                    nombre: servicio.SERV_NOM_REC || "",
+                    tipo: danioReportado.substring(0, 50),
+                    pdf_base64: base64,
+                    serv_id: servicio.SERV_ID,
+                    serv_num: servicio.SERV_NUM,
+                    mov_id: servicio.SERV_TEC_ASIG_ID,
+                    equipo_nombre: unidadFinal,
+                    equipo_modelo: modeloEq,
+                    usa_repuestos: checks.usaRepuestos || false,
+                    repuestos_ids: checks.usaRepuestos
+                        ? repuestosSeleccionados.filter(id => id != null)
+                        : [],
+                }),
+                timeoutPromise
+            ]);
+
             if (res.success) {
-                Alert.alert("Éxito", "Reporte finalizado y enviado correctamente.");
-                if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri);
-                router.push("/tecnico/home");
+                Alert.alert(
+                    "Éxito",
+                    "Reporte finalizado y enviado correctamente.",
+                    [{
+                        text: "OK",
+                        onPress: async () => {
+                            try {
+                                if (await Sharing.isAvailableAsync()) {
+                                    await Sharing.shareAsync(uri);
+                                }
+                            } catch (shareError) {
+                                console.log('Error al compartir:', shareError);
+                            } finally {
+                                router.push("/tecnico/home");
+                            }
+                        }
+                    }]
+                );
             } else {
-                Alert.alert("Error", res.message || "Error al subir el reporte");
+                Alert.alert(
+                    "Error",
+                    res.message || "Error al subir el reporte",
+                    [
+                        { text: "Reintentar", onPress: () => generarReporte() },
+                        { text: "Cancelar", style: "cancel" }
+                    ]
+                );
             }
         } catch (e) {
-            Alert.alert("Error", "Ocurrió un error: " + e.message);
+            console.error('Error detallado:', e);
+            Alert.alert(
+                "Error",
+                "Ocurrió un error: " + (e.message || 'Error desconocido'),
+                [
+                    { text: "Reintentar", onPress: () => generarReporte() },
+                    { text: "Cancelar", style: "cancel" }
+                ]
+            );
         } finally {
             setLoading(false);
         }
@@ -262,39 +366,6 @@ export default function CrearReporte() {
             </View>
         </Modal>
     );
-
-    if (showSig) {
-        return (
-            <View style={styles.signatureOverlay}>
-                <View style={styles.signatureContainer}>
-                    <View style={styles.signatureHeader}>
-                        <Text style={styles.signatureTitle}>Firma del Cliente</Text>
-                        <TouchableOpacity onPress={() => setShowSig(false)}>
-                            <Ionicons name="close-circle" size={30} color="#FF3B30" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <SignatureScreen
-                        ref={sigRef}
-                        onOK={(sig) => { setFirma(sig); setShowSig(false); }}
-                        onEmpty={() => Alert.alert("Atención", "El cliente debe firmar antes de continuar.")}
-                        descriptionText="Firma Digital - Electrónica Mantilla"
-                        webStyle={`.m-signature-pad--footer { display: none; margin: 0; }`}
-                        autoClear={true}
-                    />
-
-                    <View style={styles.signatureFooter}>
-                        <TouchableOpacity style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]} onPress={() => sigRef.current?.clearSignature()}>
-                            <Text style={styles.sigBtnText}>LIMPIAR</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.sigBtn, { backgroundColor: '#007AFF' }]} onPress={() => sigRef.current?.readSignature()}>
-                            <Text style={styles.sigBtnText}>LISTO</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-        );
-    }
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -337,20 +408,88 @@ export default function CrearReporte() {
 
                     {/* Botón IA */}
                     <TouchableOpacity
-                        style={[styles.iaButton, !foto1 && styles.iaButtonDisabled]}
-                        disabled={!foto1}
-                        onPress={() => {
-                            Alert.alert("IA", "Procesando imagen con inteligencia artificial...");
-                            setUnidad("TV LED");
-                            setMarca("SAMSUNG");
-                            setModeloEq("UN55TU8000");
-                            setSerieEq("0A3K5B9X200045H");
-                            setColorEq("Negro");
-                            setMostrarFallos(true);
+                        style={[styles.iaButton,(!foto1 || iaProcesada) && styles.iaButtonDisabled]}
+                        disabled={!foto1 || iaProcesada || loading}
+                        onPress={async () => {
+                            if (!foto1 || iaProcesada) return;
+
+                            try {
+                                setLoading(true);
+
+                                console.log("🤖 [IA] Iniciando reconocimiento de imagen...");
+
+                                const manipResult = await ImageManipulator.manipulateAsync(
+                                    foto1.uri,
+                                    [{ resize: { width: 1200 } }],
+                                    { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+                                );
+
+                                const result = await TextRecognition.recognize(manipResult.uri);
+                                const textoExtraido = result.text.toUpperCase();
+
+                                console.log("📝 [IA] Texto extraído del sticker:");
+                                console.log("═══════════════════════════════════");
+                                console.log(textoExtraido);
+                                console.log("═══════════════════════════════════");
+                                const datos = reconocerSticker(textoExtraido);
+                                if (datos.marca) {
+                                    setMarca(datos.marca);
+                                    if (datos.marcaOtra) {
+                                        setMarcaOtra(datos.marcaOtra);
+                                    }
+                                }
+
+                                if (datos.modelo) {
+                                    setModeloEq(datos.modelo);
+                                }
+
+                                if (datos.serie) {
+                                    setSerieEq(datos.serie);
+                                }
+
+                                if (datos.unidad) {
+                                    if (!CAT_PRODUCTOS.includes(datos.unidad)) {
+                                        setUnidad("OTROS");
+                                        setUnidadOtro(datos.unidad);
+                                    } else {
+                                        setUnidad(datos.unidad);
+                                    }
+                                }
+
+                                // Marcar como procesada
+                                setIaProcesada(true);
+
+                                const partes = [];
+                                if (datos.marca) partes.push(`Marca: ${datos.marcaOtra || datos.marca}`);
+                                if (datos.modelo) partes.push(`Modelo: ${datos.modelo}`);
+                                if (datos.serie && datos.serie !== datos.modelo) partes.push(`Serie: ${datos.serie}`);
+                                if (datos.unidad) partes.push(`Equipo: ${datos.unidad}`);
+
+                                const mensaje = partes.length > 0
+                                    ? `Datos detectados:\n\n${partes.join('\n')}\n\nVerifique y complete los campos manualmente si es necesario.`
+                                    : "No se pudieron detectar datos automáticamente. Complete los campos manualmente.";
+
+                                Alert.alert("Análisis Completado", mensaje);
+
+                            } catch (error) {
+                                console.error("[IA] Error en el proceso:", error);
+                                Alert.alert("Error", "Hubo un problema al procesar la imagen localmente.");
+                                // No marcar como procesada si hay error
+                                setIaProcesada(false);
+                            } finally {
+                                setLoading(false);
+                            }
                         }}
                     >
-                        <Ionicons name="scan-outline" size={20} color="#FFF" />
-                        <Text style={styles.iaButtonText}>USAR IA PARA RECONOCER EL DISPOSITIVO</Text>
+                        {loading ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <>
+                                <Ionicons name={iaProcesada ? "checkmark-circle-outline" : "scan-outline"} size={20} color="#FFF" />
+                                <Text style={styles.iaButtonText}> {iaProcesada ? "PROCESADA - CAMBIE LA IMAGEN PARA REINTENTAR" : "USAR IA PARA RECONOCER EL DISPOSITIVO"}
+                                </Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     {/* Datos del equipo */}
@@ -385,8 +524,8 @@ export default function CrearReporte() {
                     <TextInput style={styles.input} placeholder="N° Serie *" value={serieEq} onChangeText={setSerieEq} maxLength={40} />
                     <TextInput style={styles.input} placeholder="Color *" value={colorEq} onChangeText={setColorEq} maxLength={20} />
 
-                    {/* Posibles Fallos (visible solo después de IA) */}
-                    {mostrarFallos && (
+                    {/* Posibles Fallos (visible siempre que haya fallosDB con datos) */}
+                    {fallosDB.length > 0 && (
                         <View style={styles.fallosSection}>
                             <View style={styles.divider}>
                                 <View style={styles.dividerRow}>
@@ -398,13 +537,21 @@ export default function CrearReporte() {
                             <Text style={styles.dividerHint}>Seleccione los fallos para autocompletar el diagnóstico</Text>
 
                             <FallosChecks
+                                listaFallos={fallosDB}
                                 onFallosChange={(fallos) => {
                                     setFallosSeleccionados(fallos);
                                     if (fallos.length > 0) {
-                                        const textoFallos = fallos.map((f, i) =>
-                                            `${i + 1}. ${f.fallo}`
-                                        ).join("\n");
-                                        const textoCompleto = `Se revisó el equipo ${unidad || '[EQUIPO]'} marca ${marca || '[MARCA]'} modelo ${modeloEq || '[MODELO]'} porque:\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
+                                        let textoFallos = "";
+
+                                        if (fallos.length === 1) {
+                                            textoFallos = `PROBLEMA: ${fallos[0].fallo}`;
+                                        } else {
+                                            const fallosUnidos = fallos.map(f => f.fallo).join(". ");
+                                            textoFallos = `PROBLEMAS: ${fallosUnidos}`;
+                                        }
+
+                                        const textoCompleto = `En la revisión del equipo, tras la evaluación técnica se determina:\n\n${textoFallos}\n\n[Describa detalles adicionales aquí]`;
+
                                         setDanioReportado(textoCompleto);
                                     } else {
                                         setDanioReportado("");
@@ -425,13 +572,18 @@ export default function CrearReporte() {
                         <CheckItem label="Pendiente" value={checks.pendiente} onToggle={() => toggleCheck('pendiente')} />
                         <CheckItem label="Caja Completa" value={checks.completo} onToggle={() => toggleCheck('completo')} />
                     </View>
-                    <TextInput style={styles.inputArea} multiline placeholder="DESCRIBA EL DAÑO REPORTADO... *" value={danioReportado} onChangeText={setDanioReportado} />
+                    <TextInput
+                        style={styles.inputArea}
+                        multiline
+                        placeholder="Describa el daño reportado o detalles adicionales aquí... *"
+                        value={danioReportado}
+                        onChangeText={setDanioReportado}
+                    />
                 </View>
 
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>4. Accesorios y Repuestos</Text>
 
-                    {/* ===== ACCESORIOS ===== */}
                     <Text style={styles.subLabel}>¿Recibe accesorios del cliente?</Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, accesorios: true })}>
@@ -447,7 +599,6 @@ export default function CrearReporte() {
                         <TextInput style={styles.inputAcc} placeholder="Especifique los accesorios recibidos... *" value={accesoriosDesc} onChangeText={setAccesoriosDesc} />
                     )}
 
-                    {/* ===== REPUESTOS ===== */}
                     <Text style={styles.subLabel}>¿Utilizó repuestos?</Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.radioItem} onPress={() => setChecks({ ...checks, usaRepuestos: true })}>
@@ -641,6 +792,55 @@ export default function CrearReporte() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Modal de Firma Digital */}
+            <Modal 
+                visible={showSig} 
+                animationType="fade" 
+                transparent={true}
+                onRequestClose={() => setShowSig(false)}
+            >
+                <View style={styles.signatureOverlay}>
+                    <View style={styles.signatureContainer}>
+                        <View style={styles.signatureHeader}>
+                            <Text style={styles.signatureTitle}>Firma del Cliente</Text>
+                            <TouchableOpacity onPress={() => setShowSig(false)}>
+                                <Ionicons name="close-circle" size={30} color="#FF3B30" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                            <SignatureScreen
+                                ref={sigRef}
+                                onOK={(sig) => { 
+                                    setFirma(sig); 
+                                    setShowSig(false); 
+                                }}
+                                onEmpty={() => Alert.alert("Atención", "El cliente debe firmar antes de continuar.")}
+                                descriptionText="Firma Digital - Electrónica Mantilla"
+                                webStyle={`.m-signature-pad--footer { display: none; margin: 0; }`}
+                                autoClear={true}
+                            />
+                        </View>
+
+                        <View style={styles.signatureFooter}>
+                            <TouchableOpacity 
+                                style={[styles.sigBtn, { backgroundColor: '#8E8E93' }]} 
+                                onPress={() => sigRef.current?.clearSignature()}
+                            >
+                                <Text style={styles.sigBtnText}>LIMPIAR</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.sigBtn, { backgroundColor: '#007AFF' }]} 
+                                onPress={() => sigRef.current?.readSignature()}
+                            >
+                                <Text style={styles.sigBtnText}>LISTO</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
         </KeyboardAvoidingView>
     );
 }
