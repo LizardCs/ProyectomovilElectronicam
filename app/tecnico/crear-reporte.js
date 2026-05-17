@@ -416,7 +416,7 @@ export default function CrearReporte() {
                             try {
                                 setLoading(true);
 
-                                console.log("🤖 [IA] Iniciando reconocimiento de imagen...");
+                                //console.log("[IA] Iniciando reconocimiento de imagen...");
 
                                 const manipResult = await ImageManipulator.manipulateAsync(
                                     foto1.uri,
@@ -427,10 +427,10 @@ export default function CrearReporte() {
                                 const result = await TextRecognition.recognize(manipResult.uri);
                                 const textoExtraido = result.text.toUpperCase();
 
-                                console.log("📝 [IA] Texto extraído del sticker:");
-                                console.log("═══════════════════════════════════");
-                                console.log(textoExtraido);
-                                console.log("═══════════════════════════════════");
+                                //console.log("[IA] Texto extraído del sticker:");
+                                //console.log("═══════════════════════════════════");
+                                //console.log(textoExtraido);
+                                //console.log("═══════════════════════════════════");
                                 const datos = reconocerSticker(textoExtraido);
                                 if (datos.marca) {
                                     setMarca(datos.marca);
