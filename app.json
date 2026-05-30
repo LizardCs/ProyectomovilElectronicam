@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "E.M.App",
+    "name": "S.G.T.E.M",
     "slug": "ProyectomovilElectronicam",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -41,7 +41,9 @@
         }
       ],
       "expo-web-browser",
-      "expo-build-properties"
+      "expo-build-properties",
+      "react-native-fast-tflite",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

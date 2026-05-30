@@ -137,7 +137,7 @@ const detectarModelo = (texto) => {
                         "SINO", "ELECTRONICS", "INC"
                     ];
                     if (!palabrasInvalidas.includes(candidato)) {
-                        console.log("   📦 Modelo detectado en línea anterior a MODEL:", candidato);
+                        //console.log("Modelo detectado en línea anterior a MODEL:", candidato);
                         return candidato;
                     }
                 }
@@ -171,7 +171,7 @@ const detectarModelo = (texto) => {
                 /[A-Z]/.test(candidato) &&                 
                 !palabrasInvalidasModelo.includes(candidato)
             ) {
-                console.log("   📦 Modelo detectado por patrón suelto:", candidato);
+                //console.log("Modelo detectado por patrón suelto:", candidato);
                 return candidato;
             }
         }
@@ -203,7 +203,7 @@ const detectarSerie = (texto, unidad = "") => {
                 if (siguienteLinea) {
                     const candidato = siguienteLinea[1].trim();
                     if (candidato.length >= 6) {
-                        console.log("   🔢 Serie encontrada en línea siguiente:", candidato);
+                        //console.log("Serie encontrada en línea siguiente:", candidato);
                         return candidato;
                     }
                 }
@@ -247,7 +247,7 @@ const detectarSerie = (texto, unidad = "") => {
  */
 const detectarMarca = (texto) => {
     if (/WH[IRL]{1,6}PO{1,2}[OL]/i.test(texto) || /WH[IRL]{1,6}PO/i.test(texto)) {
-        console.log("   🏷️ Marca detectada por patrón flexible: WHIRLPOOL");
+        //console.log("Marca detectada por patrón flexible: WHIRLPOOL");
         return { marca: "WHIRLPOOL", marcaOtra: "" };
     }
     const marcasExtrasOrdenadas = MARCAS_EXTRAS.sort((a, b) => b.length - a.length);
@@ -256,7 +256,7 @@ const detectarMarca = (texto) => {
         if (marca.length <= 5) {
             const regexCorta = new RegExp(`\\b${marca}\\b`, 'i');
             if (regexCorta.test(texto)) {
-                console.log("   🏷️ Marca extra corta encontrada:", marca);
+                //console.log("Marca extra corta encontrada:", marca);
                 return { marca: "OTROS", marcaOtra: marca };
             }
         } else {
@@ -281,7 +281,7 @@ const detectarMarca = (texto) => {
         if (marca.length <= 3) {
             const regexCorta = new RegExp(`\\b${marca}\\b`, 'i');
             if (regexCorta.test(texto)) {
-                console.log("   🏷️ Marca corta encontrada:", marca);
+                //console.log("Marca corta encontrada:", marca);
                 return { marca, marcaOtra: "" };
             }
         } else {
@@ -351,29 +351,22 @@ const detectarUnidad = (texto, modelo) => {
 
 export const reconocerSticker = (texto) => {
     const textoLimpio = texto.toUpperCase();
-
-    console.log("🔍 [IA] Iniciando reconocimiento avanzado...");
-
-    // PRIMERO: Detectar unidad (es más fácil y confiable)
+    //console.log("Iniciando reconocimiento avanzado...");
     const unidad = detectarUnidad(textoLimpio, null);
-    console.log("   📺 Unidad:", unidad || "❌ No detectada");
-
+    //console.log("Unidad:", unidad || "❌ No detectada");
     // Detectar modelo
     const modelo = detectarModelo(textoLimpio);
-    console.log("   📦 Modelo:", modelo || "❌ No detectado");
-
+    //console.log(" Modelo:", modelo || "❌ No detectado");
     // Detectar serie (usando regex específicos según unidad)
     const serie = detectarSerie(textoLimpio, unidad);
-    console.log("   🔢 Serie:", serie || "❌ No detectada");
-
+    //console.log("Serie:", serie || "❌ No detectada");
     // Detectar marca
     const { marca, marcaOtra } = detectarMarca(textoLimpio);
-    console.log("   🏷️ Marca:", marca || "❌ No detectada", marcaOtra ? `(${marcaOtra})` : "");
-
+    //console.log("Marca:", marca || "❌ No detectada", marcaOtra ? `(${marcaOtra})` : "");
     // Si no hay serie, usar el modelo
     const serieFinal = serie || modelo || "";
     if (!serie && modelo) {
-        console.log("   💡 Serie copiada del modelo:", modelo);
+        //console.log("Serie copiada del modelo:", modelo);
     }
 
     const resultado = {
@@ -384,9 +377,9 @@ export const reconocerSticker = (texto) => {
         unidad: unidad || ""
     };
 
-    console.log("═══════════════════════════════════");
-    console.log("📋 RESULTADO FINAL:", JSON.stringify(resultado, null, 2));
-    console.log("═══════════════════════════════════");
+    //console.log("═══════════════════════════════════");
+    //console.log("RESULTADO FINAL:", JSON.stringify(resultado, null, 2));
+    //console.log("═══════════════════════════════════");
 
     return resultado;
 };
