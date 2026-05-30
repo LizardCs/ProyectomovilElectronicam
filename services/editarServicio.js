@@ -90,7 +90,7 @@ export const editarServicio = async (formData) => {
     };
 
     if (cliId) {
-      updateFields.serv_ced_cli = cliId; 
+      updateFields.SERV_CLI_ID = cliId; 
     }
 
     if (cleanBase64) {
